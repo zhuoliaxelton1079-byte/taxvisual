@@ -1,6 +1,6 @@
-# Income Tax Ledger — Project Docs
+# Income Tax Ledger — Tool Docs
 
-*Interactive 2025 US federal income-tax bracket simulator, built for classroom use. Single self-contained HTML file, no build step, no dependencies beyond Google Fonts.*
+*Interactive 2025 US federal income-tax bracket simulator, built for classroom use. Self-contained page (`tools/tax-bracket-ledger/index.html`) sharing only the site's topbar/footer chrome — no build step, no dependencies beyond Google Fonts.*
 
 ## What it is
 
@@ -39,9 +39,9 @@ Source: Tax Foundation, "2025 Tax Brackets and Federal Income Tax Rates." Educat
 ## Design notes
 
 - Built against Anthropic's `dataviz` skill: an 8-hue CVD-safe categorical palette (one hue per bracket, validated for colorblind-safe adjacent contrast), fixed mark specs (rounded bar ends, 2px gaps, hairline gridlines), and direct labels so values don't rely on color alone.
-- Full light/dark theme support via CSS custom properties, switching with `prefers-color-scheme` and honoring an explicit theme override if the host page sets one.
+- Full light/dark theme support via its own CSS custom properties (`--surface`, `--page`, `--ink`, `--accent`, `--b1`…`--b7`, deliberately namespaced apart from the site-wide `--tv-*` tokens), switching with `prefers-color-scheme` and honoring an explicit `data-theme="dark"` override if the host page sets one.
 - Responsive down to mobile width (390px): the layout collapses to a single column, the bracket table scrolls horizontally in its own container, and nothing else overflows the viewport.
-- No build tooling — it's one `.html` file with inline `<style>` and `<script>`. Charts are hand-built SVG (vanilla JS, `document.createElementNS`), not a charting library.
+- No build tooling — its chart/interaction logic is one inline `<script>` block; charts are hand-built SVG (vanilla JS, `document.createElementNS`), not a charting library. Only the topbar/footer chrome and their stylesheets are shared with the rest of the site — the tool's own `<style>`/`<script>` are never touched by shared-asset changes.
 
 ## History
 
@@ -55,28 +55,4 @@ Built iteratively:
 7. Replaced the single stacked "tax owed" column with a categorical bar chart (one bar per bracket, x-axis = income range).
 8. Added the marginal-rate step-line/dots overlay on the bar chart, on its own right-hand axis.
 9. Removed the original left-hand "ladder" column chart (which showed where the income fell across the full $0–$800k range) to simplify the panel down to the bar chart alone.
-
-## Files in this folder
-
-- `index.html` — TaxVisual homepage modeled after policy-research site patterns, with navigation, tool directory, and pressbook integration sections.
-- `tax-bracket-ledger.html` — the tool. Open directly in a browser, or serve with any static server / VS Code Live Server.
-- `Tax_Bracket_Ledger_Docs.md` — this file.
-
-## Domain launch checklist (taxvisual.com)
-
-For a simple static launch, host this folder on GitHub Pages, Netlify, or Vercel, then point your GoDaddy domain to that host.
-
-1. Publish the project folder as a static site (`index.html` should be the entry page).
-2. In GoDaddy DNS, set your apex/root records based on your hosting provider's instructions.
-3. Add a `www` CNAME record that points to your hosted site target.
-4. In your hosting dashboard, add both `taxvisual.com` and `www.taxvisual.com` as custom domains.
-5. Enable HTTPS and force redirect to your preferred canonical domain.
-
-## Pressbook integration plan
-
-To connect your open access book with tools:
-
-1. Add your live Pressbook URL in the homepage "Open Book" section.
-2. Create one tool card per chapter or major concept.
-3. Add a short "How to use this tool with Chapter X" block on each tool page.
-4. Keep a visible source line with date, assumptions, and data references.
+10. Moved from a standalone root-level file into `tools/tax-bracket-ledger/index.html` with shared site chrome, as part of the site-wide restructure (see `docs/site-architecture.md`).

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tool Directory | TaxVisual</title>
+  <meta name="description" content="Every interactive tax tool published by TaxVisual, organized by topic.">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/tokens.css">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/topbar.css">
+  <link rel="stylesheet" href="../assets/css/footer.css">
+  <link rel="stylesheet" href="../assets/css/reveal.css">
+  <link rel="stylesheet" href="../assets/css/tool-card.css">
+  <style>
+    .page-head {
+      padding: 2.25rem 0 1.5rem;
+    }
+
+    .page-head h1 {
+      font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem);
+      max-width: 22ch;
+    }
+
+    .page-head p {
+      margin: 0.75rem 0 0;
+      color: var(--tv-muted);
+      max-width: 60ch;
+    }
+
+    .catalog {
+      padding-bottom: 2.5rem;
+      display: grid;
+      gap: 1.75rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../index.html" aria-label="TaxVisual home">
+        <span class="brand-mark">TV</span>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="index.html" aria-current="page">Tools</a></li>
+          <li><a href="../methodology/index.html">Methodology</a></li>
+          <li><a href="../about/index.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container page-head reveal">
+      <h1>Tool Directory</h1>
+      <p>Every interactive tool TaxVisual has published, grouped by topic. Each one documents its assumptions and sources on its own page.</p>
+    </div>
+
+    <div class="container catalog" id="catalog"></div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      TaxVisual | Educational tax policy simulations, not tax advice | <a href="../about/index.html">About</a>
+    </div>
+  </footer>
+
+  <script src="../assets/js/tools-data.js"></script>
+  <script src="../assets/js/render.js"></script>
+  <script>
+    TaxVisual.renderToolGrid(document.getElementById('catalog'), {
+      basePath: '../',
+      groupByCategory: true
+    });
+  </script>
+  <script src="../assets/js/reveal.js"></script>
+</body>
+</html>

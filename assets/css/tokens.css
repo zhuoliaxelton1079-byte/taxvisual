@@ -1,0 +1,17 @@
+:root {
+  --tv-bg: #f5f7f8;
+  --tv-paper: #ffffff;
+  --tv-ink: #1b2733;
+  --tv-muted: #546371;
+  --tv-rule: #d6dde3;
+  --tv-navy: #12334f;
+  --tv-navy-soft: #1b476c;
+  --tv-teal: #0e6f6e;
+  --tv-red: #b3202a;
+  --tv-accent: #1d5fd6;
+  --tv-accent-soft: #17469e;
+  --tv-accent-tint: rgba(29, 95, 214, 0.1);
+  --tv-shadow: 0 10px 30px rgba(19, 39, 56, 0.08);
+  --tv-radius: 14px;
+  --tv-max: 1140px;
+}

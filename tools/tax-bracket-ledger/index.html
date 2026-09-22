@@ -1,4 +1,15 @@
-<title>Income Tax Ledger</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Income Tax Ledger | TaxVisual</title>
+<meta name="description" content="Interactive 2025 US federal income-tax bracket simulator for single filers.">
+<link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<link rel="stylesheet" href="../../assets/css/topbar.css">
+<link rel="stylesheet" href="../../assets/css/footer.css">
 <style>
   :root{
     color-scheme: light;
@@ -282,6 +293,23 @@
 </style>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../../index.html" aria-label="TaxVisual home">
+        <span class="brand-mark">TV</span>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../directory/index.html">Tools</a></li>
+          <li><a href="../../methodology/index.html">Methodology</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
 
 <div class="app" id="appRoot">
   <div class="wrap">
@@ -375,6 +403,12 @@
 </div>
 
 <div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
+  <footer class="footer">
+    <div class="container">
+      TaxVisual | Educational tax policy simulations, not tax advice | <a href="../../about/index.html">About</a>
+    </div>
+  </footer>
 
 <script>
 (function(){
@@ -812,3 +846,5 @@
   setIncome(60000);
 })();
 </script>
+</body>
+</html>

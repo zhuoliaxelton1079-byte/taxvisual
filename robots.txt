@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /tools/_starter/
+
+Sitemap: https://taxvisual.com/sitemap.xml
