@@ -1,0 +1,8 @@
+# Normalize all text files to LF inside the repository, so two Windows
+# machines with core.autocrlf=true don't produce whole-file CRLF diffs.
+# Working copies still get native line endings on checkout.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
