@@ -22,6 +22,10 @@ This is the whole workflow — no other page needs hand-editing.
    ```
 6. Once the PR is reviewed and merged, GitHub Pages rebuilds automatically from `main` (usually live within about a minute). Reload `https://taxvisual.com/directory/` to confirm the tool appears, then open its live URL.
 
+## Contributing
+
+`main` is the live site — every merge deploys. Nothing lands on `main` except through a reviewed pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch → PR → review → merge loop and the three files that cause merge conflicts.
+
 ## Local preview
 
 No server needed — every page uses relative paths, so double-clicking any `.html` file opens it correctly straight from the filesystem. (A local server such as VS Code's Live Server also works, if you prefer.)
