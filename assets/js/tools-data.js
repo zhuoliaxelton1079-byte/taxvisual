@@ -19,7 +19,14 @@ window.TOOLS = [
     status: 'live',
     url: 'tools/tax-bracket-ledger/index.html',
     order: 1,
-    featured: true
+    featured: true,
+    // Optional. Shown as the key-facts table in the homepage spotlight.
+    facts: [
+      { label: 'Tax year', value: '2025' },
+      { label: 'Jurisdiction', value: 'US federal' },
+      { label: 'Filing status', value: 'Single' },
+      { label: 'Brackets', value: '7' }
+    ]
   },
   {
     slug: 'payroll-tax-split-viewer',

@@ -1,9 +1,18 @@
 <!--
   Reference copy only — never fetched at runtime. See topbar.html for the
-  {{ROOT}} convention.
+  {{ROOT}} convention and the aria-current rule, which applies here too:
+  mark the link pointing at the current page and drop {{ROOT}} from it.
 -->
-<footer class="footer">
-  <div class="container">
-    TaxVisual | Educational tax policy simulations, not tax advice | <a href="{{ROOT}}about/index.html">About</a> | <a href="{{ROOT}}sitemap/index.html">Site Map</a>
+<footer class="site-footer">
+  <div class="container site-footer-inner">
+    <p class="footer-note">TaxVisual publishes educational tax policy simulations. Not tax advice.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="{{ROOT}}about/index.html">About</a></li>
+        <li><a href="{{ROOT}}methodology/index.html">Methodology</a></li>
+        <li><a href="{{ROOT}}sitemap/index.html">Site map</a></li>
+        <li><a href="mailto:info@taxvisual.com">Contact</a></li>
+      </ul>
+    </nav>
   </div>
 </footer>

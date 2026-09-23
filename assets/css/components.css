@@ -1,0 +1,316 @@
+/* ==========================================================================
+   Components — shared chrome and reusable pieces.
+   Loaded by every page. Replaces the old topbar.css, footer.css,
+   tool-card.css and reveal.css.
+
+   .section-head lives here rather than in home.css because render.js
+   injects it on /directory/ too; when it lived in home.css those headings
+   rendered unstyled.
+   ========================================================================== */
+
+/* ---- Topbar -------------------------------------------------------------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 60px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.brand:hover { color: var(--ink); }
+
+.brand-mark {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.topbar nav ul {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topbar nav a {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.topbar nav a:hover { color: var(--ink); }
+
+/* Current page gets weight and a rule, not just a hue shift — color alone
+   is too weak an indicator for low-vision users. */
+.topbar nav a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 2px;
+}
+
+/* ---- Footer -------------------------------------------------------------- */
+
+.site-footer {
+  margin-top: var(--space-9);
+  border-top: 1px solid var(--rule);
+  padding: var(--space-6) 0 var(--space-7);
+}
+
+.site-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+}
+
+.footer-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  max-width: var(--measure);
+}
+
+.site-footer nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-footer nav a {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.site-footer nav a:hover { color: var(--ink); }
+.site-footer nav a[aria-current="page"] { color: var(--ink); }
+
+/* ---- Buttons ------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  color: var(--on-accent);
+}
+
+.btn-outline {
+  border-color: var(--rule);
+  color: var(--ink);
+  background: transparent;
+}
+
+.btn-outline:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+/* ---- Eyebrow / chips ----------------------------------------------------- */
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.chip-live {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent);
+}
+
+/* ---- Section heading ----------------------------------------------------- */
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.section-head p {
+  margin: 0;
+  max-width: var(--measure);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* ---- Tool cards ---------------------------------------------------------- */
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-4);
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.tool-tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tool-card h3 {
+  font-size: var(--text-lg);
+}
+
+.tool-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.tool-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.tool-status {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.tool-status.is-live { color: var(--accent); }
+.tool-status.is-planned { color: var(--muted); }
+
+.tool-link { font-weight: var(--weight-medium); }
+
+.tool-grid-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* ---- Scroll reveal -------------------------------------------------------
+   Scoped to .js so the content is visible when JavaScript fails, is
+   blocked, or is disabled. Previously an unscoped opacity:0 meant a script
+   failure rendered whole pages blank. */
+
+.js .reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 500ms ease, transform 500ms ease;
+}
+
+.js .reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- Responsive ----------------------------------------------------------
+   Breakpoints for the whole site: 900px (layout collapse) and 600px
+   (single column / stacked chrome). Keep new queries on these two values. */
+
+@media (max-width: 600px) {
+  .topbar-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding-block: var(--space-3);
+  }
+
+  .topbar nav ul {
+    gap: var(--space-4);
+  }
+
+  .site-footer-inner {
+    flex-direction: column;
+  }
+}

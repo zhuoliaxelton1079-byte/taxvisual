@@ -6,21 +6,21 @@
   <title>TaxVisual | Interactive Tax Tools</title>
   <meta name="description" content="TaxVisual publishes interactive tax policy tools and classroom simulations.">
   <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+  <script>document.documentElement.classList.add('js');</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/tokens.css">
   <link rel="stylesheet" href="assets/css/base.css">
-  <link rel="stylesheet" href="assets/css/topbar.css">
-  <link rel="stylesheet" href="assets/css/footer.css">
-  <link rel="stylesheet" href="assets/css/reveal.css">
-  <link rel="stylesheet" href="assets/css/tool-card.css">
+  <link rel="stylesheet" href="assets/css/components.css">
   <link rel="stylesheet" href="assets/css/home.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
   <header class="topbar">
     <div class="container topbar-inner">
-      <a class="brand" href="index.html" aria-label="TaxVisual home">
+      <a class="brand" href="index.html" aria-current="page" aria-label="TaxVisual home">
         <span class="brand-mark">TV</span>
         <span>TaxVisual</span>
       </a>
@@ -34,94 +34,90 @@
     </div>
   </header>
 
-  <main id="top">
-    <section class="hero">
-      <div class="container hero-grid">
-        <article class="hero-main reveal">
-          <p class="eyebrow">Open Access Tax Policy Lab</p>
-          <h1>Interactive tax tools that turn bracket math into public understanding</h1>
-          <p>
-            TaxVisual publishes transparent, browser-based simulations for classrooms, policy workshops, and
-            self-study. Every tool documents its assumptions and sources in the open.
-          </p>
-          <div class="actions">
-            <a class="btn btn-primary" href="directory/index.html">Browse All Tools</a>
-            <a class="btn btn-outline" href="#book">About This Project</a>
-          </div>
-        </article>
-
-        <aside class="hero-side reveal" aria-label="Highlights">
-          <h2>At a glance</h2>
-          <dl class="stat-grid">
-            <div class="stat">
-              <dt>Interactive Tools</dt>
-              <dd>1 live, more in development</dd>
-            </div>
-            <div class="stat">
-              <dt>Audience</dt>
-              <dd>Students, educators, policy readers</dd>
-            </div>
-            <div class="stat">
-              <dt>Approach</dt>
-              <dd>Open method, transparent formulas</dd>
-            </div>
-          </dl>
-        </aside>
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container">
+        <p class="eyebrow hero-eyebrow reveal">Open access tax policy lab</p>
+        <h1 id="hero-title" class="reveal">Interactive tax tools that turn bracket math into public understanding</h1>
+        <p class="hero-lede reveal">
+          TaxVisual publishes transparent, browser-based simulations for classrooms, policy workshops, and
+          self-study. Every tool documents its assumptions and sources in the open.
+        </p>
+        <div class="hero-actions reveal">
+          <a class="btn btn-primary" href="directory/index.html">Browse all tools</a>
+          <a class="btn btn-outline" href="methodology/index.html">How these are built</a>
+        </div>
       </div>
     </section>
 
-    <section class="section" id="tools">
+    <section class="section" id="tools" aria-labelledby="tools-title">
       <div class="container">
         <div class="section-head reveal">
-          <h2>Featured Tools</h2>
-          <p>
-            Every tool includes assumptions, source references, and direct controls to test scenarios in real time.
-          </p>
+          <h2 id="tools-title">The tool</h2>
+          <p>Every tool documents its assumptions, cites its sources, and gives you direct controls to test scenarios in real time.</p>
         </div>
 
-        <div id="featured-tools"></div>
-
-        <p class="reveal" style="margin-top: 1rem;">
-          <a class="btn btn-outline" href="directory/index.html">See the full tool directory</a>
-        </p>
+        <div id="tool-spotlight" class="reveal"></div>
+        <noscript>
+          <p><a href="tools/tax-bracket-ledger/index.html">Income Tax Ledger</a> — progressive bracket mechanics for 2025 single filers. <a href="directory/index.html">See the full directory</a>.</p>
+        </noscript>
       </div>
     </section>
 
-    <section class="section" id="book">
+    <section class="section" id="method" aria-labelledby="method-title">
       <div class="container">
-        <div class="book-panel reveal">
-          <div class="book-copy">
-            <h3>Grounded in an open access tax textbook</h3>
+        <div class="split">
+          <div class="section-head reveal">
+            <h2 id="method-title">Method and transparency</h2>
+          </div>
+          <div class="split-body reveal">
+            <p>
+              TaxVisual tools are educational simulations. They are not legal or tax advice.
+            </p>
+            <p>
+              Each tool page documents its rate schedules, sources, update dates, and known limitations, so you
+              can check the arithmetic rather than take it on trust.
+            </p>
+            <p class="split-actions">
+              <a class="btn btn-outline" href="methodology/index.html">Read the methodology</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="book" aria-labelledby="book-title">
+      <div class="container">
+        <div class="split">
+          <div class="section-head reveal">
+            <h2 id="book-title">Grounded in an open textbook</h2>
+          </div>
+          <div class="split-body reveal">
             <p>
               TaxVisual's tools are informed by <em>Fundamentals of Federal Taxation</em>, an open access Pressbook
               covering individual, corporate, and pass-through taxation. Tools here aren't a strict chapter-by-chapter
-              companion — they cover whatever topics are most useful to visualize, drawing loosely on the book's subject areas.
+              companion — they cover whatever topics are most useful to visualize, drawing loosely on the book's
+              subject areas.
             </p>
-            <ul class="book-list">
+            <ul class="marker-list" role="list">
               <li>Read the open textbook for the underlying rules and policy context.</li>
               <li>Use the tools here to test scenarios interactively, at your own pace.</li>
               <li>New tools are added over time as the catalog grows.</li>
             </ul>
-            <p style="margin-top: 1rem;">
-              <a class="btn btn-outline" href="https://wisconsin.pressbooks.pub/taxation/" target="_blank" rel="noopener">Read the Pressbook</a>
+            <p class="split-actions">
+              <a class="btn btn-outline" href="https://wisconsin.pressbooks.pub/taxation/" target="_blank" rel="noopener">Read the Pressbook (opens in a new tab)</a>
             </p>
           </div>
-          <aside class="book-side">
-            <h4>Method and transparency</h4>
-            <p>
-              TaxVisual tools are educational simulations. They are not legal or tax advice.
-              Each tool page documents its rate schedules, sources, update dates, and known limitations.
-            </p>
-            <a class="btn btn-outline" href="methodology/index.html">Read the Methodology</a>
-          </aside>
         </div>
+      </div>
+    </section>
 
-        <div class="newsletter reveal" id="contact">
+    <section class="section" id="contact" aria-labelledby="contact-title">
+      <div class="container">
+        <div class="contact-row reveal">
           <div>
-            <strong>Questions or suggestions?</strong>
-            <p style="margin:0.25rem 0 0; color: var(--tv-muted); font-size: 0.92rem;">
-              Reach out about a tool idea, a correction, or a classroom use case.
-            </p>
+            <h2 id="contact-title">Questions or suggestions?</h2>
+            <p>Reach out about a tool idea, a correction, or a classroom use case.</p>
           </div>
           <a class="btn btn-primary" href="mailto:info@taxvisual.com">Contact TaxVisual</a>
         </div>
@@ -129,19 +125,24 @@
     </section>
   </main>
 
-  <footer class="footer">
-    <div class="container">
-      TaxVisual | Educational tax policy simulations, not tax advice | <a href="about/index.html">About</a> | <a href="sitemap/index.html">Site Map</a>
+  <footer class="site-footer">
+    <div class="container site-footer-inner">
+      <p class="footer-note">TaxVisual publishes educational tax policy simulations. Not tax advice.</p>
+      <nav aria-label="Footer">
+        <ul>
+          <li><a href="about/index.html">About</a></li>
+          <li><a href="methodology/index.html">Methodology</a></li>
+          <li><a href="sitemap/index.html">Site map</a></li>
+          <li><a href="mailto:info@taxvisual.com">Contact</a></li>
+        </ul>
+      </nav>
     </div>
   </footer>
 
   <script src="assets/js/tools-data.js"></script>
   <script src="assets/js/render.js"></script>
   <script>
-    TaxVisual.renderToolGrid(document.getElementById('featured-tools'), {
-      basePath: '',
-      onlyFeatured: true
-    });
+    TaxVisual.renderSpotlight(document.getElementById('tool-spotlight'), { basePath: '' });
   </script>
   <script src="assets/js/reveal.js"></script>
 </body>

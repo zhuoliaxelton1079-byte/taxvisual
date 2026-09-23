@@ -1,9 +1,20 @@
 <!--
   Reference copy only — never fetched at runtime. When the nav changes,
   update this file, then hand-copy the change into every page's own
-  <header class="topbar"> block. Replace {{ROOT}} with the right relative
-  prefix for that page's depth: '' at root, '../' one level deep,
-  '../../' under /tools/<slug>/.
+  <header class="topbar"> block.
+
+  Two things to substitute when you paste it:
+
+  1. {{ROOT}} — the relative prefix for that page's depth:
+       ''       at the repo root (index.html)
+       '../'    one level deep (about/, directory/, methodology/, sitemap/)
+       '../../' under tools/<slug>/
+
+  2. aria-current="page" — put it on the link (or the brand, on the
+     homepage) that points at the page you are pasting into, and remove it
+     from all the others. Pasting this file verbatim would drop it, which
+     both removes the current-page cue for screen readers and loses the
+     underline that styles it.
 -->
 <header class="topbar">
   <div class="container topbar-inner">

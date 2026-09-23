@@ -14,8 +14,10 @@ TaxVisual is a hand-authored static site: no build step, no framework, no npm. E
   README.md
 
   /assets
-    /css                  tokens.css, base.css, topbar.css, footer.css,
-                           reveal.css, tool-card.css, home.css
+    /css                  tokens.css    design tokens (color, type, space)
+                           base.css      reset, elements, container, print
+                           components.css  topbar, footer, buttons, cards
+                           home.css      homepage composition only
     /js                    tools-data.js (the registry), render.js, reveal.js
     /img                   favicon.svg, etc.
     /partials              reference copies of the topbar/footer markup —
@@ -72,6 +74,31 @@ Claim a growth slot by building it at that exact path rather than inventing a ne
 
 `/sitemap/` needs no edit when a tool is added — it renders from the registry via `TaxVisual.renderToolLinks()`.
 
+## The design system
+
+Every page loads the same three stylesheets in this order, then optionally its own:
+
+```html
+<link rel="stylesheet" href="{{ROOT}}assets/css/tokens.css">
+<link rel="stylesheet" href="{{ROOT}}assets/css/base.css">
+<link rel="stylesheet" href="{{ROOT}}assets/css/components.css">
+```
+
+**Two rules keep this coherent:**
+
+1. **Never write a raw color, font-size, or spacing value at the use site.** If the value you need isn't in `tokens.css`, add it there first. The one sanctioned exception is the `@media print` block in `base.css`, which is deliberately black-on-white because paper is not a theme.
+2. **Reference colors only through the semantic tokens** — `--paper`, `--surface`, `--ink`, `--muted`, `--rule`, `--accent`, `--on-accent`. Those names are redefined per theme, so dark mode costs nothing at the use site. Hard-coding a hex is what previously left the topbar stuck white on a black page.
+
+`--on-accent` exists because the correct text color on an accent fill flips between themes: white on the dark-green light accent (7.7:1), near-black on the light-teal dark accent (7.3:1). White in both would fail at 2.5:1 in dark mode.
+
+Typography is the IBM Plex superfamily: **Serif** for headings and prose, **Sans** for UI chrome, **Mono** for figures and tabular data.
+
+Breakpoints are **900px** (multi-column layouts collapse) and **600px** (chrome stacks). Keep new media queries on these two values rather than inventing more.
+
+### Themes
+
+Dark mode follows the OS by default. A page can pin itself with `data-theme="light"` or `data-theme="dark"` on `<html>`, which is also the easiest way to eyeball both themes while developing.
+
 ## Path scheme
 
 All asset and nav links are **relative**, not root-relative (`../assets/...`, not `/assets/...`), so any page can still be opened directly in a browser (double-click, no server) before it's deployed. Depth-by-depth:
@@ -98,11 +125,13 @@ Two plain JS globals, loaded via `<script src>` (not JSON/`fetch()`, so pages st
   | `url` | site-root-relative path (e.g. `tools/my-tool/index.html`), or `null` if not live |
   | `order` | sort weight, lower first |
   | `featured` | `true` to show on the homepage |
+  | `facts` | optional `[{ label, value }]`, shown as the key-facts table in the homepage spotlight (e.g. tax year, jurisdiction, filing status) |
 
 `assets/js/render.js` exposes two renderers over that registry. Every consuming page passes its own `basePath` (`''` at root, `'../'` one level deep, `'../../'` two levels deep) so the same registry entries resolve correctly regardless of which page is rendering them.
 
 - **`TaxVisual.renderToolGrid(mountEl, options)`** — builds the `.tool-card` grid. `options.onlyFeatured` filters to homepage cards; `options.groupByCategory` renders the full grouped catalog used by `/directory`.
 - **`TaxVisual.renderToolLinks(mountEl, { basePath })`** — renders the same registry as a plain link list grouped by category, used by `/sitemap/`. Live tools become links; anything else is plain text annotated with its status.
+- **`TaxVisual.renderSpotlight(mountEl, { basePath })`** — used by the homepage. Renders the highest-priority live tool as a full feature block (with its `facts` table, if it has one), followed by a one-line note naming everything still in development. A new tool promotes itself onto the homepage the moment its `status` becomes `live`.
 
 ## GitHub Pages + custom domain
 

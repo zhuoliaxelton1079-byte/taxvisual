@@ -1,17 +1,147 @@
+/* ==========================================================================
+   Design tokens — the single source of truth for color, type, space, radii.
+
+   Rules for using these:
+   - Never write a raw hex, rgb() or px value at the use site. If a value
+     isn't here, add it here first.
+   - Always reference colors through the semantic names (--paper, --ink,
+     --rule). That indirection is what makes dark mode work: the semantic
+     name is redefined per theme, the use site never changes.
+   ========================================================================== */
+
 :root {
-  --tv-bg: #f5f7f8;
-  --tv-paper: #ffffff;
-  --tv-ink: #1b2733;
-  --tv-muted: #546371;
-  --tv-rule: #d6dde3;
-  --tv-navy: #12334f;
-  --tv-navy-soft: #1b476c;
-  --tv-teal: #0e6f6e;
-  --tv-red: #b3202a;
-  --tv-accent: #1d5fd6;
-  --tv-accent-soft: #17469e;
-  --tv-accent-tint: rgba(29, 95, 214, 0.1);
-  --tv-shadow: 0 10px 30px rgba(19, 39, 56, 0.08);
-  --tv-radius: 14px;
-  --tv-max: 1140px;
+  /* ---- Type families -------------------------------------------------- */
+  /* Serif = prose and headlines. Sans = UI chrome. Mono = figures & data. */
+  --font-serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  /* ---- Type scale ----------------------------------------------------- */
+  /* Modular, ~1.25 ratio above the base. Two fluid steps for display type. */
+  --text-2xs: 0.6875rem;  /* 11px — chips, axis labels */
+  --text-xs: 0.75rem;     /* 12px — eyebrows, metadata */
+  --text-sm: 0.875rem;    /* 14px — secondary prose, captions */
+  --text-base: 1rem;      /* 16px — body */
+  --text-md: 1.125rem;    /* 18px — lead paragraphs */
+  --text-lg: 1.375rem;    /* 22px — h3 */
+  --text-xl: 1.75rem;     /* 28px */
+  --text-2xl: 2.25rem;    /* 36px */
+
+  --text-section: clamp(1.5rem, 1.15rem + 1.4vw, 2rem);      /* h2 */
+  --text-display: clamp(2.125rem, 1.4rem + 2.9vw, 3.375rem); /* h1 */
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.6;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --tracking-wide: 0.08em;
+
+  /* ---- Space scale ---------------------------------------------------- */
+  /* 4px base. Use these for every margin, padding and gap. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+
+  /* ---- Radii ---------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
+  /* ---- Layout --------------------------------------------------------- */
+  --max-width: 1140px;   /* page gutter container */
+  --measure: 68ch;       /* comfortable reading line length */
+
+  /* ---- Color: light theme --------------------------------------------- */
+  /* Every pair below is verified against WCAG AA. See the contrast table
+     in docs/design-system.md before changing any of these. */
+  --paper: #fbfaf8;      /* page background — warm off-white */
+  --surface: #ffffff;    /* raised panels */
+  --ink: #1a1916;        /* body text            16.9:1 on paper */
+  --muted: #5c5950;      /* secondary text        6.7:1 on paper */
+  --rule: #e2ded4;       /* hairlines */
+  --accent: #0f5e52;     /* links, CTAs           7.3:1 on paper */
+  --accent-hover: #0a453c;
+  --on-accent: #ffffff;  /* text on an accent fill  7.7:1 */
+
+  color-scheme: light;
+
+  /* ---- Elevation ------------------------------------------------------ */
+  /* Reserved for genuinely raised things. Not default decoration. */
+  --shadow-sm: 0 1px 2px rgb(26 25 22 / 0.06);
+  --shadow-md: 0 4px 16px rgb(26 25 22 / 0.08);
+
+  /* ---- Motion --------------------------------------------------------- */
+  --transition: 180ms ease;
+}
+
+/* Dark theme. Applies on OS preference unless the page opts out with
+   data-theme="light", and can be forced with data-theme="dark". */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14130f;
+    --surface: #1d1c18;
+    --ink: #f2f0ea;      /* 16.3:1 on paper */
+    --muted: #a8a399;    /*  7.4:1 on paper */
+    --rule: #33312b;
+    --accent: #4fb3a1;   /*  7.3:1 on paper */
+    --accent-hover: #6fc7b7;
+    --on-accent: #14130f; /* dark text on the light accent — 7.3:1.
+                             White here would be 2.5:1 and fail. */
+
+    color-scheme: dark;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 16px rgb(0 0 0 / 0.5);
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #14130f;
+  --surface: #1d1c18;
+  --ink: #f2f0ea;
+  --muted: #a8a399;
+  --rule: #33312b;
+  --accent: #4fb3a1;
+  --accent-hover: #6fc7b7;
+  --on-accent: #14130f;
+
+  color-scheme: dark;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.5);
+}
+
+/* ---- Compatibility aliases ---------------------------------------------
+   The pages not yet rebuilt (directory, methodology, about, sitemap, the
+   tool page) still reference the old --tv-* names. Mapping them here means
+   those pages keep working and inherit dark mode for free. Remove each
+   alias as its page is rebuilt.
+   ------------------------------------------------------------------------ */
+:root {
+  --tv-bg: var(--paper);
+  --tv-paper: var(--surface);
+  --tv-ink: var(--ink);
+  --tv-muted: var(--muted);
+  --tv-rule: var(--rule);
+  --tv-navy: var(--ink);
+  --tv-navy-soft: var(--muted);
+  --tv-teal: var(--accent);
+  --tv-red: var(--accent);
+  --tv-accent: var(--accent);
+  --tv-accent-soft: var(--accent-hover);
+  --tv-accent-tint: color-mix(in srgb, var(--accent) 10%, transparent);
+  --tv-shadow: var(--shadow-md);
+  --tv-radius: var(--radius-lg);
+  --tv-max: var(--max-width);
 }

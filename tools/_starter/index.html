@@ -8,10 +8,13 @@
 <!-- Template only — delete this line when you copy the folder. -->
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/css/tokens.css">
 <link rel="stylesheet" href="../../assets/css/base.css">
-<link rel="stylesheet" href="../../assets/css/topbar.css">
-<link rel="stylesheet" href="../../assets/css/footer.css">
+<link rel="stylesheet" href="../../assets/css/components.css">
 <style>
   /*
    * Tool-specific styles start here. A proven pattern from the Income Tax
@@ -20,26 +23,26 @@
    *
    * :root {
    *   color-scheme: light;
-   *   --surface: #fcfcfb;
+   *   --tool-surface: #fcfcfb;
    *   --page: #f9f9f7;
-   *   --ink: #0b0b0b;
+   *   --tool-ink: #0b0b0b;
    *   --border: rgba(11,11,11,0.10);
-   *   --accent: #2a78d6;
+   *   --tool-accent: #2a78d6;
    * }
    * @media (prefers-color-scheme: dark) {
    *   :root:where(:not([data-theme="light"])) {
    *     color-scheme: dark;
-   *     --surface: #1a1a19;
+   *     --tool-surface: #1a1a19;
    *     --page: #0d0d0d;
-   *     --ink: #ffffff;
+   *     --tool-ink: #ffffff;
    *     --border: rgba(255,255,255,0.10);
-   *     --accent: #3987e5;
+   *     --tool-accent: #3987e5;
    *   }
    * }
    * :root[data-theme="dark"] { ...same as the dark media block, as a manual override hook... }
    *
    * body { margin: 0; background: var(--page); }
-   * .app { background: var(--page); color: var(--ink); padding: 28px 16px 40px; }
+   * .app { background: var(--page); color: var(--tool-ink); padding: 28px 16px 40px; }
    */
 </style>
 </head>
@@ -70,11 +73,19 @@
 
   <!-- Tool markup ends here. -->
 
-  <footer class="footer">
-    <div class="container">
-      TaxVisual | Educational tax policy simulations, not tax advice | <a href="../../about/index.html">About</a> | <a href="../../sitemap/index.html">Site Map</a>
-    </div>
-  </footer>
+<footer class="site-footer">
+  <div class="container site-footer-inner">
+    <p class="footer-note">TaxVisual publishes educational tax policy simulations. Not tax advice.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="../../about/index.html">About</a></li>
+        <li><a href="../../methodology/index.html">Methodology</a></li>
+        <li><a href="../../sitemap/index.html">Site map</a></li>
+        <li><a href="mailto:info@taxvisual.com">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</footer>
 
   <!-- Tool-specific script starts here. -->
   <script>

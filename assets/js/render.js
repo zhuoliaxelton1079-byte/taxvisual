@@ -78,6 +78,7 @@
 
   // options: { basePath, onlyFeatured, groupByCategory }
   function renderToolGrid(mountEl, options) {
+    if (!mountEl) return;
     options = options || {};
     var basePath = options.basePath || '';
     var tools = sortedTools();
@@ -113,6 +114,7 @@
   // Plain link list for the /sitemap/ page — same registry, no cards.
   // options: { basePath }
   function renderToolLinks(mountEl, options) {
+    if (!mountEl) return;
     options = options || {};
     var basePath = options.basePath || '';
     var tools = sortedTools();
@@ -153,7 +155,105 @@
     }
   }
 
+  // Homepage spotlight: the highest-priority live tool, given a full block
+  // rather than a card in a row of mostly-empty cards. Reads the same
+  // registry, so a new tool promotes itself here the moment it goes live.
+  // options: { basePath }
+  function renderSpotlight(mountEl, options) {
+    if (!mountEl) return;
+    options = options || {};
+    var basePath = options.basePath || '';
+    var tools = sortedTools();
+
+    var live = tools.filter(function (t) { return t.status === 'live' && t.url; });
+    var pending = tools.filter(function (t) { return t.status !== 'live'; });
+
+    mountEl.innerHTML = '';
+
+    var tool = live[0];
+    if (!tool) {
+      var empty = document.createElement('p');
+      empty.className = 'tool-grid-empty';
+      empty.textContent = 'No tools are live yet.';
+      mountEl.appendChild(empty);
+      return;
+    }
+
+    var panel = document.createElement('div');
+    panel.className = 'spotlight';
+
+    var body = document.createElement('div');
+
+    var head = document.createElement('div');
+    head.className = 'spotlight-head';
+    var chip = document.createElement('span');
+    chip.className = 'chip chip-live';
+    chip.textContent = 'Live';
+    head.appendChild(chip);
+    var tag = document.createElement('span');
+    tag.className = 'tool-tag';
+    tag.textContent = categoryLabel(tool.category);
+    head.appendChild(tag);
+    body.appendChild(head);
+
+    var h3 = document.createElement('h3');
+    h3.textContent = tool.title;
+    body.appendChild(h3);
+
+    var desc = document.createElement('p');
+    desc.className = 'spotlight-desc';
+    desc.textContent = tool.description;
+    body.appendChild(desc);
+
+    var actions = document.createElement('p');
+    actions.className = 'spotlight-actions';
+    var link = document.createElement('a');
+    link.className = 'btn btn-primary';
+    link.href = basePath + tool.url;
+    link.textContent = 'Open the tool';
+    actions.appendChild(link);
+    body.appendChild(actions);
+
+    panel.appendChild(body);
+
+    // Key facts, if the registry entry carries them.
+    if (tool.facts && tool.facts.length) {
+      var facts = document.createElement('dl');
+      facts.className = 'spotlight-facts';
+      for (var i = 0; i < tool.facts.length; i++) {
+        var row = document.createElement('div');
+        var dt = document.createElement('dt');
+        dt.textContent = tool.facts[i].label;
+        var dd = document.createElement('dd');
+        dd.textContent = tool.facts[i].value;
+        row.appendChild(dt);
+        row.appendChild(dd);
+        facts.appendChild(row);
+      }
+      panel.appendChild(facts);
+    }
+
+    mountEl.appendChild(panel);
+
+    if (pending.length) {
+      var names = pending.map(function (t) { return t.title; });
+      var joined = names.length > 1
+        ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1]
+        : names[0];
+
+      var note = document.createElement('p');
+      note.className = 'upcoming';
+      note.appendChild(document.createTextNode(joined + (names.length > 1 ? ' are' : ' is') + ' in development. '));
+      var dirLink = document.createElement('a');
+      dirLink.href = basePath + 'directory/index.html';
+      dirLink.textContent = 'See the full directory';
+      note.appendChild(dirLink);
+      mountEl.appendChild(note);
+    }
+  }
+
   window.TaxVisual = window.TaxVisual || {};
   window.TaxVisual.renderToolGrid = renderToolGrid;
   window.TaxVisual.renderToolLinks = renderToolLinks;
+  window.TaxVisual.renderSpotlight = renderSpotlight;
 })();
