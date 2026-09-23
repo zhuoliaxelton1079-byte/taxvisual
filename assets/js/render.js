@@ -110,6 +110,50 @@
     }
   }
 
+  // Plain link list for the /sitemap/ page — same registry, no cards.
+  // options: { basePath }
+  function renderToolLinks(mountEl, options) {
+    options = options || {};
+    var basePath = options.basePath || '';
+    var tools = sortedTools();
+    var categories = window.CATEGORIES || [];
+
+    mountEl.innerHTML = '';
+
+    for (var i = 0; i < categories.length; i++) {
+      var cat = categories[i];
+      var inCategory = tools.filter(function (t) { return t.category === cat.key; });
+      if (!inCategory.length) continue;
+
+      var h2 = document.createElement('h2');
+      h2.textContent = cat.label;
+      mountEl.appendChild(h2);
+
+      var list = document.createElement('ul');
+      for (var j = 0; j < inCategory.length; j++) {
+        var tool = inCategory[j];
+        var li = document.createElement('li');
+
+        if (tool.status === 'live' && tool.url) {
+          var link = document.createElement('a');
+          link.href = basePath + tool.url;
+          link.textContent = tool.title;
+          li.appendChild(link);
+        } else {
+          li.appendChild(document.createTextNode(tool.title));
+          var note = document.createElement('span');
+          note.className = 'sitemap-note';
+          note.textContent = tool.status === 'in-progress' ? ' (in progress)' : ' (planned)';
+          li.appendChild(note);
+        }
+
+        list.appendChild(li);
+      }
+      mountEl.appendChild(list);
+    }
+  }
+
   window.TaxVisual = window.TaxVisual || {};
   window.TaxVisual.renderToolGrid = renderToolGrid;
+  window.TaxVisual.renderToolLinks = renderToolLinks;
 })();

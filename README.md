@@ -10,15 +10,17 @@ This is the whole workflow — no other page needs hand-editing.
 
 1. Copy `tools/_starter/` to `tools/<your-slug>/`, and build your tool inside the marked sections of `tools/<your-slug>/index.html`.
 2. Add one entry to `window.TOOLS` in `assets/js/tools-data.js` (and a new `CATEGORIES` entry only if none of the existing ones fit).
-3. Add one `<url>` line to `sitemap.xml`.
-4. Preview locally — double-click `index.html` at every page you touched (homepage, `directory/index.html`, your new tool page) and confirm it renders and every link resolves.
-5. Commit and push to `main`:
+3. Add one `<url>` line to `sitemap.xml`. (The human-readable `/sitemap/` page needs no edit — it renders from the registry.)
+4. Preview locally — double-click `index.html` at every page you touched (homepage, `directory/index.html`, `sitemap/index.html`, your new tool page) and confirm it renders and every link resolves.
+5. Open a pull request — see [CONTRIBUTING.md](CONTRIBUTING.md). Nobody pushes directly to `main`:
    ```
-   git add .
+   git switch main && git pull
+   git switch -c tool/<your-slug>
+   git add -A
    git commit -m "Add <tool name>"
-   git push
+   git push -u origin HEAD
    ```
-6. GitHub Pages rebuilds automatically from `main` (usually live within about a minute). Reload `https://taxvisual.com/directory/` to confirm the tool appears, then open its live URL.
+6. Once the PR is reviewed and merged, GitHub Pages rebuilds automatically from `main` (usually live within about a minute). Reload `https://taxvisual.com/directory/` to confirm the tool appears, then open its live URL.
 
 ## Local preview
 

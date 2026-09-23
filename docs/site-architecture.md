@@ -29,12 +29,48 @@ TaxVisual is a hand-authored static site: no build step, no framework, no npm. E
   /directory                full tool catalog (index.html), grouped by category
   /methodology              sourcing/assumptions/update-cadence policy
   /about
+  /sitemap                  human-readable index of every page
 
   /docs
     site-architecture.md   this file
     /tools
       <tool-slug>.md       tool-specific docs (data, design notes, history)
 ```
+
+## Site map
+
+Every page is a `<dir>/index.html`. That gives clean public URLs (`taxvisual.com/about/`) with no server configuration, while links stay written as `about/index.html` so double-click `file://` preview keeps working.
+
+```
+Live today
+  /                          Home — hero, featured tools, Pressbook blurb, contact
+  /directory/                Full tool catalog, grouped by category
+  /tools/<slug>/             One folder per tool
+  /methodology/              Sourcing, assumptions, update cadence
+  /about/                    About the project
+  /sitemap/                  Human-readable index of every page
+
+Not indexed
+  /tools/_starter/           Template. Disallow-ed in robots.txt and carries
+                             <meta name="robots" content="noindex">
+
+Growth slots — agreed structure, not built yet
+  /book/                     Promote the Pressbook (today just #book on the homepage)
+  /teaching/                 Classroom guides: how to use a given tool in class
+  /updates/                  Changelog — what changed in which tool, and when
+```
+
+Claim a growth slot by building it at that exact path rather than inventing a new one, so the URL scheme stays predictable.
+
+### What a new page has to touch
+
+| Adding… | Files to edit |
+|---|---|
+| Any page | its own `index.html`, plus one `<url>` line in `sitemap.xml` |
+| A tool | the above, plus one entry in `assets/js/tools-data.js` |
+| A top-nav entry | the above, plus the `<nav>` block in **every** page and `assets/partials/topbar.html` |
+
+`/sitemap/` needs no edit when a tool is added — it renders from the registry via `TaxVisual.renderToolLinks()`.
 
 ## Path scheme
 
@@ -63,7 +99,10 @@ Two plain JS globals, loaded via `<script src>` (not JSON/`fetch()`, so pages st
   | `order` | sort weight, lower first |
   | `featured` | `true` to show on the homepage |
 
-`assets/js/render.js` exposes `TaxVisual.renderToolGrid(mountEl, options)`. Every consuming page passes its own `basePath` (`''` at root, `'../'` one level deep, `'../../'` two levels deep) so the same registry entries resolve correctly regardless of which page is rendering them. `options.onlyFeatured` filters to homepage cards; `options.groupByCategory` renders the full grouped catalog used by `/directory`.
+`assets/js/render.js` exposes two renderers over that registry. Every consuming page passes its own `basePath` (`''` at root, `'../'` one level deep, `'../../'` two levels deep) so the same registry entries resolve correctly regardless of which page is rendering them.
+
+- **`TaxVisual.renderToolGrid(mountEl, options)`** — builds the `.tool-card` grid. `options.onlyFeatured` filters to homepage cards; `options.groupByCategory` renders the full grouped catalog used by `/directory`.
+- **`TaxVisual.renderToolLinks(mountEl, { basePath })`** — renders the same registry as a plain link list grouped by category, used by `/sitemap/`. Live tools become links; anything else is plain text annotated with its status.
 
 ## GitHub Pages + custom domain
 
