@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Site Map | TaxVisual</title>
-  <meta name="description" content="Every page on TaxVisual, in one list.">
+  <meta name="description" content="Every page on TaxVisual, including what is still to be built.">
   <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
   <script>document.documentElement.classList.add('js');</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,40 +13,10 @@
   <link rel="stylesheet" href="../assets/css/tokens.css">
   <link rel="stylesheet" href="../assets/css/base.css">
   <link rel="stylesheet" href="../assets/css/components.css">
-  <style>
-    .page {
-      padding: 2.25rem 0 3rem;
-      max-width: 72ch;
-    }
-
-    .page h1 {
-      font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem);
-    }
-
-    .page > p {
-      color: var(--tv-muted);
-    }
-
-    .page h2 {
-      font-size: 1.05rem;
-      margin: 2rem 0 0.6rem;
-    }
-
-    .page ul {
-      margin: 0;
-      padding-left: 1.1rem;
-    }
-
-    .page li {
-      margin: 0.3rem 0;
-    }
-
-    .sitemap-note {
-      color: var(--tv-muted);
-    }
-  </style>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="../index.html" aria-label="TaxVisual home">
@@ -55,42 +25,116 @@
       </a>
       <nav aria-label="Primary">
         <ul>
-          <li><a href="../directory/index.html">Tools</a></li>
-          <li><a href="../methodology/index.html">Methodology</a></li>
+          <li><a href="../tools/index.html">Tools</a></li>
+          <li><a href="../learn/index.html">Learn</a></li>
+          <li><a href="../training/index.html">Training</a></li>
           <li><a href="../about/index.html">About</a></li>
+          <li><a class="topbar-cta" href="../contact/index.html">Request training</a></li>
         </ul>
       </nav>
     </div>
   </header>
 
-  <main>
-    <div class="container page reveal">
-      <h1>Site Map</h1>
-      <p>Every page on TaxVisual. The tool list below is generated from the site's tool registry, so it is never out of date.</p>
+  <main id="main">
+    <div class="container page-header">
+      <p class="eyebrow reveal">Site map</p>
+      <h1 class="reveal">Site map</h1>
+      <p class="reveal">Every page on TaxVisual. Pages marked <em>to be built</em> are scaffolded but have no content yet. The tool list is generated from the registry, so it is never out of date.</p>
+    </div>
 
-      <h2>Pages</h2>
-      <ul>
-        <li><a href="../index.html">Home</a></li>
-        <li><a href="../directory/index.html">Tool Directory</a></li>
-        <li><a href="../methodology/index.html">Methodology</a></li>
-        <li><a href="../about/index.html">About</a></li>
-      </ul>
+    <div class="container page-body">
+      <div class="prose reveal">
+        <h2>Pages</h2>
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="index.html" aria-current="page">Site map</a></li>
+        </ul>
 
-      <div id="tool-links"></div>
+        <h2>Tools</h2>
+        <ul>
+          <li><a href="../tools/index.html">All tools</a></li>
+        </ul>
+        <div id="tool-links"></div>
+
+        <h2>Learn</h2>
+        <ul>
+          <li><a href="../learn/index.html">Learn</a></li>
+          <li><a href="../learn/textbook/index.html">The textbook</a></li>
+          <li><a href="../learn/guides/index.html">Concept guides</a> <span class="sitemap-note">to be built</span></li>
+          <li><a href="../learn/glossary/index.html">Glossary</a> <span class="sitemap-note">to be built</span></li>
+          <li><a href="../updates/index.html">Updates</a> <span class="sitemap-note">to be built</span></li>
+        </ul>
+
+        <h2>Training</h2>
+        <ul>
+          <li><a href="../training/index.html">Training</a></li>
+          <li><a href="../training/team/index.html">Team training</a> <span class="sitemap-note">to be built</span></li>
+          <li><a href="../training/workshops/index.html">Public workshops</a> <span class="sitemap-note">to be built</span></li>
+          <li><a href="../training/on-demand/index.html">On-demand course</a> <span class="sitemap-note">to be built</span></li>
+        </ul>
+
+        <h2>About</h2>
+        <ul>
+          <li><a href="../about/index.html">About TaxVisual</a></li>
+          <li><a href="../about/team/index.html">Our team</a> <span class="sitemap-note">to be built</span></li>
+          <li><a href="../methodology/index.html">Methodology</a></li>
+          <li><a href="../community/index.html">Community</a> <span class="sitemap-note">to be built</span></li>
+          <li><a href="../contact/index.html">Contact</a></li>
+        </ul>
+      </div>
     </div>
   </main>
 
   <footer class="site-footer">
-    <div class="container site-footer-inner">
-      <p class="footer-note">TaxVisual publishes educational tax policy simulations. Not tax advice.</p>
+    <div class="container">
       <nav aria-label="Footer">
-        <ul>
-          <li><a href="../about/index.html">About</a></li>
-          <li><a href="../methodology/index.html">Methodology</a></li>
-          <li><a href="index.html" aria-current="page">Site map</a></li>
-          <li><a href="mailto:info@taxvisual.com">Contact</a></li>
-        </ul>
+        <div class="footer-cols">
+        <div class="footer-col">
+          <h2>Tools</h2>
+          <ul>
+            <li><a href="../tools/index.html">All tools</a></li>
+            <li><a href="../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Learn</h2>
+          <ul>
+            <li><a href="../learn/textbook/index.html">The textbook</a></li>
+            <li><a href="../learn/guides/index.html">Concept guides</a></li>
+            <li><a href="../learn/glossary/index.html">Glossary</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Training</h2>
+          <ul>
+            <li><a href="../training/team/index.html">Team training</a></li>
+            <li><a href="../training/workshops/index.html">Public workshops</a></li>
+            <li><a href="../training/on-demand/index.html">On-demand course</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>About</h2>
+          <ul>
+            <li><a href="../about/index.html">About TaxVisual</a></li>
+            <li><a href="../about/team/index.html">Our team</a></li>
+            <li><a href="../methodology/index.html">Methodology</a></li>
+            <li><a href="index.html" aria-current="page">Site map</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Connect</h2>
+          <ul>
+            <li><a href="../contact/index.html">Contact</a></li>
+            <li><a href="../updates/index.html">Updates</a></li>
+            <li><a href="../community/index.html">Community</a></li>
+          </ul>
+        </div>
+        </div>
       </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual publishes educational tax policy simulations for classrooms, policy workshops, and self-study. Not tax advice.</p>
+        <p class="footer-note"><a href="../contact/index.html">Get email updates</a></p>
+      </div>
     </div>
   </footer>
 

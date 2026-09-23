@@ -245,8 +245,8 @@
       note.className = 'upcoming';
       note.appendChild(document.createTextNode(joined + (names.length > 1 ? ' are' : ' is') + ' in development. '));
       var dirLink = document.createElement('a');
-      dirLink.href = basePath + 'directory/index.html';
-      dirLink.textContent = 'See the full directory';
+      dirLink.href = basePath + 'tools/index.html';
+      dirLink.textContent = 'See all tools';
       note.appendChild(dirLink);
       mountEl.appendChild(note);
     }

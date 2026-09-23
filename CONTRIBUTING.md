@@ -77,7 +77,7 @@ No server needed. Every path in the site is relative, so double-clicking any
 Server works too if you prefer it.
 
 Check every page you touched, not just the one you were working in. Adding a
-tool changes the homepage and `/directory/` as well as your own tool page.
+tool changes the homepage and `/tools/` as well as your own tool page.
 
 ## Avoiding conflicts
 
@@ -88,7 +88,7 @@ are hard to deal with if you follow the rule.
 |---|---|---|
 | `assets/js/tools-data.js` | One shared registry that both of us append to | **Append at the end of the array.** Agree `order` numbers in the issue before you branch. If it conflicts anyway, the resolution is always "keep both entries" |
 | `sitemap.xml` | Same append pattern | Append before `</urlset>` |
-| The nav and footer blocks | They are hand-duplicated into all 8 pages, so one change rewrites every file | **A nav or footer change gets its own PR with nothing else in it**, reviewed and merged the same day. Update `assets/partials/` in the same PR |
+| The nav and footer blocks | They are hand-duplicated into **all 19 pages**, so one change rewrites every file | **A nav or footer change gets its own PR with nothing else in it**, reviewed and merged the same day. Update `assets/partials/` in the same PR. See the warning below |
 
 The general rule that makes all three a non-issue: **small pull requests,
 merged promptly**. A branch left open for a week across a nav change is the
@@ -96,6 +96,31 @@ only way this gets painful.
 
 Before you start building a tool, open an issue for it so the other person can
 see it is claimed.
+
+### A warning about the duplicated chrome
+
+The site now has 19 pages, and the topbar and footer are hand-copied into
+every one of them. That was manageable at 5 pages. At 19 it is the single
+most likely source of silent breakage: change the nav, miss two pages, and
+nobody notices for a month.
+
+Two things to know:
+
+1. `assets/partials/topbar.html` and `footer.html` are the source of truth.
+   Change them **first**, then paste outward. They carry the `{{ROOT}}` depth
+   convention and the `aria-current` rule in their comments.
+2. If this starts to hurt — and it will, somewhere around 25 pages — the fix
+   is a tiny generator script that stamps the chrome into every page, run by
+   hand before committing. That is not the same as adopting a framework, and
+   it keeps the published output plain static HTML. Worth doing before the
+   next big structural change rather than after.
+
+### Stub pages
+
+A page with no content yet must satisfy all three of: `noindex` in its head,
+**absent** from `sitemap.xml`, and listed on `/sitemap/` marked "to be built".
+When you give it real content, reverse all three in the same commit. See
+`docs/site-architecture.md` for why.
 
 ## Adding a tool
 

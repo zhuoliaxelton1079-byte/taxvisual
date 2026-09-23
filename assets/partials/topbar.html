@@ -7,14 +7,16 @@
 
   1. {{ROOT}} — the relative prefix for that page's depth:
        ''       at the repo root (index.html)
-       '../'    one level deep (about/, directory/, methodology/, sitemap/)
-       '../../' under tools/<slug>/
+       '../'    one level deep (tools/, learn/, training/, about/, …)
+       '../../' two levels deep (tools/<slug>/, learn/<page>/, …)
 
-  2. aria-current="page" — put it on the link (or the brand, on the
-     homepage) that points at the page you are pasting into, and remove it
-     from all the others. Pasting this file verbatim would drop it, which
-     both removes the current-page cue for screen readers and loses the
-     underline that styles it.
+  2. The current-page marker. Put aria-current="page" on the link that
+     points at the page you are pasting into, and aria-current="true" on
+     the section link when the current page sits *inside* that section but
+     is not the section index — e.g. on tools/tax-bracket-ledger/ the
+     "Tools" link gets aria-current="true". Remove it from all others.
+     Pasting this file verbatim would drop the marker, which loses both
+     the screen-reader cue and the underline that styles it.
 -->
 <header class="topbar">
   <div class="container topbar-inner">
@@ -24,9 +26,11 @@
     </a>
     <nav aria-label="Primary">
       <ul>
-        <li><a href="{{ROOT}}directory/index.html">Tools</a></li>
-        <li><a href="{{ROOT}}methodology/index.html">Methodology</a></li>
+        <li><a href="{{ROOT}}tools/index.html">Tools</a></li>
+        <li><a href="{{ROOT}}learn/index.html">Learn</a></li>
+        <li><a href="{{ROOT}}training/index.html">Training</a></li>
         <li><a href="{{ROOT}}about/index.html">About</a></li>
+        <li><a class="topbar-cta" href="{{ROOT}}contact/index.html">Request training</a></li>
       </ul>
     </nav>
   </div>

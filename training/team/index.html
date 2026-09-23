@@ -1,53 +1,22 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tool Name | TaxVisual</title>
-<meta name="description" content="One-sentence description of what this tool simulates.">
-<!-- Template only — delete this line when you copy the folder. -->
-<meta name="robots" content="noindex">
-<link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
-<script>document.documentElement.classList.add('js');</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../../assets/css/tokens.css">
-<link rel="stylesheet" href="../../assets/css/base.css">
-<link rel="stylesheet" href="../../assets/css/components.css">
-<style>
-  /*
-   * Tool-specific styles start here. A proven pattern from the Income Tax
-   * Ledger tool (tools/tax-bracket-ledger/index.html) for a self-contained
-   * light/dark theme that doesn't depend on the shared site tokens above:
-   *
-   * :root {
-   *   color-scheme: light;
-   *   --tool-surface: #fcfcfb;
-   *   --page: #f9f9f7;
-   *   --tool-ink: #0b0b0b;
-   *   --border: rgba(11,11,11,0.10);
-   *   --tool-accent: #2a78d6;
-   * }
-   * @media (prefers-color-scheme: dark) {
-   *   :root:where(:not([data-theme="light"])) {
-   *     color-scheme: dark;
-   *     --tool-surface: #1a1a19;
-   *     --page: #0d0d0d;
-   *     --tool-ink: #ffffff;
-   *     --border: rgba(255,255,255,0.10);
-   *     --tool-accent: #3987e5;
-   *   }
-   * }
-   * :root[data-theme="dark"] { ...same as the dark media block, as a manual override hook... }
-   *
-   * body { margin: 0; background: var(--page); }
-   * .app { background: var(--page); color: var(--tool-ink); padding: 28px 16px 40px; }
-   */
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Team Training | TaxVisual</title>
+  <meta name="description" content="Custom tax-literacy training delivered to your team.">
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+  <script>document.documentElement.classList.add('js');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="topbar">
     <div class="container topbar-inner">
@@ -57,9 +26,9 @@
       </a>
       <nav aria-label="Primary">
         <ul>
-          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../tools/index.html">Tools</a></li>
           <li><a href="../../learn/index.html">Learn</a></li>
-          <li><a href="../../training/index.html">Training</a></li>
+          <li><a href="../../training/index.html" aria-current="true">Training</a></li>
           <li><a href="../../about/index.html">About</a></li>
           <li><a class="topbar-cta" href="../../contact/index.html">Request training</a></li>
         </ul>
@@ -67,15 +36,21 @@
     </div>
   </header>
 
-  <!-- Tool markup starts here. Wrap it in your own container (e.g. <div class="app">)
-       so its styles stay scoped and don't leak into the shared topbar/footer above/below. -->
+  <main id="main">
+    <div class="container page-header">
+      <p class="eyebrow reveal">Training</p>
+      <h1 class="reveal">Team training</h1>
+      <p class="reveal">Custom sessions built around your team, your questions, and the decisions you actually make.</p>
+    </div>
 
-  <main class="container" style="padding: 2rem 0;">
-    <h1>Tool Name</h1>
-    <p>Replace this with the tool.</p>
+    <div class="container page-body">
+      <div class="placeholder reveal">
+        <p class="eyebrow">To be built</p>
+        <p>Scope, format, session length, delivery options (remote or in person), what a typical engagement covers, and how pricing works.</p>
+        <p><a href="../../contact/index.html">Request team training</a></p>
+      </div>
+    </div>
   </main>
-
-  <!-- Tool markup ends here. -->
 
   <footer class="site-footer">
     <div class="container">
@@ -99,7 +74,7 @@
         <div class="footer-col">
           <h2>Training</h2>
           <ul>
-            <li><a href="../../training/team/index.html">Team training</a></li>
+            <li><a href="index.html" aria-current="page">Team training</a></li>
             <li><a href="../../training/workshops/index.html">Public workshops</a></li>
             <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
           </ul>
@@ -130,9 +105,6 @@
     </div>
   </footer>
 
-  <!-- Tool-specific script starts here. -->
-  <script>
-  </script>
-  <!-- Tool-specific script ends here. -->
+  <script src="../../assets/js/reveal.js"></script>
 </body>
 </html>

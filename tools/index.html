@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Methodology | TaxVisual</title>
-  <meta name="description" content="How TaxVisual tools are sourced, what they simplify, and how they are kept current.">
+  <title>Tools | TaxVisual</title>
+  <meta name="description" content="Every interactive tax tool TaxVisual has published, grouped by topic.">
   <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
   <script>document.documentElement.classList.add('js');</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,7 +25,7 @@
       </a>
       <nav aria-label="Primary">
         <ul>
-          <li><a href="../tools/index.html">Tools</a></li>
+          <li><a href="index.html" aria-current="page">Tools</a></li>
           <li><a href="../learn/index.html">Learn</a></li>
           <li><a href="../training/index.html">Training</a></li>
           <li><a href="../about/index.html">About</a></li>
@@ -37,38 +37,13 @@
 
   <main id="main">
     <div class="container page-header">
-      <p class="eyebrow reveal">Methodology</p>
-      <h1 class="reveal">Methodology</h1>
-      <p class="reveal">Every TaxVisual tool is an educational simulation, not tax advice. These are the standards each tool is built to.</p>
+      <p class="eyebrow reveal">Tools</p>
+      <h1 class="reveal">Interactive tax tools</h1>
+      <p class="reveal">Every tool TaxVisual has published, grouped by topic. Each one documents its assumptions and sources on its own page.</p>
     </div>
 
     <div class="container page-body">
-      <div class="prose reveal">
-        <h2>Sourcing</h2>
-        <p>
-          Each tool cites the rule set or rate schedule it uses (e.g. IRS brackets, a specific tax year) directly
-          on its page, along with the date that data was last checked against the source.
-        </p>
-
-        <h2>Assumptions</h2>
-        <p>
-          Where a tool simplifies a real rule (a single filing status, a single tax year, no state-level rules),
-          that simplification is stated on the tool's own page rather than left implicit.
-        </p>
-
-        <h2>Updates</h2>
-        <p>
-          Tax rules change annually. Tools are updated when a relevant rate schedule changes; the "last updated"
-          date on each tool page reflects that, not just cosmetic edits. Changes are logged on
-          <a href="../updates/index.html">Updates</a>.
-        </p>
-
-        <h2>Accessibility</h2>
-        <p>
-          Tools support both light and dark display modes, are usable down to mobile widths, and use direct
-          value labels rather than color alone to convey data.
-        </p>
-      </div>
+      <div id="catalog"></div>
     </div>
   </main>
 
@@ -79,7 +54,7 @@
         <div class="footer-col">
           <h2>Tools</h2>
           <ul>
-            <li><a href="../tools/index.html">All tools</a></li>
+            <li><a href="index.html" aria-current="page">All tools</a></li>
             <li><a href="../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
           </ul>
         </div>
@@ -104,7 +79,7 @@
           <ul>
             <li><a href="../about/index.html">About TaxVisual</a></li>
             <li><a href="../about/team/index.html">Our team</a></li>
-            <li><a href="index.html" aria-current="page">Methodology</a></li>
+            <li><a href="../methodology/index.html">Methodology</a></li>
             <li><a href="../sitemap/index.html">Site map</a></li>
           </ul>
         </div>
@@ -125,6 +100,11 @@
     </div>
   </footer>
 
+  <script src="../assets/js/tools-data.js"></script>
+  <script src="../assets/js/render.js"></script>
+  <script>
+    TaxVisual.renderToolGrid(document.getElementById('catalog'), { basePath: '../', groupByCategory: true });
+  </script>
   <script src="../assets/js/reveal.js"></script>
 </body>
 </html>

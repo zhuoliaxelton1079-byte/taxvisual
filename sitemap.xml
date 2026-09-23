@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Only pages with real content belong here. Scaffolded "to be built" pages
+  carry <meta name="robots" content="noindex"> and are deliberately absent;
+  add a page here in the same commit that gives it content.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://taxvisual.com/</loc></url>
-  <url><loc>https://taxvisual.com/directory/</loc></url>
-  <url><loc>https://taxvisual.com/methodology/</loc></url>
-  <url><loc>https://taxvisual.com/about/</loc></url>
-  <url><loc>https://taxvisual.com/sitemap/</loc></url>
+  <url><loc>https://taxvisual.com/tools/</loc></url>
   <url><loc>https://taxvisual.com/tools/tax-bracket-ledger/</loc></url>
+  <url><loc>https://taxvisual.com/learn/</loc></url>
+  <url><loc>https://taxvisual.com/learn/textbook/</loc></url>
+  <url><loc>https://taxvisual.com/training/</loc></url>
+  <url><loc>https://taxvisual.com/about/</loc></url>
+  <url><loc>https://taxvisual.com/methodology/</loc></url>
+  <url><loc>https://taxvisual.com/contact/</loc></url>
+  <url><loc>https://taxvisual.com/sitemap/</loc></url>
 </urlset>

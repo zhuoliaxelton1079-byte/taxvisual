@@ -76,6 +76,28 @@
   padding-bottom: 2px;
 }
 
+/* The persistent lead-capture CTA. Styled as a button, so it reads as an
+   action rather than a fifth nav item. */
+.topbar nav a.topbar-cta {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  color: var(--accent);
+  font-weight: var(--weight-medium);
+}
+
+.topbar nav a.topbar-cta:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.topbar nav a.topbar-cta[aria-current="page"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-bottom-color: var(--accent);
+  padding-bottom: var(--space-2);
+}
+
 /* ---- Footer -------------------------------------------------------------- */
 
 .site-footer {
@@ -84,12 +106,33 @@
   padding: var(--space-6) 0 var(--space-7);
 }
 
-.site-footer-inner {
+/* Five columns, the way SWD uses its footer: a site map in disguise that
+   keeps the free material one click from anywhere. */
+.footer-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-5);
+}
+
+.footer-col h2 {
+  margin-bottom: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.footer-base {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3) var(--space-5);
+  margin-top: var(--space-7);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--rule);
 }
 
 .footer-note {
@@ -100,9 +143,8 @@
 }
 
 .site-footer nav ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -294,6 +336,228 @@
   }
 }
 
+/* ---- Page template -------------------------------------------------------
+   One template for every content page. Replaces the three forked .page
+   blocks and the separate .page-head that used to live inline in four
+   different files, each drifting from the others. */
+
+.page-header {
+  padding-block: var(--space-7) var(--space-6);
+  border-bottom: 1px solid var(--rule);
+}
+
+.page-header .eyebrow {
+  margin-bottom: var(--space-3);
+}
+
+.page-header h1 {
+  max-width: 24ch;
+}
+
+.page-header p {
+  margin-top: var(--space-4);
+  max-width: var(--measure);
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  line-height: var(--leading-snug);
+  color: var(--muted);
+}
+
+.page-body {
+  padding-block: var(--space-7) var(--space-8);
+}
+
+/* Long-form prose. */
+.prose {
+  max-width: var(--measure);
+}
+
+.prose p {
+  color: var(--muted);
+}
+
+.prose p + p,
+.prose ul + p,
+.prose p + ul {
+  margin-top: var(--space-4);
+}
+
+.prose h2 {
+  margin-top: var(--space-7);
+  margin-bottom: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--rule);
+}
+
+.prose h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.prose h3 {
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-2);
+}
+
+.prose ul {
+  margin: 0;
+  padding-left: var(--space-5);
+  color: var(--muted);
+}
+
+.prose li + li {
+  margin-top: var(--space-2);
+}
+
+/* ---- Card grid -----------------------------------------------------------
+   Used by the hub pages and the homepage "explore" strip. */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--space-4);
+}
+
+.nav-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color var(--transition);
+}
+
+.nav-card:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+/* Heading level varies by context: h2 on a hub page where the cards are the
+   top-level sections, h3 on the homepage where they sit under a section
+   heading. Both look the same. */
+.nav-card h2,
+.nav-card h3 {
+  font-size: var(--text-lg);
+}
+
+.nav-card p {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.nav-card .card-more {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+/* ---- Offerings -----------------------------------------------------------
+   The "three ways to work with this" row. */
+
+.offerings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-5);
+}
+
+.offering {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 2px solid var(--rule);
+}
+
+.offering.is-available {
+  border-top-color: var(--accent);
+}
+
+.offering h2,
+.offering h3 {
+  font-size: var(--text-lg);
+}
+
+.offering p {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.offering .offering-action {
+  margin-top: auto;
+  padding-top: var(--space-4);
+}
+
+/* ---- To-be-built placeholder ---------------------------------------------
+   Every unfinished section says what will go there and offers a live next
+   step, so an empty page still does something useful. Grep for
+   "placeholder" to find the whole backlog. */
+
+.offerings + .placeholder,
+.card-grid + .placeholder,
+.prose + .placeholder {
+  margin-top: var(--space-7);
+}
+
+.placeholder {
+  padding: var(--space-6);
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  max-width: var(--measure);
+}
+
+.placeholder .eyebrow {
+  color: var(--accent);
+  margin-bottom: var(--space-3);
+}
+
+.placeholder p {
+  color: var(--muted);
+}
+
+.placeholder p + p {
+  margin-top: var(--space-4);
+}
+
+/* Inline "to be built" marker, used in the site map listing. */
+.sitemap-note {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---- CTA band ------------------------------------------------------------ */
+
+.cta-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.cta-band p {
+  color: var(--muted);
+  max-width: 52ch;
+}
+
+.cta-band h2 {
+  margin-bottom: var(--space-2);
+}
+
 /* ---- Responsive ----------------------------------------------------------
    Breakpoints for the whole site: 900px (layout collapse) and 600px
    (single column / stacked chrome). Keep new queries on these two values. */
@@ -312,5 +576,22 @@
 
   .site-footer-inner {
     flex-direction: column;
+  }
+
+  .page-header {
+    padding-block: var(--space-6) var(--space-5);
+  }
+
+  .page-body {
+    padding-block: var(--space-6);
+  }
+
+  .placeholder,
+  .cta-band {
+    padding: var(--space-5);
+  }
+
+  .cta-band .btn {
+    width: 100%;
   }
 }

@@ -1,18 +1,59 @@
 <!--
   Reference copy only — never fetched at runtime. See topbar.html for the
-  {{ROOT}} convention and the aria-current rule, which applies here too:
-  mark the link pointing at the current page and drop {{ROOT}} from it.
+  {{ROOT}} convention and the aria-current rule, which applies here too.
+
+  The five columns are deliberate: the footer doubles as a site map and
+  keeps every free resource one click from anywhere on the site.
 -->
 <footer class="site-footer">
-  <div class="container site-footer-inner">
-    <p class="footer-note">TaxVisual publishes educational tax policy simulations. Not tax advice.</p>
+  <div class="container">
     <nav aria-label="Footer">
-      <ul>
-        <li><a href="{{ROOT}}about/index.html">About</a></li>
-        <li><a href="{{ROOT}}methodology/index.html">Methodology</a></li>
-        <li><a href="{{ROOT}}sitemap/index.html">Site map</a></li>
-        <li><a href="mailto:info@taxvisual.com">Contact</a></li>
-      </ul>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h2>Tools</h2>
+          <ul>
+            <li><a href="{{ROOT}}tools/index.html">All tools</a></li>
+            <li><a href="{{ROOT}}tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Learn</h2>
+          <ul>
+            <li><a href="{{ROOT}}learn/textbook/index.html">The textbook</a></li>
+            <li><a href="{{ROOT}}learn/guides/index.html">Concept guides</a></li>
+            <li><a href="{{ROOT}}learn/glossary/index.html">Glossary</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Training</h2>
+          <ul>
+            <li><a href="{{ROOT}}training/team/index.html">Team training</a></li>
+            <li><a href="{{ROOT}}training/workshops/index.html">Public workshops</a></li>
+            <li><a href="{{ROOT}}training/on-demand/index.html">On-demand course</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>About</h2>
+          <ul>
+            <li><a href="{{ROOT}}about/index.html">About TaxVisual</a></li>
+            <li><a href="{{ROOT}}about/team/index.html">Our team</a></li>
+            <li><a href="{{ROOT}}methodology/index.html">Methodology</a></li>
+            <li><a href="{{ROOT}}sitemap/index.html">Site map</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Connect</h2>
+          <ul>
+            <li><a href="{{ROOT}}contact/index.html">Contact</a></li>
+            <li><a href="{{ROOT}}updates/index.html">Updates</a></li>
+            <li><a href="{{ROOT}}community/index.html">Community</a></li>
+          </ul>
+        </div>
+      </div>
     </nav>
+    <div class="footer-base">
+      <p class="footer-note">TaxVisual publishes educational tax policy simulations for classrooms, policy workshops, and self-study. Not tax advice.</p>
+      <p class="footer-note"><a href="{{ROOT}}contact/index.html">Get email updates</a></p>
+    </div>
   </div>
 </footer>

@@ -6,7 +6,7 @@ TaxVisual is a hand-authored static site: no build step, no framework, no npm. E
 
 ```
 /
-  index.html              homepage — hero + featured tools + pressbook blurb
+  index.html              homepage — hero, featured tool, explore, offerings
   CNAME                   custom domain for GitHub Pages ("taxvisual.com")
   .nojekyll                disables GitHub Pages' default Jekyll processing
   robots.txt
@@ -25,12 +25,26 @@ TaxVisual is a hand-authored static site: no build step, no framework, no npm. E
                            of truth for when the nav changes
 
   /tools
-    /_starter              copy this folder to start a new tool
+    index.html              the tool catalog, grouped by category
+    /_starter               copy this folder to start a new tool
     /<tool-slug>            one folder per live/in-progress tool
 
-  /directory                full tool catalog (index.html), grouped by category
-  /methodology              sourcing/assumptions/update-cadence policy
+  /learn                    free-resource hub
+    /textbook               the open access Pressbook
+    /guides                 concept guides — to be built
+    /glossary               to be built
+
+  /training                 commercial hub
+    /team                   to be built
+    /workshops              to be built
+    /on-demand              to be built
+
   /about
+    /team                   to be built
+  /methodology              sourcing/assumptions/update-cadence policy
+  /contact                  contact + training enquiry
+  /updates                  changelog — to be built
+  /community                to be built
   /sitemap                  human-readable index of every page
 
   /docs
@@ -43,36 +57,54 @@ TaxVisual is a hand-authored static site: no build step, no framework, no npm. E
 
 Every page is a `<dir>/index.html`. That gives clean public URLs (`taxvisual.com/about/`) with no server configuration, while links stay written as `about/index.html` so double-click `file://` preview keeps working.
 
+The structure follows the hub-and-spoke shape used by Storytelling with Data: a small nav, one hub page per section, and a footer that doubles as a site map. The split that matters is **free vs paid** — Tools and Learn are the free surface area that earns an audience, Training is the commercial layer.
+
 ```
-Live today
-  /                          Home — hero, featured tools, Pressbook blurb, contact
-  /directory/                Full tool catalog, grouped by category
-  /tools/<slug>/             One folder per tool
-  /methodology/              Sourcing, assumptions, update cadence
-  /about/                    About the project
-  /sitemap/                  Human-readable index of every page
+NAV:  Tools   Learn   Training   About        [ Request training ]
+
+/                          Home
+/tools/                    Catalog, grouped by category
+/tools/<slug>/             One folder per tool
+/learn/                    Free-resource hub
+/learn/textbook/           The open access Pressbook
+/learn/guides/             Concept guides            — to be built
+/learn/glossary/           Glossary                  — to be built
+/training/                 Commercial hub
+/training/team/            Team training             — to be built
+/training/workshops/       Public workshops          — to be built
+/training/on-demand/       Self-paced course         — to be built
+/about/                    About the project
+/about/team/               Who builds it             — to be built
+/methodology/              Sourcing and update policy
+/contact/                  Contact + training enquiry
+/updates/                  Changelog                 — to be built
+/community/                                          — to be built
+/sitemap/                  Human-readable page index
 
 Not indexed
-  /tools/_starter/           Template. Disallow-ed in robots.txt and carries
-                             <meta name="robots" content="noindex">
-
-Growth slots — agreed structure, not built yet
-  /book/                     Promote the Pressbook (today just #book on the homepage)
-  /teaching/                 Classroom guides: how to use a given tool in class
-  /updates/                  Changelog — what changed in which tool, and when
+/tools/_starter/           Template. Disallow-ed in robots.txt and noindex.
 ```
 
-Claim a growth slot by building it at that exact path rather than inventing a new one, so the URL scheme stays predictable.
+### The "to be built" convention
+
+Eight pages are scaffolding. Three rules keep a scaffolded page from quietly becoming a half-real one:
+
+1. It carries `<meta name="robots" content="noindex">`
+2. It is **absent** from `sitemap.xml`
+3. It is listed on `/sitemap/` annotated `to be built`
+
+When a page gets real content, reverse all three in the same commit. Each stub uses the `.placeholder` component, which states what will go there and offers a live next step — an unfinished page should still be useful. Grep for `placeholder` to see the whole backlog.
 
 ### What a new page has to touch
 
 | Adding… | Files to edit |
 |---|---|
-| Any page | its own `index.html`, plus one `<url>` line in `sitemap.xml` |
+| Any real page | its own `index.html`, plus one `<url>` in `sitemap.xml` and one line on `/sitemap/` |
+| A stub | its own `index.html` (with `noindex`) and one annotated line on `/sitemap/` — **not** `sitemap.xml` |
 | A tool | the above, plus one entry in `assets/js/tools-data.js` |
-| A top-nav entry | the above, plus the `<nav>` block in **every** page and `assets/partials/topbar.html` |
+| A nav entry | the above, plus the `<nav>` block in **every** page and `assets/partials/topbar.html` |
 
-`/sitemap/` needs no edit when a tool is added — it renders from the registry via `TaxVisual.renderToolLinks()`.
+`/tools/` and the homepage spotlight need no edit when a tool is added — both render from the registry.
 
 ## The design system
 
@@ -104,8 +136,8 @@ Dark mode follows the OS by default. A page can pin itself with `data-theme="lig
 All asset and nav links are **relative**, not root-relative (`../assets/...`, not `/assets/...`), so any page can still be opened directly in a browser (double-click, no server) before it's deployed. Depth-by-depth:
 
 - Root pages (`index.html`): `assets/...`
-- One level deep (`directory/`, `methodology/`, `about/`): `../assets/...`
-- Two levels deep (`tools/<slug>/`): `../../assets/...`
+- One level deep (`tools/`, `learn/`, `training/`, `about/`, …): `../assets/...`
+- Two levels deep (`tools/<slug>/`, `learn/textbook/`, `training/team/`, …): `../../assets/...`
 
 `tools/_starter/index.html` already has the correct `../../` depth filled in — copy it rather than recomputing paths by hand.
 
@@ -129,7 +161,7 @@ Two plain JS globals, loaded via `<script src>` (not JSON/`fetch()`, so pages st
 
 `assets/js/render.js` exposes two renderers over that registry. Every consuming page passes its own `basePath` (`''` at root, `'../'` one level deep, `'../../'` two levels deep) so the same registry entries resolve correctly regardless of which page is rendering them.
 
-- **`TaxVisual.renderToolGrid(mountEl, options)`** — builds the `.tool-card` grid. `options.onlyFeatured` filters to homepage cards; `options.groupByCategory` renders the full grouped catalog used by `/directory`.
+- **`TaxVisual.renderToolGrid(mountEl, options)`** — builds the `.tool-card` grid. `options.onlyFeatured` filters to homepage cards; `options.groupByCategory` renders the full grouped catalog used by `/tools/`.
 - **`TaxVisual.renderToolLinks(mountEl, { basePath })`** — renders the same registry as a plain link list grouped by category, used by `/sitemap/`. Live tools become links; anything else is plain text annotated with its status.
 - **`TaxVisual.renderSpotlight(mountEl, { basePath })`** — used by the homepage. Renders the highest-priority live tool as a full feature block (with its `facts` table, if it has one), followed by a one-line note naming everything still in development. A new tool promotes itself onto the homepage the moment its `status` becomes `live`.
 
