@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Annuity Payments and the Exclusion Ratio | TaxVisual</title>
+<meta name="description" content="A simple interactive view of how each annuity payment splits into tax-free return of investment and taxable income, and what happens once the investment is fully recovered.">
+<link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<link rel="stylesheet" href="../../assets/css/components.css">
+<style>
+  /* ---------------------------------------------------------------------
+     Tool-scoped theme — see docs/interactive-tool-pattern.md. Blue is the
+     taxable part throughout the suite; the neutral is the part that is not
+     taxed, a true neutral outside the ordinal ramp.
+
+     Two weights of each, on purpose. --fill-* are for small marks (the split
+     bar, the legend swatch, the marker). --area-* are the large bands in the
+     chart, where a saturated block would read loud and crowd everything on top
+     of it. Same hues, lighter steps; separation still measured, not eyeballed:
+     OKLab dE 16.3 light (#86b6ef vs #dcdcdc) and 18.0 dark (#1c5cab vs
+     #3f3f3f), both clear of the 15 floor, and each band is directly labelled
+     as well.
+     --------------------------------------------------------------------- */
+  :root{
+    color-scheme: light;
+    --tool-surface:   #fcfcfb;
+    --page:           #f9f9f7;
+    --tool-ink:       #0b0b0b;
+    --ink-soft:       #52514e;
+    --ink-muted:      #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --tool-accent:    #2a78d6;
+    --fill-strong:    #2a78d6;
+    --fill-neutral:   #8a8a8a;
+    --area-taxable:   #86b6ef;
+    --area-free:      #dcdcdc;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --tool-surface:  #1a1a19;
+      --page:          #0d0d0d;
+      --tool-ink:      #ffffff;
+      --ink-soft:      #c3c2b7;
+      --ink-muted:     #898781;
+      --gridline:      #2c2c2a;
+      --baseline:      #383835;
+      --border:        rgba(255,255,255,0.10);
+      --tool-accent:   #3987e5;
+      --fill-strong:   #3987e5;
+      --fill-neutral:  #757575;
+      --area-taxable:  #1c5cab;
+      --area-free:     #3f3f3f;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --tool-surface:  #1a1a19;
+    --page:          #0d0d0d;
+    --tool-ink:      #ffffff;
+    --ink-soft:      #c3c2b7;
+    --ink-muted:     #898781;
+    --gridline:      #2c2c2a;
+    --baseline:      #383835;
+    --border:        rgba(255,255,255,0.10);
+    --tool-accent:   #3987e5;
+    --fill-strong:   #3987e5;
+    --fill-neutral:  #757575;
+    --area-taxable:  #1c5cab;
+    --area-free:     #3f3f3f;
+  }
+
+  * { box-sizing: border-box; }
+  body{ margin:0; background: var(--page); }
+  .app{
+    background: var(--page); color: var(--tool-ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 28px 16px 40px;
+  }
+  .wrap{ max-width: 1000px; margin: 0 auto; }
+
+  .masthead{
+    display:flex; flex-direction:column; gap:8px;
+    padding-bottom:20px; margin-bottom:24px; border-bottom:1px solid var(--border);
+  }
+  .kicker{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase; color: var(--ink-muted);
+  }
+  .app h1{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-weight:600; font-size: clamp(24px,3.4vw,32px);
+    margin:2px 0 0; text-wrap: balance; color: var(--tool-ink);
+  }
+  .standfirst{ font-size:15px; color: var(--ink-soft); margin:0; line-height:1.55; max-width:66ch; }
+
+  .layout{ display:grid; grid-template-columns:280px minmax(0,1fr); gap:28px; align-items:start; }
+  @media (max-width:860px){ .layout{ grid-template-columns:minmax(0,1fr); } }
+
+  .rail{
+    background: var(--tool-surface); border:1px solid var(--border);
+    border-radius:10px; padding:20px; position:sticky; top:16px;
+  }
+  @media (max-width:860px){ .rail{ position:static; } }
+  .rail h2{
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    color: var(--ink-muted); margin:0 0 14px; font-weight:600;
+  }
+  .field{ margin-bottom:17px; }
+  .field label{ display:block; font-size:12px; color: var(--ink-soft); margin-bottom:2px; }
+  .field .amount{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:21px; font-weight:500; color: var(--tool-ink);
+    font-variant-numeric: tabular-nums; line-height:1.2;
+  }
+  input[type="range"]{ width:100%; margin:5px 0 0; accent-color: var(--tool-accent); }
+
+  .stats{
+    border-top:1px solid var(--border); margin-top:4px; padding-top:18px;
+    display:grid; gap:16px;
+  }
+  .stat .label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color: var(--ink-muted); margin-bottom:2px;
+  }
+  .stat .value{ font-size:26px; font-weight:600; line-height:1.1; font-variant-numeric: proportional-nums; }
+  .stat .value.accent{ color: var(--tool-accent); }
+  .stat .value.small{ font-size:17px; font-weight:500; }
+  .stat .sub{ font-size:11.5px; color: var(--ink-muted); margin-top:3px; line-height:1.4; }
+
+  .panel{
+    background: var(--tool-surface); border:1px solid var(--border);
+    border-radius:10px; padding:20px 20px 18px; margin-bottom:22px;
+  }
+  .panel h3{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-size:18px; font-weight:600; margin:0 0 4px; color: var(--tool-ink);
+  }
+  .panel .lede{ font-size:13px; color: var(--ink-soft); margin:0 0 16px; line-height:1.5; max-width:64ch; }
+
+  .chart-scroll{ overflow-x:auto; overflow-y:hidden; }
+  .chart-shell{ min-width:600px; }
+  .chart-shell svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .axis-text{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10.5px; fill: var(--ink-muted); }
+  .axis-text.emph{ fill: var(--tool-ink); font-weight:500; }
+  .band-text{ font-family:"IBM Plex Sans", sans-serif; font-size:11.5px; font-weight:600; fill: var(--ink-soft); }
+  .anno-text{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10px; fill: var(--ink-muted); }
+  .anno-text.bind{ fill: var(--tool-ink); }
+  .band-inline{
+    font-family:"IBM Plex Sans", sans-serif; font-size:11px; font-weight:600;
+    fill: var(--tool-ink); opacity:.72;
+  }
+  .marker-text{
+    font-family:"IBM Plex Sans", sans-serif; font-size:12px; font-weight:600;
+    fill: var(--tool-ink); paint-order: stroke; stroke: var(--tool-surface); stroke-width:3px;
+  }
+
+  .split{ margin-top:26px; padding-top:20px; border-top:1px solid var(--gridline); }
+  .split h4{
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color: var(--ink-muted); margin:0 0 10px; font-weight:600;
+  }
+  .ptw{ display:flex; gap:2px; height:30px; }
+  .ptw > div{ min-width:2px; border-radius:2px; }
+  .ptw > div:first-child{ border-radius:4px 2px 2px 4px; }
+  .ptw > div:last-child{ border-radius:2px 4px 4px 2px; }
+  .ptw-scale{
+    display:flex; justify-content:space-between;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:10.5px; color: var(--ink-muted); margin-top:5px;
+  }
+  .legend{ display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:14px; }
+  .legend-item{ display:flex; align-items:flex-start; gap:7px; font-size:12px; color: var(--ink-soft); max-width:30ch; }
+  .legend-swatch{ width:11px; height:11px; border-radius:3px; flex:none; margin-top:3px; }
+  .legend-item b{
+    display:block; color: var(--tool-ink); font-weight:600;
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums;
+  }
+
+  details.sources{ padding:0; overflow:hidden; }
+  details.sources > summary{
+    list-style:none; cursor:pointer;
+    padding:18px 20px; display:flex; align-items:baseline; gap:11px; flex-wrap:wrap;
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-size:17px; font-weight:600; color: var(--tool-ink); transition: background 140ms ease;
+  }
+  details.sources > summary::-webkit-details-marker{ display:none; }
+  details.sources > summary::before{
+    content:''; width:7px; height:7px; flex:none; align-self:center;
+    border-right:2px solid var(--tool-accent); border-bottom:2px solid var(--tool-accent);
+    transform: rotate(-45deg); transition: transform 160ms ease;
+  }
+  details.sources[open] > summary::before{ transform: rotate(45deg); }
+  details.sources > summary:hover{ background: color-mix(in srgb, var(--tool-accent) 6%, transparent); }
+  details.sources > summary:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
+  .summary-hint{
+    font-family:"IBM Plex Sans", sans-serif; font-size:12.5px; font-weight:400; color: var(--ink-muted);
+  }
+  .sources-body{ padding:0 20px 20px; }
+  .sources-body p{ font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:70ch; margin:0 0 15px; }
+  .sources-body a{ color: var(--tool-accent); }
+  .src-meta{ margin:0 0 14px; }
+  .src-meta strong{ color: var(--tool-ink); }
+  .statute{
+    max-height:430px; overflow-y:auto;
+    border:1px solid var(--gridline); border-radius:8px;
+    padding:16px 18px; background: var(--page);
+    font-size:13px; line-height:1.62; color: var(--ink-soft);
+  }
+  .statute:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .statute .lv{ margin-left:16px; }
+  .statute > .lv{ margin-left:0; margin-top:16px; }
+  .statute > .lv:first-child{ margin-top:0; }
+  .statute .lv > p{ margin:0 0 7px; max-width:none; font-size:13px; line-height:1.62; }
+  .statute .lv-n{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-weight:500; color: var(--tool-ink); }
+  .statute .lv-h{ font-weight:600; color: var(--tool-ink); }
+  .statute-head{
+    font-family:"IBM Plex Sans", sans-serif; font-size:11px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.07em; color: var(--ink-muted);
+    margin:22px 0 10px; padding-top:16px; border-top:1px solid var(--gridline);
+  }
+  .statute-head:first-child{ margin-top:0; padding-top:0; border-top:none; }
+  .note{
+    border-left:3px solid var(--tool-accent);
+    padding:2px 0 2px 14px; margin:18px 0 0;
+    font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:70ch;
+  }
+  .note b{ color: var(--tool-ink); font-weight:600; }
+
+  .footnote{ font-size:12px; color: var(--ink-muted); line-height:1.55; max-width:74ch; margin:14px 0 0; }
+
+  .tooltip{
+    position:fixed; z-index:50; pointer-events:none;
+    transform: translate(-50%, calc(-100% - 12px));
+    background: var(--tool-ink); color: var(--page);
+    border-radius:6px; padding:7px 10px; font-size:12px; line-height:1.45;
+    opacity:0; transition: opacity 120ms ease; white-space:nowrap;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+  }
+  .tooltip.show{ opacity:1; }
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+  }
+  @media (prefers-reduced-motion: reduce){ .app *, .tooltip{ transition:none !important; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../../index.html" aria-label="TaxVisual home">
+        <span class="brand-mark">TV</span>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../learn/index.html">Learn</a></li>
+          <li><a href="../../training/index.html">Training</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+          <li><a class="topbar-cta" href="../../contact/index.html">Request training</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+<div class="app" id="main">
+  <div class="wrap">
+
+    <div class="masthead">
+      <div class="kicker">Gross income · Simulation</div>
+      <h1>Getting Your Own Money Back</h1>
+      <p class="standfirst">
+        An annuity payment is part your own capital coming back and part income. A fixed exclusion
+        ratio splits every payment the same way — until you have recovered everything you put in.
+        From the next payment on, the whole thing is taxable.
+      </p>
+    </div>
+
+    <div class="layout">
+
+      <aside class="rail">
+        <h2>The contract</h2>
+
+        <div class="field">
+          <label for="paymentSlider">Monthly payment</label>
+          <div class="amount" id="paymentOut">$12,000</div>
+          <input type="range" id="paymentSlider" min="0" max="30000" step="100" value="12000"
+                 aria-label="Monthly annuity payment">
+        </div>
+
+        <div class="field">
+          <label for="investmentSlider">Investment in the contract</label>
+          <div class="amount" id="investmentOut">$1,576,800</div>
+          <input type="range" id="investmentSlider" min="0" max="3000000" step="100" value="1576800"
+                 aria-label="Investment in the contract">
+        </div>
+
+        <div class="field">
+          <label for="multipleSlider">Expected-return multiple (years)</label>
+          <div class="amount" id="multipleOut">14.6</div>
+          <input type="range" id="multipleSlider" min="1" max="30" step="0.1" value="14.6"
+                 aria-label="Expected return multiple in years">
+        </div>
+
+        <div class="field">
+          <label for="receivedSlider">Payments received so far</label>
+          <div class="amount" id="receivedOut">100</div>
+          <input type="range" id="receivedSlider" min="0" max="400" step="1" value="100"
+                 aria-label="Number of payments received so far">
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Taxable in this payment</div>
+            <div class="value accent" id="statTaxable">$0</div>
+            <div class="sub" id="statTaxableSub">&nbsp;</div>
+          </div>
+          <div class="stat">
+            <div class="label">Exclusion ratio</div>
+            <div class="value small" id="statRatio">0%</div>
+            <div class="sub">investment &divide; expected total return</div>
+          </div>
+          <div class="stat">
+            <div class="label">Investment recovered</div>
+            <div class="value small" id="statRecovered">$0</div>
+            <div class="sub" id="statRecoveredSub">&nbsp;</div>
+          </div>
+        </div>
+      </aside>
+
+      <div>
+        <details class="panel sources">
+          <summary>
+            The source rules
+            <span class="summary-hint">26 U.S.C. &sect;72(b), full text &mdash; optional</span>
+          </summary>
+          <div class="sources-body">
+            <p class="src-meta">
+              <strong>26 U.S.C. &sect;72(b) &mdash; Exclusion ratio.</strong> Reproduced in full and
+              unedited from the U.S. Code as published by the Legal Information Institute, retrieved
+              24 September 2026.
+            </p>
+            <p>
+              &sect;72 as a whole runs to about 500 provisions &mdash; it covers early-distribution
+              penalties, plan loans, modified endowment contracts and much else that has nothing to do
+              with this calculation. Reproducing all of it here would bury the one rule the tool
+              models, so the panel carries <strong>subsection (b) whole</strong>, the provision that
+              creates the exclusion ratio. Nothing in it is summarised or trimmed.
+              <a href="https://www.law.cornell.edu/uscode/text/26/72" target="_blank" rel="noopener">Read all of &sect;72</a>
+              &middot; regulations at
+              <a href="https://www.law.cornell.edu/cfr/text/26/1.72-1" target="_blank" rel="noopener">&sect;1.72-1</a>,
+              <a href="https://www.law.cornell.edu/cfr/text/26/1.72-2" target="_blank" rel="noopener">&sect;1.72-2</a> and
+              <a href="https://www.law.cornell.edu/cfr/text/26/1.72-4" target="_blank" rel="noopener">&sect;1.72-4</a>.
+            </p>
+
+            <div class="statute" tabindex="0" role="region"
+                 aria-label="Full text of 26 U.S.C. section 72(b), exclusion ratio">
+              <p class="statute-head">26 U.S.C. &sect;72(b) &mdash; Exclusion ratio</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-h">Exclusion ratio</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">In general</span> <span class="lv-t">Gross income does not include that part of any amount received as an annuity under an annuity, endowment, or life insurance contract which bears the same ratio to such amount as the investment in the contract (as of the annuity starting date) bears to the expected return under the contract (as of such date).</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Exclusion limited to investment</span> <span class="lv-t">The portion of any amount received as an annuity which is excluded from gross income under paragraph (1) shall not exceed the unrecovered investment in the contract immediately before the receipt of such amount.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(3)</span> <span class="lv-h">Deduction where annuity payments cease before entire investment recovered</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">If—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">after the annuity starting date, payments as an annuity under the contract cease by reason of the death of an annuitant, and</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">as of the date of such cessation, there is unrecovered investment in the contract,</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Payments to other persons</span> <span class="lv-t">In the case of any contract which provides for payments meeting the requirements of subparagraphs (B) and (C) of subsection (c)(2), the deduction under subparagraph (A) shall be allowed to the person entitled to such payments for the taxable year in which such payments are received.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-h">Net operating loss deductions provided</span> <span class="lv-t">For purposes of section 172, a deduction allowed under this paragraph shall be treated as if it were attributable to a trade or business of the taxpayer.</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(4)</span> <span class="lv-h">Unrecovered investment</span> <span class="lv-t">For purposes of this subsection, the unrecovered investment in the contract as of any date is—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">the investment in the contract (determined without regard to subsection (c)(2)) as of the annuity starting date, reduced by</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">the aggregate amount received under the contract on or after such annuity starting date and before the date as of which the determination is being made, to the extent such amount was excludable from gross income under this subtitle.</span></p>
+              </div>
+            </div>
+          </div>
+            </div>
+
+            <p class="note">
+              <b>Verify before relying on this.</b> Retrieved 24 September 2026. Tax law changes;
+              confirm against the primary source above before using it in class or in practice.
+              Nothing here is tax advice.
+            </p>
+          </div>
+        </details>
+
+        <section class="panel">
+          <h3>Every payment, split</h3>
+          <p class="lede" id="chartLede"></p>
+
+          <div class="chart-scroll">
+            <div class="chart-shell">
+              <svg id="splitChart" viewBox="0 0 760 330" preserveAspectRatio="xMidYMid meet"
+                   role="img" aria-labelledby="chartDesc"></svg>
+              <p class="sr-only" id="chartDesc"></p>
+            </div>
+          </div>
+
+          <div class="split">
+            <h4 id="splitHead">This payment, split</h4>
+            <div class="ptw" id="ptwBar" role="img" aria-labelledby="ptwDesc"></div>
+            <p class="sr-only" id="ptwDesc"></p>
+            <div class="ptw-scale">
+              <span>$0</span>
+              <span id="ptwEnd">$0</span>
+            </div>
+            <div class="legend" id="ptwLegend"></div>
+          </div>
+
+          <p class="footnote">
+            Educational simulation, not tax advice. A date-neutral model: the expected-return multiple
+            is an editable assumption rather than a table lookup for a named person or year. Assumes a
+            fixed monthly payment for life with no refund or period-certain feature, and ignores the
+            deduction allowed under &sect;72(b)(3) for investment left unrecovered at death. Source
+            model: ACCTG 410 Individual Taxation Toolbox, &ldquo;Annuity&rdquo; tab.
+          </p>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav aria-label="Footer">
+        <div class="footer-cols">
+        <div class="footer-col">
+          <h2>Tools</h2>
+          <ul>
+            <li><a href="../../tools/index.html">All tools</a></li>
+            <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Learn</h2>
+          <ul>
+            <li><a href="../../learn/textbook/index.html">The textbook</a></li>
+            <li><a href="../../learn/guides/index.html">Concept guides</a></li>
+            <li><a href="../../learn/glossary/index.html">Glossary</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Training</h2>
+          <ul>
+            <li><a href="../../training/team/index.html">Team training</a></li>
+            <li><a href="../../training/workshops/index.html">Public workshops</a></li>
+            <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>About</h2>
+          <ul>
+            <li><a href="../../about/index.html">About TaxVisual</a></li>
+            <li><a href="../../about/team/index.html">Our team</a></li>
+            <li><a href="../../methodology/index.html">Methodology</a></li>
+            <li><a href="../../sitemap/index.html">Site map</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Connect</h2>
+          <ul>
+            <li><a href="../../contact/index.html">Contact</a></li>
+            <li><a href="../../updates/index.html">Updates</a></li>
+            <li><a href="../../community/index.html">Community</a></li>
+          </ul>
+        </div>
+        </div>
+      </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual publishes educational tax policy simulations for classrooms, policy workshops, and self-study. Not tax advice.</p>
+        <p class="footer-note"><a href="../../contact/index.html">Get email updates</a></p>
+      </div>
+    </div>
+  </footer>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ==================================================================
+     MODEL — a line-for-line port of the workbook's Annuity tab.
+
+       annual      = monthly payment x 12                  (C11)
+       expected    = annual x expected-return multiple     (C13)
+       ratio       = MIN(1, investment / expected)         (C16)
+       excluded    = payment x ratio                       (C17)
+       taxable     = payment - excluded                    (C18)
+       taxablePct  = taxable / payment                     (C19)
+       recovered   = MIN(investment, excluded x received)  (G11)
+       unrecovered = MAX(0, investment - recovered)        (G12)
+       fullAt      = ROUNDUP(investment / excluded, 0)     (G14)
+
+     The workbook leaves expected = 0 as a divide error; here the ratio
+     falls to zero, which is the same answer the rule gives when there is
+     nothing to recover against.
+     ================================================================== */
+  function model(i){
+    const annual     = i.payment * 12;
+    const expected   = annual * i.multiple;
+    const ratio      = expected === 0 ? 0 : Math.min(1, i.investment / expected);
+    const excluded   = i.payment * ratio;
+    const taxable    = i.payment - excluded;
+    const taxablePct = i.payment === 0 ? 0 : taxable / i.payment;
+    const recovered  = Math.min(i.investment, excluded * i.received);
+    const unrecovered= Math.max(0, i.investment - recovered);
+    const fullAt     = excluded === 0 ? 0 : Math.ceil(i.investment / excluded);
+    return { annual: annual, expected: expected, ratio: ratio, excluded: excluded,
+             taxable: taxable, taxablePct: taxablePct, recovered: recovered,
+             unrecovered: unrecovered, fullAt: fullAt };
+  }
+
+  /* Cumulative recovery after n payments — the workbook's G11. */
+  function cumRecovered(n, investment, excluded){
+    return Math.min(investment, excluded * Math.max(0, n));
+  }
+
+  /* The excluded part of payment n, obtained by differencing the cumulative
+     figure rather than reusing the steady-state split. That is what makes the
+     FINAL payment come out right: recovery runs out part-way through it, so it
+     excludes less than a full share and is taxed on the rest. */
+  function excludedAt(n, investment, excluded){
+    return cumRecovered(n, investment, excluded) - cumRecovered(n - 1, investment, excluded);
+  }
+
+  /* Constant-value runs of payments, merged, so the chart draws a handful of
+     rectangles rather than one per payment. */
+  function segments(payment, investment, excluded, xMax){
+    const out = [];
+    function push(from, to){
+      if (to < from || from < 1) return;
+      const e = excludedAt(from, investment, excluded);
+      const prev = out[out.length - 1];
+      if (prev && Math.abs(prev.excluded - e) < 1e-9) prev.to = to;
+      else out.push({ from: from, to: to, excluded: e, taxable: payment - e });
+    }
+    const fullAt = excluded === 0 ? 0 : Math.ceil(investment / excluded);
+    if (fullAt <= 0){ push(1, xMax); return out; }
+    push(1, Math.min(fullAt - 1, xMax));
+    if (fullAt <= xMax) push(fullAt, fullAt);
+    if (fullAt + 1 <= xMax) push(fullAt + 1, xMax);
+    return out;
+  }
+
+  /* ============================== FORMATTING ============================== */
+  const usd0 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', maximumFractionDigits:0 });
+  const usd2 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 });
+  const pct0 = new Intl.NumberFormat('en-US',{ style:'percent', maximumFractionDigits:0 });
+  const pct1 = new Intl.NumberFormat('en-US',{ style:'percent', maximumFractionDigits:1 });
+  const num0 = new Intl.NumberFormat('en-US',{ maximumFractionDigits:0 });
+
+  function money(v){ return Math.abs(v - Math.round(v)) < 0.005 ? usd0.format(v) : usd2.format(v); }
+  function abbr(v){
+    if (Math.abs(v) >= 1000000){ const m = v/1000000; return '$' + (m % 1 === 0 ? m : m.toFixed(1)) + 'm'; }
+    if (Math.abs(v) >= 1000){ const k = v/1000; return '$' + (k % 1 === 0 ? k : k.toFixed(1)) + 'k'; }
+    return '$' + num0.format(v);
+  }
+
+  const state = { payment: 12000, investment: 1576800, multiple: 14.6, received: 100 };
+
+  const $ = function(id){ return document.getElementById(id); };
+  const els = {
+    paymentSlider:$('paymentSlider'), paymentOut:$('paymentOut'),
+    investmentSlider:$('investmentSlider'), investmentOut:$('investmentOut'),
+    multipleSlider:$('multipleSlider'), multipleOut:$('multipleOut'),
+    receivedSlider:$('receivedSlider'), receivedOut:$('receivedOut'),
+    statTaxable:$('statTaxable'), statTaxableSub:$('statTaxableSub'),
+    statRatio:$('statRatio'),
+    statRecovered:$('statRecovered'), statRecoveredSub:$('statRecoveredSub'),
+    chartLede:$('chartLede'), chart:$('splitChart'), chartDesc:$('chartDesc'),
+    splitHead:$('splitHead'),
+    ptwBar:$('ptwBar'), ptwLegend:$('ptwLegend'), ptwEnd:$('ptwEnd'), ptwDesc:$('ptwDesc'),
+    tooltip:$('tooltip')
+  };
+
+  const NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs){
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+  function clear(node){ while (node.firstChild) node.removeChild(node.firstChild); }
+
+  function niceStep(range, target){
+    const raw = range / target;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const r = raw / mag;
+    return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10) * mag;
+  }
+  function ticksFrom0(max, target){
+    if (max <= 0) return [0];
+    const step = niceStep(max, target);
+    const out = [];
+    for (let v = 0; v <= max + step * 0.001; v += step) out.push(v);
+    return out;
+  }
+
+  function showTip(x, y, html){
+    els.tooltip.innerHTML = html;
+    els.tooltip.style.left = x + 'px';
+    els.tooltip.style.top  = y + 'px';
+    els.tooltip.classList.add('show');
+  }
+  function hideTip(){ els.tooltip.classList.remove('show'); }
+
+  /* =============================== CHART =============================== */
+  const PAD = { l:66, r:24 };
+
+  function renderChart(r, xMax, segs){
+    const svg = els.chart, W = 760, H = 330;
+    const x0 = PAD.l, x1 = W - PAD.r, y0 = 52, y1 = 248;
+    clear(svg);
+
+    const P = state.payment;
+    const yMax = P > 0 ? P : 100;
+    /* payment n occupies the slot [n-1, n] on this axis */
+    const X = function(v){ return x0 + (v / xMax) * (x1 - x0); };
+    const Y = function(v){ return y1 - (v / yMax) * (y1 - y0); };
+
+    /* --- the two bands, drawn per constant-value run --- */
+    segs.forEach(function(s){
+      const xa = X(s.from - 1), xb = X(s.to);
+      if (xb <= xa) return;
+      if (s.taxable > 0){
+        svg.appendChild(svgEl('rect',{ x:xa, y:Y(s.taxable), width:xb-xa, height:Y(0)-Y(s.taxable),
+          fill:'var(--area-taxable)' }));
+      }
+      if (s.excluded > 0){
+        svg.appendChild(svgEl('rect',{ x:xa, y:Y(P), width:xb-xa, height:Y(s.taxable)-Y(P),
+          fill:'var(--area-free)' }));
+      }
+    });
+
+    /* 2px surface gap along the boundary between the two fills */
+    let bd = '';
+    segs.forEach(function(s){
+      bd += 'M' + X(s.from - 1).toFixed(2) + ' ' + Y(s.taxable).toFixed(2) +
+            'L' + X(s.to).toFixed(2) + ' ' + Y(s.taxable).toFixed(2);
+    });
+    if (bd) svg.appendChild(svgEl('path',{ d:bd, fill:'none', stroke:'var(--tool-surface)', 'stroke-width':2 }));
+
+    /* --- name each band once, at the left edge, so the colours never have to
+           be decoded from a legend that belongs to a different chart --- */
+    if (segs.length){
+      const first = segs[0];
+      const lx = X(first.from - 1) + 8;
+      if (first.taxable > 0){
+        const t = svgEl('text',{ x:lx, y:(Y(0) + Y(first.taxable)) / 2 + 4, class:'band-inline' });
+        t.textContent = 'taxable';
+        svg.appendChild(t);
+      }
+      if (first.excluded > 0){
+        const t = svgEl('text',{ x:lx, y:(Y(first.taxable) + Y(P)) / 2 + 4, class:'band-inline' });
+        t.textContent = 'tax-free \u2014 your investment coming back';
+        svg.appendChild(t);
+      }
+    }
+
+    /* --- zone labels --- */
+    segs.forEach(function(s){
+      const xa = X(s.from - 1), xb = X(s.to), w = xb - xa;
+      const isPartial = s.from === s.to && s.excluded > 0 && s.excluded < r.excluded - 1e-9;
+      let full, short;
+      if (s.excluded <= 0){ full = 'Fully taxable'; short = 'all'; }
+      else if (isPartial){ full = 'Last part-payment'; short = ''; }
+      else { full = pct0.format(1 - s.excluded / P) + ' of each payment taxable'; short = 'split'; }
+      const label = w > 150 ? full : (w > 40 ? short : null);
+      if (!label) return;
+      const t = svgEl('text',{ x:(xa+xb)/2, y:38, 'text-anchor':'middle', class:'band-text' });
+      t.textContent = label;
+      svg.appendChild(t);
+    });
+
+    /* --- y gridlines --- */
+    ticksFrom0(yMax, 4).forEach(function(v){
+      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(v), y2:Y(v),
+        stroke: v === 0 ? 'var(--baseline)' : 'var(--gridline)', 'stroke-width':1, opacity: v === 0 ? 1 : 0.5 }));
+      const t = svgEl('text',{ x:x0-9, y:Y(v)+3.5, 'text-anchor':'end', class:'axis-text' });
+      t.textContent = abbr(v);
+      svg.appendChild(t);
+    });
+
+    /* --- the cliff: where recovery finishes --- */
+    if (r.fullAt > 0 && r.fullAt <= xMax){
+      svg.appendChild(svgEl('line',{ x1:X(r.fullAt), x2:X(r.fullAt), y1:y0-4, y2:y1,
+        stroke:'var(--ink-muted)', 'stroke-width':1 }));
+      const t = svgEl('text',{ x:X(r.fullAt)+5, y:20, class:'anno-text bind' });
+      t.textContent = 'investment fully recovered';
+      svg.appendChild(t);
+    }
+
+    /* --- this taxpayer's current payment --- */
+    if (state.received >= 1 && state.received <= xMax){
+      const tx = P - excludedAt(state.received, state.investment, r.excluded);
+      const cx = X(state.received - 0.5);
+      svg.appendChild(svgEl('line',{ x1:cx, x2:cx, y1:y0, y2:y1,
+        stroke:'var(--tool-ink)', 'stroke-width':1, opacity:0.55 }));
+      svg.appendChild(svgEl('circle',{ cx:cx, cy:Y(tx), r:6,
+        fill:'var(--fill-strong)', stroke:'var(--tool-surface)', 'stroke-width':2.5 }));
+      const lbl = svgEl('text',{ x:cx, y:Y(tx)-14, 'text-anchor':'middle', class:'marker-text' });
+      lbl.textContent = money(tx);
+      svg.appendChild(lbl);
+    }
+
+    /* --- two scales on one axis: payment number, and the same axis in years.
+           The cliff lands at 12 x the expected-return multiple whenever the
+           ratio is below 1, which is the whole design of the exclusion ratio
+           and is only visible with the years row present. --- */
+    const NUM_Y = y1 + 17, YEAR_Y = y1 + 53;
+
+    function axisRow(ticks, yTick, place, emphasis, fmt){
+      const taken = [];
+      emphasis.forEach(function(e){
+        const px = place(e.v);
+        if (px < x0 - 1 || px > x1 + 1) return;
+        const t = svgEl('text',{ x:px, y:yTick, 'text-anchor':'middle', class:'axis-text emph' });
+        t.textContent = e.text;
+        svg.appendChild(t);
+        taken.push(px);
+      });
+      ticks.forEach(function(v){
+        const px = place(v);
+        if (px < x0 - 1 || px > x1 + 1) return;
+        for (let k = 0; k < taken.length; k++) if (Math.abs(taken[k] - px) < 40) return;
+        const t = svgEl('text',{ x:px, y:yTick, 'text-anchor':'middle', class:'axis-text' });
+        t.textContent = fmt(v);
+        svg.appendChild(t);
+      });
+    }
+
+    axisRow(ticksFrom0(xMax, 6).filter(function(v){ return v > 0; }), NUM_Y, X,
+            r.fullAt > 0 && r.fullAt <= xMax ? [{ v:r.fullAt, text:num0.format(r.fullAt) }] : [],
+            function(v){ return num0.format(v); });
+    const lbl1 = svgEl('text',{ x:(x0+x1)/2, y:y1+31, 'text-anchor':'middle', class:'axis-text' });
+    lbl1.textContent = 'Payment number';
+    svg.appendChild(lbl1);
+
+    svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:y1+41, y2:y1+41,
+      stroke:'var(--baseline)', 'stroke-width':1 }));
+
+    const yearMax = xMax / 12;
+    axisRow(ticksFrom0(yearMax, 6).filter(function(v){ return v > 0; }), YEAR_Y,
+            function(v){ return X(v * 12); },
+            [{ v: state.multiple, text: state.multiple.toFixed(1) }],
+            function(v){ return num0.format(v); });
+    const lbl2 = svgEl('text',{ x:(x0+x1)/2, y:y1+67, 'text-anchor':'middle', class:'axis-text' });
+    lbl2.textContent = 'Years — the expected-return multiple is ' + state.multiple.toFixed(1);
+    svg.appendChild(lbl2);
+
+    const yt = svgEl('text',{ x:x0-48, y:16, class:'axis-text' });
+    yt.textContent = 'Per payment';
+    svg.appendChild(yt);
+
+    /* --- hover --- */
+    const hit = svgEl('rect',{ x:x0, y:y0, width:x1-x0, height:y1-y0, fill:'transparent', style:'cursor:crosshair' });
+    const cross = svgEl('line',{ x1:0, x2:0, y1:y0, y2:y1, stroke:'var(--ink-muted)', 'stroke-width':1, opacity:0 });
+    svg.appendChild(hit); svg.appendChild(cross);
+
+    hit.addEventListener('pointermove', function(e){
+      const box = svg.getBoundingClientRect();
+      const vx = ((e.clientX - box.left) / box.width) * W;
+      const n = Math.max(1, Math.min(xMax, Math.ceil(((vx - x0) / (x1 - x0)) * xMax)));
+      const exc = excludedAt(n, state.investment, r.excluded);
+      cross.setAttribute('x1', X(n - 0.5)); cross.setAttribute('x2', X(n - 0.5));
+      cross.setAttribute('opacity', 0.45);
+      showTip(e.clientX, box.top + (Y(P) / H) * box.height,
+        'payment <b>' + num0.format(n) + '</b><br>' +
+        'taxable <b>' + money(P - exc) + '</b><br>' +
+        'tax-free <b>' + money(exc) + '</b>');
+    });
+    hit.addEventListener('pointerleave', function(){
+      cross.setAttribute('opacity', 0); hideTip();
+    });
+
+    els.chartDesc.textContent =
+      'Stacked area chart of how each annuity payment of ' + money(P) + ' divides, against payment ' +
+      'number. The horizontal axis is labelled in two units: payment number, and below it years, at ' +
+      'twelve payments to the year. ' +
+      (r.fullAt > 0
+        ? money(r.excluded) + ' of each payment is tax-free return of investment and ' +
+          money(r.taxable) + ' is taxable, until the investment is fully recovered at payment ' +
+          num0.format(r.fullAt) + '. From the next payment on the whole ' + money(P) + ' is taxable.'
+        : 'No part of any payment is excluded, so the whole payment is taxable throughout.');
+  }
+
+  /* ========================== PAYMENT SPLIT BAR ========================== */
+  function renderSplit(r){
+    const P = state.payment;
+    const n = Math.max(1, state.received);
+    const exc = excludedAt(n, state.investment, r.excluded);
+    const tax = P - exc;
+
+    clear(els.ptwBar); clear(els.ptwLegend);
+    els.ptwEnd.textContent = money(P);
+    els.splitHead.textContent = state.received >= 1
+      ? 'Payment #' + num0.format(state.received) + ', split'
+      : 'The first payment, split';
+
+    if (P <= 0){ els.ptwDesc.textContent = 'No payment set.'; return; }
+
+    [
+      { v:tax, color:'var(--fill-strong)',  name:'Taxable income' },
+      { v:exc, color:'var(--fill-neutral)', name:'Tax-free — your own investment coming back' }
+    ].forEach(function(p){
+      if (p.v <= 0) return;
+      const seg = document.createElement('div');
+      seg.style.cssText = 'flex-grow:' + p.v + ';flex-basis:0;background:' + p.color + ';';
+      els.ptwBar.appendChild(seg);
+
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      const sw = document.createElement('span');
+      sw.className = 'legend-swatch';
+      sw.style.background = p.color;
+      const txt = document.createElement('span');
+      txt.innerHTML = '<b>' + money(p.v) + '</b>' + p.name;
+      item.appendChild(sw); item.appendChild(txt);
+      els.ptwLegend.appendChild(item);
+    });
+
+    els.ptwDesc.textContent =
+      'Of a ' + money(P) + ' payment, ' + money(tax) + ' is taxable income and ' +
+      money(exc) + ' is tax-free return of investment.';
+  }
+
+  /* =============================== RENDER =============================== */
+  function render(){
+    const r = model(state);
+    const xMax = Math.max(
+      Math.ceil((r.fullAt > 0 ? r.fullAt : 12) * 1.5),
+      Math.ceil(state.received * 1.25), 24);
+    const segs = segments(state.payment, state.investment, r.excluded, xMax);
+
+    els.paymentOut.textContent    = money(state.payment);
+    els.investmentOut.textContent = money(state.investment);
+    els.multipleOut.textContent   = state.multiple.toFixed(1);
+    els.receivedOut.textContent   = num0.format(state.received);
+
+    const nowExc = excludedAt(Math.max(1, state.received), state.investment, r.excluded);
+    els.statTaxable.textContent = money(state.payment - nowExc);
+    els.statTaxableSub.textContent = state.payment > 0
+      ? pct0.format((state.payment - nowExc) / state.payment) + ' of the ' + money(state.payment) + ' payment'
+      : 'no payment set';
+
+    els.statRatio.textContent = pct1.format(r.ratio);
+
+    els.statRecovered.textContent = money(r.recovered);
+    els.statRecoveredSub.textContent = r.unrecovered > 0
+      ? money(r.unrecovered) + ' still to recover · full recovery at payment ' + num0.format(r.fullAt)
+      : 'fully recovered — every later payment is taxable in full';
+
+    els.chartLede.textContent =
+      'Investment ' + money(state.investment) + ' against an expected total return of ' +
+      money(r.expected) + ' gives an exclusion ratio of ' + pct1.format(r.ratio) + '. ' +
+      (r.fullAt > 0
+        ? 'That ratio splits every payment identically until the investment runs out at payment ' +
+          num0.format(r.fullAt) + ' — which is twelve times the expected-return multiple, ' +
+          'whatever the payment and investment amounts are. After it, nothing is left to exclude.'
+        : 'Nothing is excluded, so every payment is taxable in full.');
+
+    renderChart(r, xMax, segs);
+    renderSplit(r);
+  }
+
+  /* =============================== WIRING =============================== */
+  [['paymentSlider','payment'], ['investmentSlider','investment'],
+   ['multipleSlider','multiple'], ['receivedSlider','received']].forEach(function(pair){
+    els[pair[0]].addEventListener('input', function(){
+      state[pair[1]] = +this.value;
+      render();
+    });
+  });
+
+  render();
+  window.addEventListener('resize', hideTip);
+})();
+</script>
+</body>
+</html>

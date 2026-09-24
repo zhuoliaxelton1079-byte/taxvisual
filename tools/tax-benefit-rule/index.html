@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Tax Benefit Rule | TaxVisual</title>
+<meta name="description" content="A simple interactive view of when a state or local tax refund is taxable, and how the tax benefit rule limits the amount included in income.">
+<link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<link rel="stylesheet" href="../../assets/css/components.css">
+<style>
+  /* ---------------------------------------------------------------------
+     Tool-scoped theme, namespaced apart from the site-wide --tv-* tokens.
+     Same system as tools/social-security-inclusion/ — see
+     docs/interactive-tool-pattern.md.
+
+     One hue as an ORDINAL ramp; the neutral is deliberately OUTSIDE it,
+     because the untaxed part of a refund is the remainder, not another step
+     of the same measure. Neutrals are true neutrals (channel spread 0) and
+     clear OKLab dE 15 against the blue they touch.
+     --------------------------------------------------------------------- */
+  :root{
+    color-scheme: light;
+    --tool-surface:   #fcfcfb;
+    --page:           #f9f9f7;
+    --tool-ink:       #0b0b0b;
+    --ink-soft:       #52514e;
+    --ink-muted:      #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --tool-accent:    #2a78d6;
+    --fill-strong:    #2a78d6;
+    --fill-neutral:   #8a8a8a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --tool-surface:  #1a1a19;
+      --page:          #0d0d0d;
+      --tool-ink:      #ffffff;
+      --ink-soft:      #c3c2b7;
+      --ink-muted:     #898781;
+      --gridline:      #2c2c2a;
+      --baseline:      #383835;
+      --border:        rgba(255,255,255,0.10);
+      --tool-accent:   #3987e5;
+      --fill-strong:   #3987e5;
+      --fill-neutral:  #757575;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --tool-surface:  #1a1a19;
+    --page:          #0d0d0d;
+    --tool-ink:      #ffffff;
+    --ink-soft:      #c3c2b7;
+    --ink-muted:     #898781;
+    --gridline:      #2c2c2a;
+    --baseline:      #383835;
+    --border:        rgba(255,255,255,0.10);
+    --tool-accent:   #3987e5;
+    --fill-strong:   #3987e5;
+    --fill-neutral:  #757575;
+  }
+
+  * { box-sizing: border-box; }
+  body{ margin:0; background: var(--page); }
+  .app{
+    background: var(--page);
+    color: var(--tool-ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 28px 16px 40px;
+  }
+  .wrap{ max-width: 1000px; margin: 0 auto; }
+
+  .masthead{
+    display:flex; flex-direction:column; gap:8px;
+    padding-bottom: 20px; margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .kicker{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color: var(--ink-muted);
+  }
+  .app h1{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-weight:600; font-size: clamp(24px,3.4vw,32px);
+    margin:2px 0 0; text-wrap: balance; color: var(--tool-ink);
+  }
+  .standfirst{ font-size:15px; color: var(--ink-soft); margin:0; line-height:1.55; max-width:66ch; }
+
+  .layout{
+    display:grid; grid-template-columns: 280px minmax(0,1fr);
+    gap:28px; align-items:start;
+  }
+  @media (max-width: 860px){ .layout{ grid-template-columns: minmax(0,1fr); } }
+
+  /* ---- controls ---- */
+  .rail{
+    background: var(--tool-surface); border:1px solid var(--border);
+    border-radius:10px; padding:20px; position:sticky; top:16px;
+  }
+  @media (max-width:860px){ .rail{ position:static; } }
+  .rail h2{
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    color: var(--ink-muted); margin:0 0 14px; font-weight:600;
+  }
+  .field{ margin-bottom:17px; }
+  .field label{ display:block; font-size:12px; color: var(--ink-soft); margin-bottom:2px; }
+  .field .amount{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:21px; font-weight:500; color: var(--tool-ink);
+    font-variant-numeric: tabular-nums; line-height:1.2;
+  }
+  input[type="range"]{ width:100%; margin:5px 0 0; accent-color: var(--tool-accent); }
+
+  .stats{
+    border-top:1px solid var(--border); margin-top:4px; padding-top:18px;
+    display:grid; gap:16px;
+  }
+  .stat .label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color: var(--ink-muted); margin-bottom:2px;
+  }
+  .stat .value{
+    font-size:26px; font-weight:600; line-height:1.1;
+    font-variant-numeric: proportional-nums;
+  }
+  .stat .value.accent{ color: var(--tool-accent); }
+  .stat .value.small{ font-size:15px; font-weight:500; line-height:1.35; }
+  .stat .sub{ font-size:11.5px; color: var(--ink-muted); margin-top:3px; line-height:1.4; }
+
+  /* ---- panel ---- */
+  .panel{
+    background: var(--tool-surface); border:1px solid var(--border);
+    border-radius:10px; padding:20px 20px 18px; margin-bottom:22px;
+  }
+  .panel h3{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-size:18px; font-weight:600; margin:0 0 4px; color: var(--tool-ink);
+  }
+  .panel .lede{ font-size:13px; color: var(--ink-soft); margin:0 0 16px; line-height:1.5; max-width:64ch; }
+
+  /* ---- chart ---- */
+  .chart-scroll{ overflow-x:auto; overflow-y:hidden; }
+  .chart-shell{ min-width:600px; }
+  .chart-shell svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .axis-text{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10.5px; fill: var(--ink-muted); }
+  .axis-text.emph{ fill: var(--tool-ink); font-weight:500; }
+  .band-text{ font-family:"IBM Plex Sans", sans-serif; font-size:11.5px; font-weight:600; fill: var(--ink-soft); }
+  .anno-text{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10px; fill: var(--ink-muted); }
+  .anno-text.bind{ fill: var(--tool-ink); }
+  .marker-text{
+    font-family:"IBM Plex Sans", sans-serif; font-size:12px; font-weight:600;
+    fill: var(--tool-ink); paint-order: stroke; stroke: var(--tool-surface); stroke-width:3px;
+  }
+
+  /* ---- refund split bar ---- */
+  .split{ margin-top:26px; padding-top:20px; border-top:1px solid var(--gridline); }
+  .split h4{
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color: var(--ink-muted); margin:0 0 10px; font-weight:600;
+  }
+  .ptw{ display:flex; gap:2px; height:30px; }
+  .ptw > div{ min-width:2px; border-radius:2px; }
+  .ptw > div:first-child{ border-radius:4px 2px 2px 4px; }
+  .ptw > div:last-child{ border-radius:2px 4px 4px 2px; }
+  .ptw-scale{
+    display:flex; justify-content:space-between;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:10.5px; color: var(--ink-muted); margin-top:5px;
+  }
+  .legend{ display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:14px; }
+  .legend-item{ display:flex; align-items:flex-start; gap:7px; font-size:12px; color: var(--ink-soft); max-width:30ch; }
+  .legend-swatch{ width:11px; height:11px; border-radius:3px; flex:none; margin-top:3px; }
+  .legend-item b{
+    display:block; color: var(--tool-ink); font-weight:600;
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- source-rules disclosure ---- */
+  details.sources{ padding:0; overflow:hidden; }
+  details.sources > summary{
+    list-style:none; cursor:pointer;
+    padding:18px 20px; display:flex; align-items:baseline; gap:11px; flex-wrap:wrap;
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-size:17px; font-weight:600; color: var(--tool-ink);
+    transition: background 140ms ease;
+  }
+  details.sources > summary::-webkit-details-marker{ display:none; }
+  details.sources > summary::before{
+    content:''; width:7px; height:7px; flex:none; align-self:center;
+    border-right:2px solid var(--tool-accent); border-bottom:2px solid var(--tool-accent);
+    transform: rotate(-45deg); transition: transform 160ms ease;
+  }
+  details.sources[open] > summary::before{ transform: rotate(45deg); }
+  details.sources > summary:hover{ background: color-mix(in srgb, var(--tool-accent) 6%, transparent); }
+  details.sources > summary:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
+  .summary-hint{
+    font-family:"IBM Plex Sans", sans-serif; font-size:12.5px; font-weight:400;
+    color: var(--ink-muted);
+  }
+  .sources-body{ padding:0 20px 20px; }
+  .sources-body p{ font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:70ch; margin:0 0 15px; }
+  .sources-body a{ color: var(--tool-accent); }
+  .src-meta{ margin:0 0 14px; }
+  .src-meta strong{ color: var(--tool-ink); }
+  .statute{
+    max-height:430px; overflow-y:auto;
+    border:1px solid var(--gridline); border-radius:8px;
+    padding:16px 18px; background: var(--page);
+    font-size:13px; line-height:1.62; color: var(--ink-soft);
+  }
+  .statute:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .statute .lv{ margin-left:16px; }
+  .statute > .lv{ margin-left:0; margin-top:16px; }
+  .statute > .lv:first-child{ margin-top:0; }
+  .statute .lv > p{ margin:0 0 7px; max-width:none; font-size:13px; line-height:1.62; }
+  .statute .lv-n{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-weight:500; color: var(--tool-ink);
+  }
+  .statute .lv-h{ font-weight:600; color: var(--tool-ink); }
+  .statute-head{
+    font-family:"IBM Plex Sans", sans-serif; font-size:11px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.07em; color: var(--ink-muted);
+    margin:22px 0 10px; padding-top:16px; border-top:1px solid var(--gridline);
+  }
+  .statute-head:first-child{ margin-top:0; padding-top:0; border-top:none; }
+  .note{
+    border-left:3px solid var(--tool-accent);
+    padding:2px 0 2px 14px; margin:18px 0 0;
+    font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:70ch;
+  }
+  .note b{ color: var(--tool-ink); font-weight:600; }
+
+  .footnote{ font-size:12px; color: var(--ink-muted); line-height:1.55; max-width:74ch; margin:14px 0 0; }
+
+  .tooltip{
+    position:fixed; z-index:50; pointer-events:none;
+    transform: translate(-50%, calc(-100% - 12px));
+    background: var(--tool-ink); color: var(--page);
+    border-radius:6px; padding:7px 10px; font-size:12px; line-height:1.45;
+    opacity:0; transition: opacity 120ms ease; white-space:nowrap;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+  }
+  .tooltip.show{ opacity:1; }
+
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+  }
+  @media (prefers-reduced-motion: reduce){ .app *, .tooltip{ transition:none !important; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../../index.html" aria-label="TaxVisual home">
+        <span class="brand-mark">TV</span>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../learn/index.html">Learn</a></li>
+          <li><a href="../../training/index.html">Training</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+          <li><a class="topbar-cta" href="../../contact/index.html">Request training</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+<div class="app" id="main">
+  <div class="wrap">
+
+    <div class="masthead">
+      <div class="kicker">Gross income · Simulation</div>
+      <h1>When a Refund Becomes Taxable</h1>
+      <p class="standfirst">
+        Getting a state tax refund does not automatically mean reporting it as income. You include it
+        only to the extent the deduction that produced it actually cut your tax in the earlier year.
+        If itemizing barely beat the standard deduction, most of the refund never becomes taxable at all.
+      </p>
+    </div>
+
+    <div class="layout">
+
+      <aside class="rail">
+        <h2>The earlier year</h2>
+
+        <div class="field">
+          <label for="itemizedSlider">Itemized deductions</label>
+          <div class="amount" id="itemizedOut">$13,400</div>
+          <input type="range" id="itemizedSlider" min="0" max="40000" step="100" value="13400"
+                 aria-label="Itemized deductions in the deduction period">
+        </div>
+
+        <div class="field">
+          <label for="standardSlider">Standard deduction</label>
+          <div class="amount" id="standardOut">$12,950</div>
+          <input type="range" id="standardSlider" min="0" max="30000" step="50" value="12950"
+                 aria-label="Standard deduction in the deduction period">
+        </div>
+
+        <div class="field">
+          <label for="taxSlider">State/local tax in those deductions</label>
+          <div class="amount" id="taxOut">$1,750</div>
+          <input type="range" id="taxSlider" min="0" max="10000" step="50" value="1750"
+                 aria-label="Related state or local tax included in itemized deductions">
+        </div>
+
+        <div class="field">
+          <label for="refundSlider">Refund received later</label>
+          <div class="amount" id="refundOut">$900</div>
+          <input type="range" id="refundSlider" min="0" max="5000" step="25" value="900"
+                 aria-label="Refund received in a later period">
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Included in income</div>
+            <div class="value accent" id="statIncluded">$0</div>
+            <div class="sub" id="statIncludedSub">&nbsp;</div>
+          </div>
+          <div class="stat">
+            <div class="label">What limits it</div>
+            <div class="value small" id="statBinding">&mdash;</div>
+            <div class="sub" id="statBindingSub">&nbsp;</div>
+          </div>
+        </div>
+      </aside>
+
+      <div>
+        <details class="panel sources">
+          <summary>
+            The source rules
+            <span class="summary-hint">26 U.S.C. &sect;111 and 26 CFR &sect;1.111-1, full text &mdash; optional</span>
+          </summary>
+          <div class="sources-body">
+            <p class="src-meta">
+              <strong>The tax benefit rule.</strong> Reproduced in full, unedited, from the U.S. Code
+              and the Code of Federal Regulations as published by the Legal Information Institute,
+              retrieved 24 September 2026.
+              <a href="https://www.law.cornell.edu/uscode/text/26/111" target="_blank" rel="noopener">&sect;111 at source</a> &middot;
+              <a href="https://www.law.cornell.edu/cfr/text/26/1.111-1" target="_blank" rel="noopener">&sect;1.111-1 at source</a>
+            </p>
+
+            <div class="statute" tabindex="0" role="region"
+                 aria-label="Full text of 26 U.S.C. section 111 and 26 CFR section 1.111-1">
+              <p class="statute-head">26 U.S.C. &sect;111 &mdash; Recovery of tax benefit items</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(a)</span> <span class="lv-h">Deductions</span> <span class="lv-t">Gross income does not include income attributable to the recovery during the taxable year of any amount deducted in any prior taxable year to the extent such amount did not reduce the amount of tax imposed by this chapter.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-h">Credits</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">In general</span> <span class="lv-t">If—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">a credit was allowable with respect to any amount for any prior taxable year, and</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">during the taxable year there is a downward price adjustment or similar adjustment,</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Exception where credit did not reduce tax</span> <span class="lv-t">Paragraph (1) shall not apply to the extent that the credit allowable for the recovered amount did not reduce the amount of tax imposed by this chapter.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(3)</span> <span class="lv-h">Exception for investment tax credit and foreign tax credit</span> <span class="lv-t">This subsection shall not apply with respect to the credit determined under section 46 and the foreign tax credit.</span></p>
+            </div>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-h">Treatment of carryovers</span> <span class="lv-t">For purposes of this section, an increase in a carryover which has not expired before the beginning of the taxable year in which the recovery or adjustment takes place shall be treated as reducing tax imposed by this chapter.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(d)</span> <span class="lv-h">Special rules for accumulated earnings tax and for personal holding company tax</span> <span class="lv-t">In applying subsection (a) for the purpose of determining the accumulated earnings tax under section 531 or the tax under section 541 (relating to personal holding companies)—</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-t">any excluded amount under subsection (a) allowed for the purposes of this subtitle (other than section 531 or section 541) shall be allowed whether or not such amount resulted in a reduction of the tax under section 531 or the tax under section 541 for the prior taxable year; and</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-t">where any excluded amount under subsection (a) was not allowable as a deduction for the prior taxable year for purposes of this subtitle other than of section 531 or section 541 but was allowable for the same taxable year under section 531 or section 541, then such excluded amount shall be allowable if it did not result in a reduction of the tax under section 531 or the tax under section 541.</span></p>
+            </div>
+          </div>
+
+              <p class="statute-head">26 CFR &sect;1.111-1 &mdash; Recovery of certain items previously deducted or credited</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(a)</span> <span class="lv-t">General. Section 111 provides that income attributable to the recovery during any taxable year of bad debts, prior taxes, and delinquency amounts shall be excluded from gross income to the extent of the “recovery exclusion” with respect to such items. The rule of exclusion so prescribed by statute applies equally with respect to all other losses, expenditures and accruals made the basis of deductions from gross income for prior taxable years, including war losses referred to in section 127 of the Internal Revenue Code of 1939, but not including deductions with respect to depreciation, depletion, amortization, or amortizable bond premiums. The term “recovery exclusion” as used in this section means an amount equal to the portion of the bad debts, prior taxes, and delinquency amounts (the items specifically referred to in section 111), and of all other items subject to the rule of exclusion which, when deducted or credited for a prior taxable year, did not result in a reduction of any tax of the taxpayer under subtitle A (other than the accumulated earnings tax imposed by section 531 or the personal holding company tax imposed by section 541) of the Internal Revenue Code of 1954 or corresponding provisions of prior income tax laws (other than the World War II excess profits tax imposed under subchapter E, chapter 2 of the Internal Revenue Code of 1939).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(1)</span> <span class="lv-t">Section 111 items. The term “section 111 items” as used in this section means bad debts, prior taxes, delinquency amounts, and all other items subject to the rule of exclusion, for which a deduction or credit was allowed for a prior taxable year. If a bad debt was previously charged against a reserve by a taxpayer on the reserve method of treating bad debts, it was not deducted, and it is therefore not considered a section 111 item. Bad debts, prior taxes, and delinquency amounts are defined in section 111(b) (1), (2), and (3), respectively. An example of a delinquency amount is interest on delinquent taxes. An example of the other items not expressly referred to in section 111 but nevertheless subject to the rule of exclusion is a loss sustained upon the sale of stock and later recovered, in whole or in part, through an action against the party from whom such stock had been purchased.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">Definition of “recovery”. Recoveries result from the receipt of amounts in respect of the previously deducted or credited section 111 items, such as from the collection or sale of a bad debt, refund or credit of taxes paid, or cancellation of taxes accrued. Care should be taken in the case of bad debts which were treated as only partially worthless in prior years to distinguish between the item described in section 111, that is, the part of such debt which was deducted, and the part not previously deducted, which is not a section 111 item and is considered the first part collected. The collection of the part not deducted is not considered a “recovery”. Furthermore, the term “recovery” does not include the gain resulting from the receipt of an amount on account of a section 111 item which, together with previous such receipts, exceeds the deduction or credit previously allowed for such item. For instance, a $100 corporate bond purchased for $40 and later deducted as worthless is subsequently collected to the extent of $50. The $10 gain (excess of $50 collection over $40 cost) is not a recovery of a section 111 item. Such gain is in no case excluded from gross income under section 111, regardless of whether the $40 recovery is or is not excluded.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(3)</span> <span class="lv-t">Treatment of debt deducted in more than one year by reason of partial worthlessness. In the case of a bad debt deducted in part for two or more prior years, each such deduction of a part of the debt is considered a separate section 111 item. A recovery with respect to such debt is considered first a recovery of those items (or portions thereof), resulting from such debt, for which there are recovery exclusions. If there are recovery exclusions for two or more items resulting from the same bad debt, such items are considered recovered in the order of the taxable years for which they were deducted, beginning with the latest. The recovery exclusion for any such item is determined by considering the recovery exclusion with respect to the prior year for which such item was deducted as being first used to offset all other applicable recoveries in the year in which the bad debt is recovered.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(4)</span> <span class="lv-t">Special provisions as to worthless bonds, etc., which are treated as capital losses. Certain bad debts arising from the worthlessness of securities and certain nonbusiness bad debts are treated as losses from the sale or exchange of capital assets. See sections 165(g) and 166(d). The amounts of the deductions allowed for any year under section 1211 on account of such losses for such year are considered to be section 111 items. Any part of such losses which, under section 1211, is a deduction for a subsequent year through the capital loss carryover (any later receipt of an amount with respect to such deducted loss is a recovery) is considered a section 111 item for the year in which such loss was sustained.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-t">Computation of recovery exclusion—(1) Amount of recovery exclusion allowable for year of recovery. For the year of any recovery, the section 111 items which were deducted or credited for one prior year are considered as a group and the recovery thereon is considered separately from recoveries of any items which were deducted or credited for other years. This recovery is excluded from gross income to the extent of the recovery exclusion with respect to this group of items as (i) determined for the original year for which such items were deducted or credited (see subparagraph (2) of this paragraph) and (ii) reduced by the excludable recoveries in intervening years on account of all section 111 items for such original year. A taxpayer claiming a recovery exclusion shall submit, at the time the exclusion is claimed, the computation of the recovery exclusion claimed for the original year for which the items were deducted or credited, and computations showing the amount recovered in intervening years on account of the section 111 items deducted or credited for the original year.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">Determination of recovery exclusion for original year for which items were deducted or credited.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(i)</span> <span class="lv-t">The recovery exclusion for the taxable year for which section 111 items were deducted or credited (that is, the “original taxable year”) is the portion of the aggregate amount of such deductions and credits which could be disallowed without causing an increase in any tax of the taxpayer imposed under subtitle A (other than the accumulated earnings tax imposed by section 531 or the personal holding company tax imposed by section 541) of the Internal Revenue Code of 1954 or corresponding provisions of prior income tax laws (other than the World War II excess profits tax imposed under subchapter E, chapter 2 of the Internal Revenue Code of 1939). For the purpose of such recovery exclusion, consideration must be given to the effect of net operating loss carryovers and carrybacks or capital loss carryovers.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">This rule shall be applied by determining the recovery exclusion as the aggregate amount of the section 111 items for the original year for which such items were deducted or credited reduced by whichever of the following amounts is the greater:</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(a)</span> <span class="lv-t">The difference between (1) the taxable income for such original year and (2) the taxable income computed without regard to the section 111 items for such original year.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-t">In the case of a taxpayer subject to any income tax in lieu of normal tax or surtax or both (except the alternative tax on capital gains imposed by section 1201, which is disregarded), the difference between (1) the income subject to such tax for such original year and (2) the income subject to such tax computed without regard to the section 111 items for such original year.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(iii)</span> <span class="lv-t">The determination of the recovery exclusion for original taxable years subject to the provisions of the Internal Revenue Code of 1939 shall be made under 26 CFR (1939) 39.22(b)(12)-1(b)(2) ( Regulations 118).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(3)</span> <span class="lv-t">Example. The provisions of this paragraph may be illustrated by the following example:</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-t">Provisions as to taxes imposed by section 531 (relating to the accumulated earnings tax) and section 541 (relating to the tax on personal holding companies). A recovery exclusion allowed for purposes of subtitle A (other than section 531 or section 541) of the Internal Revenue Code of 1954 shall also be allowed for the purpose of determining the accumulated earnings tax under section 531 or the personal holding company tax under section 541 regardless of whether or not the section 111 items on which such recovery exclusion is based resulted in a reduction of the tax under section 531 or section 541 of the Internal Revenue Code of 1954 (or corresponding provisions of prior income tax laws) for the prior taxable year. Furthermore, if there is recovery of a section 111 item which was not allowable as a deduction or credit for the prior taxable year for purposes of Subtitle A (not including section 531 or section 541) or corresponding provisions of prior income tax laws (other than Subchapter E, Chapter 2 of the Internal Revenue Code of 1939, relating to World War II excess profits tax), but was allowable for such prior taxable year in determining the tax under section 531 or section 541 (or corresponding provisions of prior income tax laws) then for the purpose of determining the tax under section 531 or section 541 a recovery exclusion shall be allowable with respect to such recovery if the section 111 item did not result in a reduction of the tax under section 531 or section 541 (or corresponding provisions of prior income tax laws).</span></p>
+          </div>
+            </div>
+
+            <p class="note">
+              <b>Verify before relying on this.</b> Retrieved 24 September 2026. Tax law changes;
+              confirm against the primary sources above before using it in class or in practice.
+              Nothing here is tax advice.
+            </p>
+          </div>
+        </details>
+
+        <section class="panel">
+          <h3>How much of the refund is taxable</h3>
+          <p class="lede" id="chartLede"></p>
+
+          <div class="chart-scroll">
+            <div class="chart-shell">
+              <svg id="curveChart" viewBox="0 0 760 330" preserveAspectRatio="xMidYMid meet"
+                   role="img" aria-labelledby="curveDesc"></svg>
+              <p class="sr-only" id="curveDesc"></p>
+            </div>
+          </div>
+
+          <div class="split">
+            <h4>The refund, split</h4>
+            <div class="ptw" id="ptwBar" role="img" aria-labelledby="ptwDesc"></div>
+            <p class="sr-only" id="ptwDesc"></p>
+            <div class="ptw-scale">
+              <span>$0</span>
+              <span id="ptwEnd">$0</span>
+            </div>
+            <div class="legend" id="ptwLegend"></div>
+          </div>
+
+          <p class="footnote">
+            Educational simulation, not tax advice. A date-neutral model: the standard deduction is an
+            input rather than a fixed tax year, so the mechanics hold whatever the figures are. Assumes
+            the refund relates to tax deducted in a single earlier year and ignores any limit on the
+            state and local tax deduction itself. Source model: ACCTG 410 Individual Taxation Toolbox,
+            &ldquo;Tax Benefit Rule&rdquo; tab.
+          </p>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav aria-label="Footer">
+        <div class="footer-cols">
+        <div class="footer-col">
+          <h2>Tools</h2>
+          <ul>
+            <li><a href="../../tools/index.html">All tools</a></li>
+            <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Learn</h2>
+          <ul>
+            <li><a href="../../learn/textbook/index.html">The textbook</a></li>
+            <li><a href="../../learn/guides/index.html">Concept guides</a></li>
+            <li><a href="../../learn/glossary/index.html">Glossary</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Training</h2>
+          <ul>
+            <li><a href="../../training/team/index.html">Team training</a></li>
+            <li><a href="../../training/workshops/index.html">Public workshops</a></li>
+            <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>About</h2>
+          <ul>
+            <li><a href="../../about/index.html">About TaxVisual</a></li>
+            <li><a href="../../about/team/index.html">Our team</a></li>
+            <li><a href="../../methodology/index.html">Methodology</a></li>
+            <li><a href="../../sitemap/index.html">Site map</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Connect</h2>
+          <ul>
+            <li><a href="../../contact/index.html">Contact</a></li>
+            <li><a href="../../updates/index.html">Updates</a></li>
+            <li><a href="../../community/index.html">Community</a></li>
+          </ul>
+        </div>
+        </div>
+      </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual publishes educational tax policy simulations for classrooms, policy workshops, and self-study. Not tax advice.</p>
+        <p class="footer-note"><a href="../../contact/index.html">Get email updates</a></p>
+      </div>
+    </div>
+  </footer>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ==================================================================
+     MODEL — a line-for-line port of the workbook's Tax Benefit Rule tab.
+
+       excess   = MAX(0, itemized - standard)     (C16)
+       benefit  = MIN(excess, relatedTax)         (C17)
+       included = MIN(benefit, refund)            (C18)
+
+     Three limits in a cascade, so the answer is simply the smallest of
+     them. Verified against the workbook's three scenarios:
+     Scenario 1 -> 0, Scenario 2 -> 900, Scenario 3 -> 50.
+     ================================================================== */
+  function model(i){
+    const excess   = Math.max(0, i.itemized - i.standard);
+    const benefit  = Math.min(excess, i.relatedTax);
+    const included = Math.min(benefit, i.refund);
+    const pct      = i.refund === 0 ? 0 : included / i.refund;
+    return { excess: excess, benefit: benefit, included: included, pct: pct };
+  }
+
+  /* Which of the three limits actually binds. Ties resolve in the order the
+     statute applies them, so the earliest binding limit is the one named. */
+  function binding(i, r){
+    if (i.refund <= 0) return { key:'norefund', label:'No refund received' };
+    if (r.excess <= 0) return { key:'excess',   label:'Itemizing gave no benefit' };
+    if (r.excess <= i.relatedTax && r.excess <= i.refund)
+      return { key:'excess',   label:'Excess over the standard deduction' };
+    if (i.relatedTax <= i.refund)
+      return { key:'tax',      label:'The related tax paid' };
+    return { key:'refund',     label:'The refund itself' };
+  }
+
+  /* Taxable amount as a function of itemized deductions, everything else
+     held fixed. Piecewise linear with two interior knots, so it is drawn
+     exactly rather than sampled. */
+  function curvePoints(standard, relatedTax, refund, xMin, xMax){
+    const capAt = Math.min(relatedTax, refund);
+    const knots = [xMin, standard, standard + capAt, xMax]
+      .filter(function(v){ return v >= xMin && v <= xMax; });
+    const xs = Array.from(new Set(knots)).sort(function(a, z){ return a - z; });
+    return xs.map(function(x){
+      return { x: x, y: Math.min(Math.max(0, x - standard), capAt) };
+    });
+  }
+
+  /* ============================== FORMATTING ============================== */
+  const usd0 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', maximumFractionDigits:0 });
+  const usd2 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 });
+  const pct0 = new Intl.NumberFormat('en-US',{ style:'percent', maximumFractionDigits:0 });
+  const num0 = new Intl.NumberFormat('en-US',{ maximumFractionDigits:0 });
+
+  function money(v){ return Math.abs(v - Math.round(v)) < 0.005 ? usd0.format(v) : usd2.format(v); }
+  function abbr(v){
+    if (Math.abs(v) >= 1000){ const k = v/1000; return '$' + (k % 1 === 0 ? k : k.toFixed(1)) + 'k'; }
+    return '$' + num0.format(v);
+  }
+
+  const state = { itemized: 13400, standard: 12950, relatedTax: 1750, refund: 900 };
+
+  const $ = function(id){ return document.getElementById(id); };
+  const els = {
+    itemizedSlider:$('itemizedSlider'), itemizedOut:$('itemizedOut'),
+    standardSlider:$('standardSlider'), standardOut:$('standardOut'),
+    taxSlider:$('taxSlider'), taxOut:$('taxOut'),
+    refundSlider:$('refundSlider'), refundOut:$('refundOut'),
+    statIncluded:$('statIncluded'), statIncludedSub:$('statIncludedSub'),
+    statBinding:$('statBinding'), statBindingSub:$('statBindingSub'),
+    chartLede:$('chartLede'), curve:$('curveChart'), curveDesc:$('curveDesc'),
+    ptwBar:$('ptwBar'), ptwLegend:$('ptwLegend'), ptwEnd:$('ptwEnd'), ptwDesc:$('ptwDesc'),
+    tooltip:$('tooltip')
+  };
+
+  const NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs){
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+  function clear(node){ while (node.firstChild) node.removeChild(node.firstChild); }
+
+  const CEIL_STEPS = [1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+  function niceCeil(v){
+    if (v <= 0) return 10;
+    const mag = Math.pow(10, Math.floor(Math.log10(v)));
+    const r = v / mag;
+    for (let k = 0; k < CEIL_STEPS.length; k++) if (r <= CEIL_STEPS[k] + 1e-9) return CEIL_STEPS[k] * mag;
+    return 10 * mag;
+  }
+  function niceStep(range, target){
+    const raw = range / target;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const r = raw / mag;
+    return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10) * mag;
+  }
+  /* Ticks across an arbitrary window — this axis does not start at zero. */
+  function ticksIn(min, max, target){
+    const step = niceStep(max - min, target);
+    const out = [];
+    for (let v = Math.ceil(min / step) * step; v <= max + step * 0.001; v += step) out.push(v);
+    return out;
+  }
+  function ticksFrom0(max, target){
+    const step = niceStep(max, target);
+    const out = [];
+    for (let v = 0; v <= max + step * 0.001; v += step) out.push(v);
+    return out;
+  }
+
+  function showTip(x, y, html){
+    els.tooltip.innerHTML = html;
+    els.tooltip.style.left = x + 'px';
+    els.tooltip.style.top  = y + 'px';
+    els.tooltip.classList.add('show');
+  }
+  function hideTip(){ els.tooltip.classList.remove('show'); }
+
+  /* =============================== CHART =============================== */
+  const PAD = { l:66, r:24 };
+
+  /* The whole story happens in a narrow band around the standard deduction,
+     so the window is centred there rather than started at zero. The y axis
+     still starts at zero — it is the one carrying magnitude. */
+  function domain(){
+    const capAt = Math.min(state.relatedTax, state.refund);
+    const span = Math.max(capAt, 500);
+    let xMin = Math.max(0, state.standard - span * 1.2);
+    let xMax = state.standard + span * 2.2;
+    if (state.itemized < xMin) xMin = Math.max(0, state.itemized - span * 0.3);
+    if (state.itemized > xMax) xMax = state.itemized + span * 0.3;
+    return { xMin: xMin, xMax: xMax, capAt: capAt };
+  }
+
+  function renderCurve(r, dom, pts){
+    const svg = els.curve, W = 760, H = 330;
+    const x0 = PAD.l, x1 = W - PAD.r, y0 = 52, y1 = 248;
+    clear(svg);
+
+    const S = state.standard, T = state.relatedTax, R = state.refund;
+    const capAt = dom.capAt;
+    /* Show the non-binding cap too when it is close enough to be useful;
+       otherwise it would flatten the curve into the axis. */
+    const otherCap = Math.max(T, R);
+    const yTop = Math.min(otherCap, Math.max(capAt * 2.5, capAt + 1));
+    const yMax = niceCeil(Math.max(yTop * 1.12, 100));
+
+    const X = function(v){ return x0 + ((v - dom.xMin) / (dom.xMax - dom.xMin)) * (x1 - x0); };
+    const Y = function(v){ return y1 - (v / yMax) * (y1 - y0); };
+
+    /* --- zone labels, read off the drawn segments --- */
+    const zones = [];
+    for (let k = 0; k < pts.length - 1; k++){
+      const a = pts[k], z = pts[k+1];
+      if (z.x <= a.x) continue;
+      const slope = (z.y - a.y) / (z.x - a.x);
+      let full, short;
+      if (slope < 0.001){
+        if (a.y < 0.005){ full = 'None taxable'; short = 'none'; }
+        else { full = 'Capped'; short = 'cap'; }
+      } else { full = '$1 per $1'; short = '1:1'; }
+      const prev = zones[zones.length - 1];
+      if (prev && prev.full === full) prev.right = z.x;
+      else zones.push({ left:a.x, right:z.x, full:full, short:short });
+    }
+    zones.forEach(function(zn){
+      const w = X(zn.right) - X(zn.left);
+      const label = w > 76 ? zn.full : (w > 26 ? zn.short : null);
+      if (!label) return;
+      const t = svgEl('text',{ x:(X(zn.left)+X(zn.right))/2, y:38, 'text-anchor':'middle', class:'band-text' });
+      t.textContent = label;
+      svg.appendChild(t);
+    });
+
+    /* --- y gridlines --- */
+    ticksFrom0(yMax, 4).forEach(function(v){
+      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(v), y2:Y(v),
+        stroke: v === 0 ? 'var(--baseline)' : 'var(--gridline)', 'stroke-width':1 }));
+      const t = svgEl('text',{ x:x0-9, y:Y(v)+3.5, 'text-anchor':'end', class:'axis-text' });
+      t.textContent = abbr(v);
+      svg.appendChild(t);
+    });
+
+    /* --- the two caps as reference lines; the lower one is what binds --- */
+    [{ v:T, name:'related tax' }, { v:R, name:'refund' }].forEach(function(c){
+      if (c.v > yMax || c.v <= 0) return;
+      const isBinding = Math.abs(c.v - capAt) < 1e-9;
+      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(c.v), y2:Y(c.v),
+        stroke: isBinding ? 'var(--ink-muted)' : 'var(--baseline)', 'stroke-width':1 }));
+      const t = svgEl('text',{ x:x1, y:Y(c.v)-6, 'text-anchor':'end',
+        class: isBinding ? 'anno-text bind' : 'anno-text' });
+      t.textContent = c.name + ' ' + usd0.format(c.v) + (isBinding ? ' — the limit' : '');
+      svg.appendChild(t);
+    });
+
+    /* --- the standard deduction rule --- */
+    if (S >= dom.xMin && S <= dom.xMax){
+      svg.appendChild(svgEl('line',{ x1:X(S), x2:X(S), y1:y0-4, y2:y1,
+        stroke:'var(--baseline)', 'stroke-width':1 }));
+    }
+
+    /* --- the curve --- */
+    let d = '';
+    pts.forEach(function(p){
+      d += (d ? 'L' : 'M') + X(p.x).toFixed(2) + ' ' + Y(p.y).toFixed(2);
+    });
+    svg.appendChild(svgEl('path',{ d:d, fill:'none', stroke:'var(--fill-strong)',
+      'stroke-width':2.5, 'stroke-linejoin':'round', 'stroke-linecap':'round' }));
+
+    /* --- this taxpayer --- */
+    if (state.itemized >= dom.xMin && state.itemized <= dom.xMax){
+      svg.appendChild(svgEl('line',{ x1:X(state.itemized), x2:X(state.itemized),
+        y1:Y(r.included), y2:y1, stroke:'var(--fill-strong)', 'stroke-width':1, opacity:0.35 }));
+      svg.appendChild(svgEl('circle',{ cx:X(state.itemized), cy:Y(r.included), r:7,
+        fill:'var(--fill-strong)', stroke:'var(--tool-surface)', 'stroke-width':2.5 }));
+      const lbl = svgEl('text',{ x:X(state.itemized), y:Y(r.included)-16,
+        'text-anchor':'middle', class:'marker-text' });
+      lbl.textContent = money(r.included);
+      svg.appendChild(lbl);
+    }
+
+    /* --- two scales on one axis. One axis in two units: the lower row is the
+           excess over the standard deduction, which is what the limits are
+           actually measured against. In the sloped zone the lower row and the
+           y value are the same number, which is the rule in one glance. --- */
+    const OTHER_Y = y1 + 17, EXCESS_Y = y1 + 53;
+
+    function axisRow(ticks, yTick, place, emphasis){
+      const taken = [];
+      emphasis.forEach(function(e){
+        const px = place(e.v);
+        if (px < x0 - 1 || px > x1 + 1) return;
+        const t = svgEl('text',{ x:px, y:yTick, 'text-anchor':'middle', class:'axis-text emph' });
+        t.textContent = e.text;
+        svg.appendChild(t);
+        taken.push(px);
+      });
+      ticks.forEach(function(v){
+        const px = place(v);
+        if (px < x0 - 1 || px > x1 + 1) return;
+        for (let k = 0; k < taken.length; k++) if (Math.abs(taken[k] - px) < 42) return;
+        const t = svgEl('text',{ x:px, y:yTick, 'text-anchor':'middle', class:'axis-text' });
+        t.textContent = abbr(v);
+        svg.appendChild(t);
+      });
+    }
+
+    axisRow(ticksIn(dom.xMin, dom.xMax, 6), OTHER_Y, X,
+            [{ v:S, text: usd0.format(S) }]);
+    const lbl1 = svgEl('text',{ x:(x0+x1)/2, y:y1+31, 'text-anchor':'middle', class:'axis-text' });
+    lbl1.textContent = 'Itemized deductions in the earlier year';
+    svg.appendChild(lbl1);
+
+    svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:y1+41, y2:y1+41,
+      stroke:'var(--baseline)', 'stroke-width':1 }));
+
+    /* Excess only exists to the right of the standard deduction. */
+    axisRow(ticksFrom0(Math.max(0, dom.xMax - S), 5).filter(function(v){ return v > 0; }),
+            EXCESS_Y, function(v){ return X(v + S); },
+            [{ v:0, text:'$0' }]);
+    const lbl2 = svgEl('text',{ x:(x0+x1)/2, y:y1+67, 'text-anchor':'middle', class:'axis-text' });
+    lbl2.textContent = 'Excess over the standard deduction — what the limits are measured on';
+    svg.appendChild(lbl2);
+
+    const yt = svgEl('text',{ x:x0-48, y:16, class:'axis-text' });
+    yt.textContent = 'Included in income';
+    svg.appendChild(yt);
+
+    /* --- hover --- */
+    const hit = svgEl('rect',{ x:x0, y:y0, width:x1-x0, height:y1-y0, fill:'transparent', style:'cursor:crosshair' });
+    const cross = svgEl('line',{ x1:0, x2:0, y1:y0, y2:y1, stroke:'var(--ink-muted)', 'stroke-width':1, opacity:0 });
+    const dot = svgEl('circle',{ r:5, fill:'var(--fill-strong)', stroke:'var(--tool-surface)', 'stroke-width':2, opacity:0 });
+    svg.appendChild(hit); svg.appendChild(cross); svg.appendChild(dot);
+
+    hit.addEventListener('pointermove', function(e){
+      const box = svg.getBoundingClientRect();
+      const vx = ((e.clientX - box.left) / box.width) * W;
+      const it = Math.max(dom.xMin, Math.min(dom.xMax,
+        dom.xMin + ((vx - x0) / (x1 - x0)) * (dom.xMax - dom.xMin)));
+      const y = Math.min(Math.max(0, it - S), capAt);
+      cross.setAttribute('x1', X(it)); cross.setAttribute('x2', X(it)); cross.setAttribute('opacity', 0.45);
+      dot.setAttribute('cx', X(it)); dot.setAttribute('cy', Y(y)); dot.setAttribute('opacity', 1);
+      showTip(e.clientX, box.top + (Y(y) / H) * box.height,
+        'itemized <b>' + money(it) + '</b><br>' +
+        'excess <b>' + money(Math.max(0, it - S)) + '</b><br>' +
+        'included <b>' + money(y) + '</b>');
+    });
+    hit.addEventListener('pointerleave', function(){
+      cross.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); hideTip();
+    });
+
+    els.curveDesc.textContent =
+      'Line chart of the refund amount included in income against itemized deductions in the earlier ' +
+      'year. The horizontal axis is labelled in two units: itemized deductions, and below it the ' +
+      'excess over the standard deduction of ' + money(S) + ', which is what the limits are measured ' +
+      'on. Nothing is included while itemized deductions stay below ' + money(S) + '. Above that, one ' +
+      'dollar is included for each dollar of excess, until the amount stops at ' + money(capAt) +
+      ' — the lesser of the related tax of ' + money(T) + ' and the refund of ' + money(R) +
+      '. At ' + money(state.itemized) + ' of itemized deductions, ' + money(r.included) + ' is included.';
+  }
+
+  /* ========================= REFUND SPLIT BAR ========================= */
+  function renderSplit(r){
+    const R = state.refund;
+    clear(els.ptwBar); clear(els.ptwLegend);
+    els.ptwEnd.textContent = money(R);
+
+    if (R <= 0){
+      els.ptwDesc.textContent = 'No refund received.';
+      return;
+    }
+
+    [
+      { v:r.included,     color:'var(--fill-strong)',  name:'Included in income' },
+      { v:R - r.included, color:'var(--fill-neutral)', name:'Not included' }
+    ].forEach(function(p){
+      if (p.v <= 0) return;
+      const seg = document.createElement('div');
+      seg.style.cssText = 'flex-grow:' + p.v + ';flex-basis:0;background:' + p.color + ';';
+      els.ptwBar.appendChild(seg);
+
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      const sw = document.createElement('span');
+      sw.className = 'legend-swatch';
+      sw.style.background = p.color;
+      const txt = document.createElement('span');
+      txt.innerHTML = '<b>' + money(p.v) + '</b>' + p.name;
+      item.appendChild(sw); item.appendChild(txt);
+      els.ptwLegend.appendChild(item);
+    });
+
+    els.ptwDesc.textContent =
+      'Of a ' + money(R) + ' refund, ' + money(r.included) + ' is included in income and ' +
+      money(R - r.included) + ' is not.';
+  }
+
+  /* =============================== RENDER =============================== */
+  function render(){
+    const r = model(state);
+    const dom = domain();
+    const pts = curvePoints(state.standard, state.relatedTax, state.refund, dom.xMin, dom.xMax);
+    const b = binding(state, r);
+
+    els.itemizedOut.textContent = money(state.itemized);
+    els.standardOut.textContent = money(state.standard);
+    els.taxOut.textContent      = money(state.relatedTax);
+    els.refundOut.textContent   = money(state.refund);
+
+    els.statIncluded.textContent = money(r.included);
+    els.statIncludedSub.textContent = state.refund > 0
+      ? pct0.format(r.pct) + ' of the ' + money(state.refund) + ' refund'
+      : 'no refund set';
+
+    els.statBinding.textContent = b.label;
+    els.statBindingSub.textContent =
+      b.key === 'excess'
+        ? 'itemizing beat the standard deduction by only ' + money(r.excess)
+        : b.key === 'tax'
+          ? 'only ' + money(state.relatedTax) + ' of the deduction was the related tax'
+          : b.key === 'refund'
+            ? 'the whole refund produced a benefit, so all of it is included'
+            : 'nothing to include';
+
+    els.chartLede.textContent =
+      'Standard deduction ' + money(state.standard) + ', related tax ' + money(state.relatedTax) +
+      ', refund ' + money(state.refund) + '. Three limits apply in turn and the smallest one wins: ' +
+      'the excess over the standard deduction, the related tax paid, and the refund itself. ' +
+      'The curve rises a dollar at a time until it meets whichever limit is lower.';
+
+    renderCurve(r, dom, pts);
+    renderSplit(r);
+  }
+
+  /* =============================== WIRING =============================== */
+  [['itemizedSlider','itemized'], ['standardSlider','standard'],
+   ['taxSlider','relatedTax'], ['refundSlider','refund']].forEach(function(pair){
+    els[pair[0]].addEventListener('input', function(){
+      state[pair[1]] = +this.value;
+      render();
+    });
+  });
+
+  render();
+  window.addEventListener('resize', hideTip);
+})();
+</script>
+</body>
+</html>

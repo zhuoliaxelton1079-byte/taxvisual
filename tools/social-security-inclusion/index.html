@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Social Security Benefit Inclusion | TaxVisual</title>
+<meta name="description" content="A simple interactive view of how much of a Social Security benefit becomes taxable as other income rises, for joint and single filers.">
+<link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<link rel="stylesheet" href="../../assets/css/components.css">
+<style>
+  /* ---------------------------------------------------------------------
+     Tool-scoped theme, namespaced apart from the site-wide --tv-* tokens so
+     shared-asset changes never reflow the chart geometry.
+
+     One hue, used as an ORDINAL ramp: the benefit split is a single quantity
+     in three states, and the inclusion zones are ordered. Steps validated
+     with the dataviz validator, --ordinal, both modes: light #2a78d6/#86b6ef
+     (light end 2.06:1), dark #3987e5/#1c5cab (2.63:1). All checks pass.
+
+     --fill-neutral is deliberately OUTSIDE that ramp: the never-taxable slice
+     is not another step of the same measure, it is the remainder, so it reads
+     as a true neutral (channel spread 0) rather than a warm tint. Chosen for
+     perceptual distance from whichever blue it touches -- OKLab dE 16.3/17.3
+     light and 16.4/17.2 dark, all clear of the 15 floor -- and both steps
+     exceed 3:1 on their surface, so identity never rests on the legend alone.
+     --------------------------------------------------------------------- */
+  :root{
+    color-scheme: light;
+    --tool-surface:   #fcfcfb;
+    --page:           #f9f9f7;
+    --tool-ink:       #0b0b0b;
+    --ink-soft:       #52514e;
+    --ink-muted:      #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --tool-accent:    #2a78d6;
+    --fill-strong:    #2a78d6;
+    --fill-soft:      #86b6ef;
+    --fill-neutral:   #8a8a8a;
+    --band-tint:      rgba(42,120,214,0.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --tool-surface:  #1a1a19;
+      --page:          #0d0d0d;
+      --tool-ink:      #ffffff;
+      --ink-soft:      #c3c2b7;
+      --ink-muted:     #898781;
+      --gridline:      #2c2c2a;
+      --baseline:      #383835;
+      --border:        rgba(255,255,255,0.10);
+      --tool-accent:   #3987e5;
+      --fill-strong:   #3987e5;
+      --fill-soft:     #1c5cab;
+      --fill-neutral:  #757575;
+      --band-tint:     rgba(57,135,229,0.08);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --tool-surface:  #1a1a19;
+    --page:          #0d0d0d;
+    --tool-ink:      #ffffff;
+    --ink-soft:      #c3c2b7;
+    --ink-muted:     #898781;
+    --gridline:      #2c2c2a;
+    --baseline:      #383835;
+    --border:        rgba(255,255,255,0.10);
+    --tool-accent:   #3987e5;
+    --fill-strong:   #3987e5;
+    --fill-soft:     #1c5cab;
+    --fill-neutral:  #757575;
+    --band-tint:     rgba(57,135,229,0.08);
+  }
+
+  * { box-sizing: border-box; }
+  body{ margin:0; background: var(--page); }
+  .app{
+    background: var(--page);
+    color: var(--tool-ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 28px 16px 40px;
+  }
+  .wrap{ max-width: 1000px; margin: 0 auto; }
+
+  .masthead{
+    display:flex; flex-direction:column; gap:8px;
+    padding-bottom: 20px; margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .kicker{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color: var(--ink-muted);
+  }
+  .app h1{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-weight:600; font-size: clamp(24px,3.4vw,32px);
+    margin:2px 0 0; text-wrap: balance; color: var(--tool-ink);
+  }
+  .standfirst{
+    font-size: 15px; color: var(--ink-soft); margin:0; line-height:1.55; max-width: 66ch;
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns: 280px minmax(0,1fr);
+    gap: 28px;
+    align-items:start;
+  }
+  @media (max-width: 860px){
+    .layout{ grid-template-columns: minmax(0,1fr); }
+  }
+
+  /* ---- controls ---- */
+  .rail{
+    background: var(--tool-surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    position: sticky; top: 16px;
+  }
+  @media (max-width:860px){ .rail{ position:static; } }
+  .rail h2{
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    color: var(--ink-muted); margin:0 0 10px; font-weight:600;
+  }
+
+  .seg{ display:flex; gap:4px; margin-bottom:22px; }
+  .seg button{
+    flex:1; font:inherit; font-size:13px; padding:8px 4px;
+    background:transparent; color: var(--ink-soft);
+    border:1px solid var(--border); border-radius:6px;
+    cursor:pointer; transition: background 140ms ease, color 140ms ease;
+  }
+  .seg button:hover{ background: color-mix(in srgb, var(--tool-accent) 8%, transparent); }
+  .seg button[aria-pressed="true"]{
+    background: var(--tool-accent); color:#fff; border-color: var(--tool-accent);
+  }
+
+  .field{ margin-bottom: 20px; }
+  .field label{ display:block; font-size:12px; color: var(--ink-soft); margin-bottom:2px; }
+  .field .amount{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:24px; font-weight:500; color: var(--tool-ink);
+    font-variant-numeric: tabular-nums; line-height:1.2;
+  }
+  input[type="range"]{ width:100%; margin: 6px 0 0; accent-color: var(--tool-accent); }
+  .range-ends{
+    display:flex; justify-content:space-between;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:10.5px; color: var(--ink-muted); margin-top:2px;
+  }
+
+  .stats{
+    border-top:1px solid var(--border); margin-top:4px; padding-top:18px;
+    display:grid; gap:16px;
+  }
+  .stat .label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color: var(--ink-muted); margin-bottom:2px;
+  }
+  .stat .value{
+    font-size:26px; font-weight:600; line-height:1.1;
+    font-variant-numeric: proportional-nums;
+  }
+  .stat .value.accent{ color: var(--tool-accent); }
+  .stat .value.small{ font-size:17px; font-weight:500; }
+  .stat .sub{ font-size:11.5px; color: var(--ink-muted); margin-top:3px; line-height:1.4; }
+
+  /* ---- panel ---- */
+  .panel{
+    background: var(--tool-surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding: 20px 20px 18px;
+    margin-bottom: 22px;
+  }
+  .panel h3{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-size:18px; font-weight:600; margin:0 0 4px; color: var(--tool-ink);
+  }
+  .panel .lede{ font-size:13px; color: var(--ink-soft); margin:0 0 16px; line-height:1.5; max-width: 64ch; }
+
+  /* ---- chart ----
+     Below ~600px the viewBox would shrink the 10.5px axis text to about 5px,
+     so the chart keeps a legible floor and scrolls sideways instead — the
+     same way the calculation table behaves in the bracket-ledger tool. */
+  .chart-scroll{ overflow-x:auto; overflow-y:hidden; }
+  .chart-shell{ min-width: 600px; }
+  .chart-shell svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .axis-text{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10.5px; fill: var(--ink-muted); }
+  .band-text{ font-family:"IBM Plex Sans", sans-serif; font-size:11.5px; font-weight:600; fill: var(--ink-soft); }
+  .axis-text.emph{ fill: var(--tool-ink); font-weight:500; }
+  .anno-text{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10px; fill: var(--ink-muted); }
+  .marker-text{
+    font-family:"IBM Plex Sans", sans-serif; font-size:12px; font-weight:600;
+    fill: var(--tool-ink); paint-order: stroke; stroke: var(--tool-surface); stroke-width:3px;
+  }
+
+  /* ---- benefit split bar ---- */
+  .split{
+    margin-top:26px; padding-top:20px; border-top:1px solid var(--gridline);
+  }
+  .split h4{
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color: var(--ink-muted); margin:0 0 10px; font-weight:600;
+  }
+  .ptw{ display:flex; gap:2px; height:30px; }
+  .ptw > div{ min-width:2px; border-radius:2px; }
+  .ptw > div:first-child{ border-radius:4px 2px 2px 4px; }
+  .ptw > div:last-child{ border-radius:2px 4px 4px 2px; }
+  .ptw-scale{
+    display:flex; justify-content:space-between;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:10.5px; color: var(--ink-muted); margin-top:5px;
+  }
+  .legend{ display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:14px; }
+  .legend-item{ display:flex; align-items:flex-start; gap:7px; font-size:12px; color: var(--ink-soft); max-width:30ch; }
+  .legend-swatch{ width:11px; height:11px; border-radius:3px; flex:none; margin-top:3px; }
+  .legend-item b{
+    display:block; color: var(--tool-ink); font-weight:600;
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums;
+  }
+
+
+  .footnote{ font-size:12px; color: var(--ink-muted); line-height:1.55; max-width:74ch; margin:14px 0 0; }
+
+  /* ---- source-rules disclosure ---- */
+  details.sources{ padding:0; overflow:hidden; }
+  details.sources > summary{
+    list-style:none; cursor:pointer;
+    padding:18px 20px; display:flex; align-items:baseline; gap:11px; flex-wrap:wrap;
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-size:17px; font-weight:600; color: var(--tool-ink);
+    transition: background 140ms ease;
+  }
+  details.sources > summary::-webkit-details-marker{ display:none; }
+  details.sources > summary::before{
+    content:''; width:7px; height:7px; flex:none; align-self:center;
+    border-right:2px solid var(--tool-accent); border-bottom:2px solid var(--tool-accent);
+    transform: rotate(-45deg); transition: transform 160ms ease;
+  }
+  details.sources[open] > summary::before{ transform: rotate(45deg); }
+  details.sources > summary:hover{ background: color-mix(in srgb, var(--tool-accent) 6%, transparent); }
+  details.sources > summary:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
+  .summary-hint{
+    font-family:"IBM Plex Sans", sans-serif; font-size:12.5px; font-weight:400;
+    color: var(--ink-muted);
+  }
+  .sources-body{ padding:0 20px 20px; }
+  .sources-body p{ font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:70ch; margin:0 0 15px; }
+  .sources-body a{ color: var(--tool-accent); }
+  .src-meta{ margin:0 0 14px; }
+  .src-meta strong{ color: var(--tool-ink); }
+  .statute{
+    max-height: 430px; overflow-y:auto;
+    border:1px solid var(--gridline); border-radius:8px;
+    padding:16px 18px; background: var(--page);
+    font-size:13px; line-height:1.62; color: var(--ink-soft);
+  }
+  .statute:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .statute .lv{ margin-left:16px; }
+  .statute > .lv{ margin-left:0; margin-top:16px; }
+  .statute > .lv:first-child{ margin-top:0; }
+  .statute .lv > p{ margin:0 0 7px; max-width:none; font-size:13px; line-height:1.62; }
+  .statute .lv-n{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-weight:500; color: var(--tool-ink);
+  }
+  .statute .lv-h{ font-weight:600; color: var(--tool-ink); }
+  .note{
+    border-left:3px solid var(--tool-accent);
+    padding:2px 0 2px 14px; margin:18px 0 0;
+    font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:70ch;
+  }
+  .note b{ color: var(--tool-ink); font-weight:600; }
+
+  .tooltip{
+    position:fixed; z-index:50; pointer-events:none;
+    transform: translate(-50%, calc(-100% - 12px));
+    background: var(--tool-ink); color: var(--page);
+    border-radius:6px; padding:7px 10px; font-size:12px; line-height:1.45;
+    opacity:0; transition: opacity 120ms ease; white-space:nowrap;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+  }
+  .tooltip.show{ opacity:1; }
+
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+  }
+
+  @media (prefers-reduced-motion: reduce){ .app *, .tooltip{ transition:none !important; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../../index.html" aria-label="TaxVisual home">
+        <span class="brand-mark">TV</span>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../learn/index.html">Learn</a></li>
+          <li><a href="../../training/index.html">Training</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+          <li><a class="topbar-cta" href="../../contact/index.html">Request training</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+<div class="app" id="main">
+  <div class="wrap">
+
+    <div class="masthead">
+      <div class="kicker">Gross income · Simulation</div>
+      <h1>How Social Security Benefits Become Taxable</h1>
+      <p class="standfirst">
+        Social Security is not taxed like ordinary income. Below a threshold none of it counts;
+        above it, each extra dollar of <em>other</em> income drags part of the benefit into
+        taxable income — until a hard ceiling stops it at 85% of the benefit. Move the sliders
+        to see where a taxpayer sits.
+      </p>
+    </div>
+
+    <div class="layout">
+
+      <aside class="rail">
+        <h2>Filing status</h2>
+        <div class="seg" id="statusSeg" role="group" aria-label="Filing status">
+          <button type="button" data-status="joint"  aria-pressed="true">Married joint</button>
+          <button type="button" data-status="single" aria-pressed="false">Single</button>
+        </div>
+
+        <div class="field">
+          <label for="benefitsSlider">Social Security benefits</label>
+          <div class="amount" id="benefitsOut">$12,400</div>
+          <input type="range" id="benefitsSlider" min="0" max="60000" step="200" value="12400"
+                 aria-label="Social Security benefits received">
+          <div class="range-ends"><span>$0</span><span>$60k</span></div>
+        </div>
+
+        <div class="field">
+          <label for="agiSlider">Income excluding Social Security</label>
+          <div class="amount" id="agiOut">$36,000</div>
+          <input type="range" id="agiSlider" min="0" max="120000" step="500" value="36000"
+                 aria-label="Income excluding Social Security benefits">
+          <div class="range-ends"><span>$0</span><span>$120k</span></div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Taxable benefits</div>
+            <div class="value accent" id="statTaxable">$0</div>
+            <div class="sub" id="statTaxableSub">&nbsp;</div>
+          </div>
+          <div class="stat">
+            <div class="label">Next $1 of other income</div>
+            <div class="value small" id="statMarginal">$0.00</div>
+            <div class="sub">more of the benefit becomes taxable</div>
+          </div>
+          <div class="stat">
+            <div class="label">Provisional income</div>
+            <div class="value small" id="statPI">$0</div>
+            <div class="sub" id="statPISub">&nbsp;</div>
+          </div>
+        </div>
+      </aside>
+
+      <div>
+        <details class="panel sources">
+          <summary>
+            The source rules
+            <span class="summary-hint">26 U.S.C. &sect;86, full text &mdash; optional</span>
+          </summary>
+          <div class="sources-body">
+            <p class="src-meta">
+              <strong>26 U.S.C. &sect;86 &mdash; Social security benefits.</strong>
+              Reproduced in full, unedited, from the U.S. Code as published by the Legal
+              Information Institute, retrieved 24 September 2026. There are no final Treasury
+              regulations under &sect;86.
+              <a href="https://www.law.cornell.edu/uscode/text/26/86" target="_blank" rel="noopener">View at source</a>
+            </p>
+
+            <div class="statute" tabindex="0" role="region"
+                 aria-label="Full text of 26 U.S.C. section 86, Social security benefits">
+          <div class="lv lv-0">
+            <p><span class="lv-n">(a)</span> <span class="lv-h">In general</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">In general</span> <span class="lv-t">Except as provided in paragraph (2), gross income for the taxable year of any taxpayer described in subsection (b) (notwithstanding section 207 of the Social Security Act) includes social security benefits in an amount equal to the lesser of—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">one-half of the social security benefits received during the taxable year, or</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">one-half of the excess described in subsection (b)(1).</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Additional amount</span> <span class="lv-t">In the case of a taxpayer with respect to whom the amount determined under subsection (b)(1)(A) exceeds the adjusted base amount, the amount included in gross income under this section shall be equal to the lesser of—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">the sum of—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">85 percent of such excess, plus</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">the lesser of the amount determined under paragraph (1) or an amount equal to one-half of the difference between the adjusted base amount and the base amount of the taxpayer, or</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">85 percent of the social security benefits received during the taxable year.</span></p>
+              </div>
+            </div>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-h">Taxpayers to whom subsection (a) applies</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">In general</span> <span class="lv-t">A taxpayer is described in this subsection if—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">the sum of—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">the modified adjusted gross income of the taxpayer for the taxable year, plus</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">one-half of the social security benefits received during the taxable year, exceeds</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">the base amount.</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Modified adjusted gross income</span> <span class="lv-t">For purposes of this subsection, the term “modified adjusted gross income” means adjusted gross income—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">determined without regard to this section and sections 85(c), 135, 137, 221, 911, 931, and 933, and</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">increased by the amount of interest received or accrued by the taxpayer during the taxable year which is exempt from tax.</span></p>
+              </div>
+            </div>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-h">Base amount and adjusted base amount</span> <span class="lv-t">For purposes of this section—</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">Base amount</span> <span class="lv-t">The term “base amount” means—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">except as otherwise provided in this paragraph, $25,000,</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">$32,000 in the case of a joint return, and</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-t">zero in the case of a taxpayer who—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">is married as of the close of the taxable year (within the meaning of section 7703) but does not file a joint return for such year, and</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">does not live apart from his spouse at all times during the taxable year.</span></p>
+                </div>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Adjusted base amount</span> <span class="lv-t">The term “adjusted base amount” means—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">except as otherwise provided in this paragraph, $34,000,</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">$44,000 in the case of a joint return, and</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-t">zero in the case of a taxpayer described in paragraph (1)(C).</span></p>
+              </div>
+            </div>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(d)</span> <span class="lv-h">Social security benefit</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">In general</span> <span class="lv-t">For purposes of this section, the term “social security benefit” means any amount received by the taxpayer by reason of entitlement to—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">a monthly benefit under title II of the Social Security Act, or</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">a tier 1 railroad retirement benefit.</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Adjustment for repayments during year</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">For purposes of this section, the amount of social security benefits received during any taxable year shall be reduced by any repayment made by the taxpayer during the taxable year of a social security benefit previously received by the taxpayer (whether or not such benefit was received during the taxable year).</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Denial of deduction</span> <span class="lv-t">If (but for this subparagraph) any portion of the repayments referred to in subparagraph (A) would have been allowable as a deduction for the taxable year under section 165, such portion shall be allowable as a deduction only to the extent it exceeds the social security benefits received by the taxpayer during the taxable year (and not repaid during such taxable year).</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(3)</span> <span class="lv-h">Workmen’s compensation benefits substituted for social security benefits</span> <span class="lv-t">For purposes of this section, if, by reason of section 224 of the Social Security Act (or by reason of section 3(a)(1) of the Railroad Retirement Act of 1974), any social security benefit is reduced by reason of the receipt of a benefit under a workmen’s compensation act, the term “social security benefit” includes that portion of such benefit received under the workmen’s compensation act which equals such reduction.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(4)</span> <span class="lv-h">Tier 1 railroad retirement benefit</span> <span class="lv-t">For purposes of paragraph (1), the term “tier 1 railroad retirement benefit” means—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">the amount of the annuity under the Railroad Retirement Act of 1974 equal to the amount of the benefit to which the taxpayer would have been entitled under the Social Security Act if all of the service after December 31, 1936</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">a monthly annuity amount under section 3(f)(3) of the Railroad Retirement Act of 1974.</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(5)</span> <span class="lv-h">Effect of early delivery of benefit checks</span> <span class="lv-t">For purposes of subsection (a), in any case where section 708 of the Social Security Act causes social security benefit checks to be delivered before the end of the calendar month for which they are issued, the benefits involved shall be deemed to have been received in the succeeding calendar month.</span></p>
+            </div>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(e)</span> <span class="lv-h">Limitation on amount included where taxpayer receives lump-sum payment</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">Limitation</span> <span class="lv-t">If—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">any portion of a lump-sum payment of social security benefits received during the taxable year is attributable to prior taxable years, and</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">the taxpayer makes an election under this subsection for the taxable year,</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Special rules</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">Year to which benefit attributable</span> <span class="lv-t">For purposes of this subsection, a social security benefit is attributable to a taxable year if the generally applicable payment date for such benefit occurred during such taxable year.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Election</span> <span class="lv-t">An election under this subsection shall be made at such time and in such manner as the Secretary shall by regulations prescribe. Such election, once made, may be revoked only with the consent of the Secretary.</span></p>
+              </div>
+            </div>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(f)</span> <span class="lv-h">Treatment as pension or annuity for certain purposes</span> <span class="lv-t">For purposes of—</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-t">section 22(c)(3)(A) (relating to reduction for amounts received as pension or annuity),</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-t">section 32(c)(2) (defining earned income),</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(3)</span> <span class="lv-t">section 219(f)(1) (defining compensation), and</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(4)</span> <span class="lv-t">section 911(b)(1) (defining foreign earned income),</span></p>
+            </div>
+          </div>
+            </div>
+
+            <p class="note">
+              <b>Verify before relying on this.</b> Retrieved 24 September 2026. Tax law changes;
+              confirm against the primary source above before using it in class or in practice.
+              Nothing here is tax advice.
+            </p>
+          </div>
+        </details>
+
+        <section class="panel">
+          <h3>Taxable benefits as other income rises</h3>
+          <p class="lede" id="chartLede"></p>
+
+          <div class="chart-scroll">
+            <div class="chart-shell">
+              <svg id="curveChart" viewBox="0 0 760 330" preserveAspectRatio="xMidYMid meet"
+                   role="img" aria-labelledby="curveDesc"></svg>
+              <p class="sr-only" id="curveDesc"></p>
+            </div>
+          </div>
+
+          <div class="split">
+            <h4>The benefit, split</h4>
+            <div class="ptw" id="ptwBar" role="img" aria-labelledby="ptwDesc"></div>
+            <p class="sr-only" id="ptwDesc"></p>
+            <div class="ptw-scale">
+              <span>$0</span>
+              <span id="ptwEnd">$0</span>
+            </div>
+            <div class="legend" id="ptwLegend"></div>
+          </div>
+
+          <p class="footnote">
+            Educational simulation, not tax advice. Thresholds are the statutory provisional-income
+            figures &mdash; $32,000 / $44,000 for married filing jointly, $25,000 / $34,000 for single &mdash;
+            which are not indexed for inflation. Assumes no tax-exempt interest or foreign earned
+            income exclusion. Source model: ACCTG 410 Individual Taxation Toolbox, &ldquo;Social Security&rdquo; tab.
+          </p>
+        </section>
+
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav aria-label="Footer">
+        <div class="footer-cols">
+        <div class="footer-col">
+          <h2>Tools</h2>
+          <ul>
+            <li><a href="../../tools/index.html">All tools</a></li>
+            <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Learn</h2>
+          <ul>
+            <li><a href="../../learn/textbook/index.html">The textbook</a></li>
+            <li><a href="../../learn/guides/index.html">Concept guides</a></li>
+            <li><a href="../../learn/glossary/index.html">Glossary</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Training</h2>
+          <ul>
+            <li><a href="../../training/team/index.html">Team training</a></li>
+            <li><a href="../../training/workshops/index.html">Public workshops</a></li>
+            <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>About</h2>
+          <ul>
+            <li><a href="../../about/index.html">About TaxVisual</a></li>
+            <li><a href="../../about/team/index.html">Our team</a></li>
+            <li><a href="../../methodology/index.html">Methodology</a></li>
+            <li><a href="../../sitemap/index.html">Site map</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2>Connect</h2>
+          <ul>
+            <li><a href="../../contact/index.html">Contact</a></li>
+            <li><a href="../../updates/index.html">Updates</a></li>
+            <li><a href="../../community/index.html">Community</a></li>
+          </ul>
+        </div>
+        </div>
+      </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual publishes educational tax policy simulations for classrooms, policy workshops, and self-study. Not tax advice.</p>
+        <p class="footer-note"><a href="../../contact/index.html">Get email updates</a></p>
+      </div>
+    </div>
+  </footer>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ==================================================================
+     MODEL — the workbook's Social Security tab, reduced to the inputs
+     this tool exposes (no tax-exempt interest, no foreign earned income
+     exclusion, statutory 85% ceiling).
+
+       PI      = other income + 50% of benefits
+       lower   = MAX(MIN(half,(PI-lo)*50%),0)
+       upper   = MAX(0,MIN(PI-up,benefits))*85%
+       carry   = MIN(lower,(up-lo)*50%)
+       taxable = MIN(upper+carry, benefits*85%)
+
+     Verified against all six workbook scenarios: Joint A 5,100 /
+     Joint B 0 / Joint C 20,821.60 / Single A 0 / Single B 300 /
+     Single C 6,120.
+     ================================================================== */
+  const MAX_PCT = 0.85;
+
+  function model(i){
+    const half    = i.benefits * 0.5;
+    const pi      = i.agi + half;
+    const lower   = Math.max(Math.min(half, (pi - i.lo) * 0.5), 0);
+    const upper   = Math.max(0, Math.min(pi - i.up, i.benefits)) * 0.85;
+    const carry   = Math.min(lower, (i.up - i.lo) * 0.5);
+    const taxable = Math.min(upper + carry, i.benefits * MAX_PCT);
+    const pct     = i.benefits === 0 ? 0 : taxable / i.benefits;
+    return { half, pi, lower, upper, carry, taxable, pct };
+  }
+
+  /* Uncapped inclusion as a function of provisional income. */
+  function uncapped(pi, b, lo, up){
+    const half  = b * 0.5;
+    const lower = Math.max(Math.min(half, (pi - lo) * 0.5), 0);
+    const carry = Math.min(lower, (up - lo) * 0.5);
+    const upper = Math.max(0, Math.min(pi - up, b)) * 0.85;
+    return carry + upper;
+  }
+
+  /* Exact polyline in PROVISIONAL-INCOME space: the slope only changes at
+     these knots, so the curve is drawn through them plus any cap crossing
+     rather than sampled. Plotted against other income by subtracting half
+     the benefit from each x. */
+  function curvePoints(b, lo, up, xMax){
+    const cap = b * MAX_PCT;
+    const knots = [0, lo, Math.min(lo + b, up), up, up + b, xMax]
+      .filter(function(v){ return v >= 0 && v <= xMax; });
+    const xs = Array.from(new Set(knots)).sort(function(a, z){ return a - z; });
+    const pts = [];
+    for (let k = 0; k < xs.length; k++){
+      const x = xs[k], g = uncapped(x, b, lo, up);
+      if (k > 0){
+        const xp = xs[k-1], gp = uncapped(xp, b, lo, up);
+        if ((gp - cap) * (g - cap) < 0){
+          const t = (cap - gp) / (g - gp);
+          pts.push({ x: xp + t * (x - xp), y: cap });
+        }
+      }
+      pts.push({ x: x, y: Math.min(g, cap) });
+    }
+    return pts;
+  }
+
+  function marginalAt(pts, x){
+    for (let k = 0; k < pts.length - 1; k++){
+      const a = pts[k], z = pts[k+1];
+      if (x >= a.x && x < z.x && z.x > a.x) return (z.y - a.y) / (z.x - a.x);
+    }
+    return 0;
+  }
+
+
+  /* ============================== FORMATTING ============================== */
+  const usd0 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', maximumFractionDigits:0 });
+  const usd2 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 });
+  const pct0 = new Intl.NumberFormat('en-US',{ style:'percent', maximumFractionDigits:0 });
+  const num0 = new Intl.NumberFormat('en-US',{ maximumFractionDigits:0 });
+
+  function money(v){ return Math.abs(v - Math.round(v)) < 0.005 ? usd0.format(v) : usd2.format(v); }
+  function abbr(v){
+    if (Math.abs(v) >= 1000){ const k = v/1000; return '$' + (k % 1 === 0 ? k : k.toFixed(1)) + 'k'; }
+    return '$' + num0.format(v);
+  }
+
+  const STATUS = {
+    joint:  { lo: 32000, up: 44000, label: 'married filing jointly' },
+    single: { lo: 25000, up: 34000, label: 'single' }
+  };
+
+  const state = { benefits: 12400, agi: 36000, status: 'joint' };
+
+  const $ = function(id){ return document.getElementById(id); };
+  const els = {
+    statusSeg:$('statusSeg'),
+    benefitsSlider:$('benefitsSlider'), benefitsOut:$('benefitsOut'),
+    agiSlider:$('agiSlider'), agiOut:$('agiOut'),
+    statTaxable:$('statTaxable'), statTaxableSub:$('statTaxableSub'),
+    statMarginal:$('statMarginal'), statPI:$('statPI'), statPISub:$('statPISub'),
+    chartLede:$('chartLede'), curve:$('curveChart'), curveDesc:$('curveDesc'),
+    ptwBar:$('ptwBar'), ptwLegend:$('ptwLegend'), ptwEnd:$('ptwEnd'), ptwDesc:$('ptwDesc'),
+    tooltip:$('tooltip')
+  };
+
+  const NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs){
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+  function clear(node){ while (node.firstChild) node.removeChild(node.firstChild); }
+
+  const CEIL_STEPS = [1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+  function niceCeil(v){
+    if (v <= 0) return 10;
+    const mag = Math.pow(10, Math.floor(Math.log10(v)));
+    const r = v / mag;
+    for (let k = 0; k < CEIL_STEPS.length; k++) if (r <= CEIL_STEPS[k] + 1e-9) return CEIL_STEPS[k] * mag;
+    return 10 * mag;
+  }
+  function niceTicks(max, target){
+    const raw = max / target;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const r = raw / mag;
+    const step = (r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10) * mag;
+    const out = [];
+    for (let v = 0; v <= max + step * 0.001; v += step) out.push(v);
+    return out;
+  }
+
+  function showTip(x, y, html){
+    els.tooltip.innerHTML = html;
+    els.tooltip.style.left = x + 'px';
+    els.tooltip.style.top  = y + 'px';
+    els.tooltip.classList.add('show');
+  }
+  function hideTip(){ els.tooltip.classList.remove('show'); }
+
+  /* =============================== CHART =============================== */
+  const PAD = { l: 66, r: 24 };
+
+  function renderCurve(r, th, xMax, pts){
+    const svg = els.curve, W = 760, H = 330;
+    const x0 = PAD.l, x1 = W - PAD.r, y0 = 52, y1 = 248;
+    clear(svg);
+
+    const b = state.benefits, half = b * 0.5, cap = b * MAX_PCT;
+    const yMax = niceCeil(Math.max(cap * 1.12, 1000));
+    /* x is OTHER income: provisional income minus half the benefit. */
+    const toX = function(pi){ return pi - half; };
+    const X = function(v){ return x0 + (v / xMax) * (x1 - x0); };
+    const Y = function(v){ return y1 - (v / yMax) * (y1 - y0); };
+
+    /* --- zone labels, read off the drawn segments so they can't drift.
+           No alternating stripes: the threshold rules and the labels already
+           divide the plot, and shading every other segment just added noise. --- */
+    const zones = [];
+    for (let k = 0; k < pts.length - 1; k++){
+      const a = pts[k], z = pts[k+1];
+      const ax = toX(a.x), zx = toX(z.x);
+      if (zx <= 0 || zx <= ax) continue;
+      const left = Math.max(0, ax), right = Math.min(xMax, zx);
+      if (right <= left) continue;
+      const slope = (z.y - a.y) / (z.x - a.x);
+
+      let full, short;
+      if (slope < 0.001){
+        if (a.y < 0.005){ full = 'None taxable'; short = 'none'; }
+        else if (cap > 0 && a.y >= cap - 0.005){ full = 'Maximum reached'; short = 'max'; }
+        else { full = 'No further increase'; short = 'flat'; }
+      } else if (slope > 0.8){ full = '85¢ per $1'; short = '85¢'; }
+      else { full = '50¢ per $1'; short = '50¢'; }
+
+      /* The ceiling splits the flat top into two polyline segments; without
+         merging, that stretch would be labelled twice. */
+      const prev = zones[zones.length - 1];
+      if (prev && prev.full === full) prev.right = right;
+      else zones.push({ left: left, right: right, full: full, short: short });
+    }
+    zones.forEach(function(zn){
+      const w = X(zn.right) - X(zn.left);
+      const label = w > 76 ? zn.full : (w > 26 ? zn.short : null);
+      if (!label) return;
+      const t = svgEl('text',{ x:(X(zn.left)+X(zn.right))/2, y:38, 'text-anchor':'middle', class:'band-text' });
+      t.textContent = label;
+      svg.appendChild(t);
+    });
+
+    /* --- y gridlines --- */
+    niceTicks(yMax, 4).forEach(function(v){
+      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(v), y2:Y(v),
+        stroke: v === 0 ? 'var(--baseline)' : 'var(--gridline)', 'stroke-width':1 }));
+      const t = svgEl('text',{ x:x0-9, y:Y(v)+3.5, 'text-anchor':'end', class:'axis-text' });
+      t.textContent = abbr(v);
+      svg.appendChild(t);
+    });
+
+    /* --- threshold rules. These sit at fixed PROVISIONAL-income amounts, so on
+           this axis they slide left as the benefit grows: half the benefit is
+           already counted before the first dollar of other income arrives. The
+           value is not written here — it is carried by both axis rows below,
+           where the same vertical position reads $25,800 of other income and
+           $32,000 of provisional income at once. --- */
+    [th.lo, th.up].forEach(function(pi){
+      const ox = toX(pi);
+      if (ox < 0 || ox > xMax) return;
+      svg.appendChild(svgEl('line',{ x1:X(ox), x2:X(ox), y1:y0-4, y2:y1,
+        stroke:'var(--baseline)', 'stroke-width':1 }));
+    });
+
+    /* --- the ceiling --- */
+    if (cap > 0){
+      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(cap), y2:Y(cap),
+        stroke:'var(--ink-muted)', 'stroke-width':1 }));
+      const t = svgEl('text',{ x:x1, y:Y(cap)-7, 'text-anchor':'end', class:'anno-text' });
+      t.textContent = '85% ceiling · ' + usd0.format(cap);
+      svg.appendChild(t);
+    }
+
+    /* --- the curve --- */
+    let d = '';
+    pts.forEach(function(p){
+      const ox = toX(p.x);
+      if (ox < -1) return;
+      d += (d ? 'L' : 'M') + X(Math.max(0, ox)).toFixed(2) + ' ' + Y(p.y).toFixed(2);
+    });
+    svg.appendChild(svgEl('path',{ d:d, fill:'none', stroke:'var(--fill-strong)',
+      'stroke-width':2.5, 'stroke-linejoin':'round', 'stroke-linecap':'round' }));
+
+    /* --- the taxpayer's own point, directly labelled --- */
+    if (state.agi <= xMax){
+      svg.appendChild(svgEl('line',{ x1:X(state.agi), x2:X(state.agi), y1:Y(r.taxable), y2:y1,
+        stroke:'var(--fill-strong)', 'stroke-width':1, opacity:0.35 }));
+      svg.appendChild(svgEl('circle',{ cx:X(state.agi), cy:Y(r.taxable), r:7,
+        fill:'var(--fill-strong)', stroke:'var(--tool-surface)', 'stroke-width':2.5 }));
+      const lbl = svgEl('text',{ x:X(state.agi), y:Y(r.taxable)-16, 'text-anchor':'middle', class:'marker-text' });
+      lbl.textContent = money(r.taxable);
+      svg.appendChild(lbl);
+    }
+
+    /* --- two scales on one axis. Not a dual-axis chart: this is one axis in
+           two units, like °C and °F on the same line. The lower row is
+           provisional income, which is simply the upper row plus half the
+           benefit — so the offset between the two rows of ticks IS the half
+           benefit, drawn to scale. Reading a threshold down the page gives the
+           statutory figure and the ordinary-income figure it lands at. --- */
+    const OTHER_Y = y1 + 17, PI_Y = y1 + 53;
+
+    function axisRow(ticks, yTick, place, emphasis){
+      const taken = [];
+      emphasis.forEach(function(v){
+        const px = place(v);
+        if (px < x0 - 1 || px > x1 + 1) return;
+        const t = svgEl('text',{ x:px, y:yTick, 'text-anchor':'middle', class:'axis-text emph' });
+        t.textContent = usd0.format(v);
+        svg.appendChild(t);
+        taken.push(px);
+      });
+      ticks.forEach(function(v){
+        const px = place(v);
+        if (px < x0 - 1 || px > x1 + 1) return;
+        /* a generic tick yields to a threshold label rather than collide */
+        for (let k = 0; k < taken.length; k++) if (Math.abs(taken[k] - px) < 42) return;
+        const t = svgEl('text',{ x:px, y:yTick, 'text-anchor':'middle', class:'axis-text' });
+        t.textContent = abbr(v);
+        svg.appendChild(t);
+      });
+    }
+
+    axisRow(niceTicks(xMax, 6), OTHER_Y,
+            function(v){ return X(v); },
+            [th.lo, th.up].map(toX).filter(function(v){ return v >= 0; }));
+
+    const lbl1 = svgEl('text',{ x:(x0+x1)/2, y:y1+31, 'text-anchor':'middle', class:'axis-text' });
+    lbl1.textContent = 'Income excluding Social Security benefits';
+    svg.appendChild(lbl1);
+
+    svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:y1+41, y2:y1+41,
+      stroke:'var(--baseline)', 'stroke-width':1 }));
+
+    axisRow(niceTicks(xMax + half, 6).filter(function(v){ return v >= half - 1; }), PI_Y,
+            function(v){ return X(v - half); },
+            [th.lo, th.up]);
+
+    const lbl2 = svgEl('text',{ x:(x0+x1)/2, y:y1+67, 'text-anchor':'middle', class:'axis-text' });
+    lbl2.textContent = half > 0
+      ? 'Provisional income \u2014 the same income plus half the benefit (' + usd0.format(half) + ')'
+      : 'Provisional income \u2014 identical here, because there is no benefit to half';
+    svg.appendChild(lbl2);
+
+    const yt = svgEl('text',{ x:x0-48, y:16, class:'axis-text' });
+    yt.textContent = 'Taxable benefits';
+    svg.appendChild(yt);
+
+    /* --- hover --- */
+    const hit = svgEl('rect',{ x:x0, y:y0, width:x1-x0, height:y1-y0, fill:'transparent', style:'cursor:crosshair' });
+    const cross = svgEl('line',{ x1:0, x2:0, y1:y0, y2:y1, stroke:'var(--ink-muted)', 'stroke-width':1, opacity:0 });
+    const dot = svgEl('circle',{ r:5, fill:'var(--fill-strong)', stroke:'var(--tool-surface)', 'stroke-width':2, opacity:0 });
+    svg.appendChild(hit); svg.appendChild(cross); svg.appendChild(dot);
+
+    hit.addEventListener('pointermove', function(e){
+      const box = svg.getBoundingClientRect();
+      const vx = ((e.clientX - box.left) / box.width) * W;
+      const other = Math.max(0, Math.min(xMax, ((vx - x0) / (x1 - x0)) * xMax));
+      const y = Math.min(uncapped(other + half, b, th.lo, th.up), cap);
+      cross.setAttribute('x1', X(other)); cross.setAttribute('x2', X(other)); cross.setAttribute('opacity', 0.45);
+      dot.setAttribute('cx', X(other)); dot.setAttribute('cy', Y(y)); dot.setAttribute('opacity', 1);
+      showTip(e.clientX, box.top + (Y(y) / H) * box.height,
+        'other income <b>' + money(other) + '</b><br>' +
+        'provisional <b>' + money(other + half) + '</b><br>' +
+        'taxable benefits <b>' + money(y) + '</b>');
+    });
+    hit.addEventListener('pointerleave', function(){
+      cross.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); hideTip();
+    });
+
+    els.curveDesc.textContent =
+      'Line chart of taxable Social Security benefits against income excluding Social Security, ' +
+      'for a ' + money(b) + ' benefit, ' + STATUS[state.status].label + '. The horizontal axis is ' +
+      'labelled in two units: ordinary income, and below it provisional income, which is the same ' +
+      'figure plus half the benefit (' + money(half) + '). The statutory thresholds of ' +
+      money(th.lo) + ' and ' + money(th.up) + ' are provisional-income amounts, reached at ' +
+      money(Math.max(0, toX(th.lo))) + ' and ' + money(Math.max(0, toX(th.up))) + ' of ordinary ' +
+      'income. None of the benefit is taxable below the first; then 50 cents of benefit becomes ' +
+      'taxable per additional dollar, rising to 85 cents above the second, until the total stops ' +
+      'at the ceiling of ' + money(cap) + '. At ' + money(state.agi) + ' of other income, ' +
+      money(r.taxable) + ' is taxable.';
+  }
+
+  /* ========================= BENEFIT SPLIT BAR ========================= */
+  function renderSplit(r){
+    const b = state.benefits, cap = b * MAX_PCT;
+    const taxable = r.taxable;
+    const headroom = Math.max(0, cap - taxable);
+    const never = Math.max(0, b - cap);
+
+    clear(els.ptwBar); clear(els.ptwLegend);
+    els.ptwEnd.textContent = money(b);
+
+    if (b <= 0){
+      els.ptwDesc.textContent = 'No benefit set.';
+      return;
+    }
+
+    [
+      { v:taxable,  color:'var(--fill-strong)',  name:'Taxable now' },
+      { v:headroom, color:'var(--fill-soft)',    name:'Nontaxable' },
+      { v:never,    color:'var(--fill-neutral)', name:'Never taxable — the 15% the ceiling protects' }
+    ].forEach(function(p){
+      if (p.v <= 0) return;
+      const seg = document.createElement('div');
+      seg.style.cssText = 'flex-grow:' + p.v + ';flex-basis:0;background:' + p.color + ';';
+      els.ptwBar.appendChild(seg);
+
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      const sw = document.createElement('span');
+      sw.className = 'legend-swatch';
+      sw.style.background = p.color;
+      const txt = document.createElement('span');
+      txt.innerHTML = '<b>' + money(p.v) + '</b>' + p.name;
+      item.appendChild(sw); item.appendChild(txt);
+      els.ptwLegend.appendChild(item);
+    });
+
+    els.ptwDesc.textContent =
+      'Of a ' + money(b) + ' benefit, ' + money(taxable) + ' is taxable now, ' +
+      money(headroom) + ' is nontaxable, and ' + money(never) + ' is never taxable — ' +
+      'the 15% the ceiling protects.';
+  }
+
+
+  /* =============================== RENDER =============================== */
+  function render(){
+    const th = STATUS[state.status];
+    const r = model({ benefits: state.benefits, agi: state.agi, lo: th.lo, up: th.up });
+    const cap = state.benefits * MAX_PCT;
+    const half = state.benefits * 0.5;
+
+    /* Domain runs a little past the point where the ceiling binds — that is
+       the last thing that happens, so there is nothing to show beyond it. */
+    const xMax = Math.max(th.up + half + state.benefits * 0.35, state.agi * 1.1, 20000);
+    const pts = curvePoints(state.benefits, th.lo, th.up, xMax + half);
+    const mr  = marginalAt(pts, r.pi);
+
+    els.benefitsOut.textContent = money(state.benefits);
+    els.agiOut.textContent = money(state.agi);
+
+    els.statTaxable.textContent = money(r.taxable);
+    els.statTaxableSub.textContent = state.benefits > 0
+      ? pct0.format(r.pct) + ' of the ' + money(state.benefits) + ' benefit'
+      : 'no benefit set';
+    els.statMarginal.textContent = '$' + mr.toFixed(2);
+    els.statPI.textContent = money(r.pi);
+    els.statPISub.textContent = usd0.format(state.agi) + ' + ½ × ' +
+      usd0.format(state.benefits) + ' · threshold ' + usd0.format(th.lo);
+
+    /* The single thing most people get wrong here is which income the
+       thresholds are measured against, so say it in the lede with this
+       taxpayer's own numbers rather than in the abstract. */
+    const startsAt = th.lo - half;
+    els.chartLede.textContent =
+      'Benefit held at ' + money(state.benefits) + ', ' + STATUS[state.status].label + '. ' +
+      'The thresholds are not set on the income below — they are set on ' +
+      'provisional income, which adds half the benefit' +
+      (half > 0 ? ' (' + money(half) + ') ' : ' ') + 'to it. ' +
+      (state.benefits <= 0
+        ? 'With no benefit the two scales are identical.'
+        : startsAt > 0
+          ? 'So the ' + money(th.lo) + ' threshold is already reached at ' + money(startsAt) +
+            ' of ordinary income, and that is where the curve lifts off. '
+          : 'Half this benefit alone exceeds the ' + money(th.lo) + ' threshold, so some of it ' +
+            'is taxable from the first dollar of other income. ') +
+      'Both scales run under the chart.';
+
+    renderCurve(r, th, xMax, pts);
+    renderSplit(r);
+  }
+
+  /* =============================== WIRING =============================== */
+  els.benefitsSlider.addEventListener('input', function(){
+    state.benefits = +this.value; render();
+  });
+  els.agiSlider.addEventListener('input', function(){
+    state.agi = +this.value; render();
+  });
+  els.statusSeg.addEventListener('click', function(e){
+    const b = e.target.closest('button');
+    if (!b) return;
+    state.status = b.dataset.status;
+    Array.prototype.forEach.call(this.children, function(x){
+      x.setAttribute('aria-pressed', String(x.dataset.status === state.status));
+    });
+    render();
+  });
+
+  render();
+  window.addEventListener('resize', hideTip);
+})();
+</script>
+</body>
+</html>
