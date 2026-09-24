@@ -136,8 +136,14 @@ answer that changes between renders.
 
 ## 4. Verification — non-negotiable
 
-Every tool ships with a harness that **extracts the functions from the built HTML
-file** and runs them against the workbook's own check figures. Extracting from
+Every tool ships with a harness in `tests/`, run with node and nothing else:
+
+```bash
+node tests/verify-<slug>.mjs tools/<slug>/index.html
+```
+
+Each **extracts the functions from the built HTML file** and runs them against the
+workbook's own check figures. Extracting from
 the shipped file rather than a copy is the whole point: a transcription can pass
 while the page is broken.
 
