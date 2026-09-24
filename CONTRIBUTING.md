@@ -10,7 +10,7 @@ open the file in a browser.
 ## One-time setup
 
 ```bash
-git clone https://github.com/<owner>/taxvisual.git
+git clone https://github.com/zhuoliaxelton1079-byte/taxvisual.git
 cd taxvisual
 git config user.name  "Your Name"
 git config user.email "you@example.com"
