@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How your return is handled | TaxVisual Return Review</title>
+  <meta name="description" content="The self-serve review makes no network request that carries your figures. Exactly what that means, and the one piece of third-party code involved.">
+  <link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+  <script>document.documentElement.classList.add('js');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../../index.html" aria-label="TaxVisual home">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="20" width="20" height="1.3" rx=".65"/><path d="M2 20V14.7Q2 13.2 3.5 13.2H5.5Q7 13.2 7 14.7V20Z"/><path d="M9.5 20V10.1Q9.5 8.6 11 8.6H13Q14.5 8.6 14.5 10.1V20Z"/><rect x="17" y="9.3" width="5" height="10.7"/><path d="M17 8.7V5Q17 3.5 18.5 3.5H20.5Q22 3.5 22 5V8.7Z" fill-opacity=".45"/></svg>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../learn/index.html">Learn</a></li>
+          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../dashboard/index.html">Dashboard</a></li>
+          <li><a href="../../consulting/index.html">Consulting</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="container page-header">
+      <p class="eyebrow reveal"><a href="../index.html">Return review</a></p>
+      <h1 class="reveal">Your return does not leave your browser</h1>
+      <p class="reveal">That claim is load-bearing for a page that asks to see a tax return, so here is precisely what it means, what the one exception is, and how you can check it yourself.</p>
+    </div>
+
+    <div class="container page-body">
+      <div class="prose reveal">
+
+        <h2>What the preview does</h2>
+        <p>The file you choose is read by code already running in your browser tab. Its text is parsed there, the figures are held in memory on your own machine, and the page redraws. At no point is the file, its text, or any figure sent anywhere.</p>
+        <ul>
+          <li><strong>No upload.</strong> There is no server to receive it. The site is a set of static files.</li>
+          <li><strong>No storage.</strong> Nothing is written to cookies, <code>localStorage</code>, <code>sessionStorage</code> or any database. Close or reload the tab and everything you entered is gone.</li>
+          <li><strong>No account</strong>, no sign-in, no email address required.</li>
+          <li><strong>No analytics</strong>, no tracking pixels, no third-party scripts monitoring what you do on the page.</li>
+          <li><strong>No form submission.</strong> The fields are not part of a form that posts anywhere.</li>
+        </ul>
+
+        <h2>The one exception</h2>
+        <p>Reading a PDF needs a PDF parser, and writing one by hand is not realistic. The preview uses <a href="https://mozilla.github.io/pdf.js/" target="_blank" rel="noopener">pdf.js</a>, fetched from a public CDN <strong>only if you actually choose a PDF file</strong>. If you use the sample, paste text, type figures in, or upload a <code>.txt</code> file, no third-party code is ever fetched.</p>
+        <p>When it is fetched, it is pinned and verified before any of it runs:</p>
+        <ul>
+          <li>The library is loaded with <strong>subresource integrity</strong> &mdash; the browser itself refuses to execute it unless its SHA-384 digest matches the one written into the page.</li>
+          <li>Its worker file is fetched, hashed in the page with the browser's own crypto, and compared against a second pinned digest. It only runs if it matches.</li>
+          <li>If either check cannot be performed &mdash; CDN blocked, hashing unavailable, digest mismatch &mdash; the PDF path <strong>refuses to run</strong> rather than executing unverified code over your return, and tells you to paste the text instead.</li>
+        </ul>
+        <p>That code runs entirely on your machine and reads the PDF locally. The request that fetches it carries no information about your return; it asks for a fixed file at a fixed version, exactly as it would for any visitor.</p>
+        <p>Like every other page on this site, the preview also loads its typefaces from Google Fonts. Fonts receive no data about the page's contents.</p>
+
+        <h2>How to check any of this</h2>
+        <p>You do not have to take it on trust:</p>
+        <ul>
+          <li>Open your browser's developer tools, switch to the Network tab, and work through the whole review. You will see the fonts, and the pdf.js files only if you chose a PDF. Nothing else.</li>
+          <li>Save the page and open it with no internet connection at all. Everything except PDF reading still works.</li>
+          <li>Read the source. It is a single hand-written HTML file with no build step and no minification, and the data handling is all in one place.</li>
+        </ul>
+
+        <h2>If you are handling someone else's return</h2>
+        <p>The technical guarantees above are about this page. They say nothing about the device you are using, who else can see the screen, or your own obligations for handling another person's tax information. If you are reviewing a client's return, your professional and institutional rules still apply in full.</p>
+
+      </div>
+
+      <div class="cta-band reveal" style="margin-top: var(--space-7)">
+        <div>
+          <h2>Start with the sample</h2>
+          <p>A built-in 2024 return lets you see exactly what the preview does before it ever touches yours.</p>
+        </div>
+        <a class="btn btn-primary" href="../1040/index.html">Open the preview</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav aria-label="Footer">
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h2>Learn</h2>
+            <ul>
+              <li><a href="../../learn/index.html">Learn</a></li>
+              <li><a href="../../learn/textbook/index.html">Visualized tax guide</a></li>
+              <li><a href="../../learn/guides/index.html">Concept guides</a></li>
+              <li><a href="../../learn/glossary/index.html">Glossary</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Tools</h2>
+            <ul>
+              <li><a href="../../tools/index.html">All tools</a></li>
+              <li><a href="../../review/1040/index.html">1040 preview</a></li>
+              <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+              <li><a href="../../review/index.html">Return review</a></li>
+              <li><a href="../../review/how-it-works/index.html">How it works</a></li>
+              <li><a href="../../review/privacy/index.html" aria-current="page">Privacy</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Dashboard</h2>
+            <ul>
+              <li><a href="../../dashboard/index.html">Dashboard</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Consulting</h2>
+            <ul>
+              <li><a href="../../consulting/index.html">Consulting</a></li>
+              <li><a href="../../consulting/planning/index.html">One-on-one tax planning</a></li>
+              <li><a href="../../training/team/index.html">Team training</a></li>
+              <li><a href="../../training/workshops/index.html">Public workshops</a></li>
+              <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>About</h2>
+            <ul>
+              <li><a href="../../about/index.html">About TaxVisual</a></li>
+              <li><a href="../../about/team/index.html">Our team</a></li>
+              <li><a href="../../methodology/index.html">Methodology</a></li>
+              <li><a href="../../sitemap/index.html">Site map</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Connect</h2>
+            <ul>
+              <li><a href="../../contact/index.html">Contact</a></li>
+              <li><a href="../../updates/index.html">Updates</a></li>
+              <li><a href="../../community/index.html">Community</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual publishes educational tax policy simulations for classrooms, policy workshops, and self-study. Not tax advice.</p>
+        <p class="footer-note"><a href="../../contact/index.html">Get email updates</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/reveal.js"></script>
+</body>
+</html>

@@ -88,7 +88,7 @@ are hard to deal with if you follow the rule.
 |---|---|---|
 | `assets/js/tools-data.js` | One shared registry that both of us append to | **Append at the end of the array.** Agree `order` numbers in the issue before you branch. If it conflicts anyway, the resolution is always "keep both entries" |
 | `sitemap.xml` | Same append pattern | Append before `</urlset>` |
-| The nav and footer blocks | They are hand-duplicated into **all 19 pages**, so one change rewrites every file | **A nav or footer change gets its own PR with nothing else in it**, reviewed and merged the same day. Update `assets/partials/` in the same PR. See the warning below |
+| The nav and footer blocks | They are hand-duplicated into **all 31 pages**, so one change rewrites every file | **A nav or footer change gets its own PR with nothing else in it**, reviewed and merged the same day. Update `assets/partials/` in the same PR. See the warning below |
 
 The general rule that makes all three a non-issue: **small pull requests,
 merged promptly**. A branch left open for a week across a nav change is the

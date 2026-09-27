@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 163 40" fill="currentColor" color="#0f5e52" role="img" aria-label="TaxVisual">
+  <title>TaxVisual</title>
+  <!--
+    The lockup: the name and the figures standing on the same ledger line.
+
+    That line is the whole idea. The site's flagship tool is a ledger, its
+    pages are ruled with hairlines, and here one continuous rule runs the
+    width of the mark: the three columns rise from it on the left, the
+    wordmark sits on it on the right. Symbol and name are not set beside
+    each other, they share a baseline, which is what keeps this from
+    reading as a stock bar-chart icon with a company name next to it.
+    Symbol on its own: logo-mark.svg.
+
+    Two things here are load-bearing, so read before editing.
+
+    1. textLength pins the wordmark to 124.47 units, which is what IBM
+       Plex Serif 600 actually measures at this size. Plex therefore
+       renders untouched, and a fallback face is condensed to the same
+       width instead of running past the end of the rule. Measured, not
+       estimated: Georgia is 132.7 here, so without this the rule ends in
+       the wrong place on any machine without Plex. If you change the
+       string, the size or the weight, re-measure and update this number.
+
+    2. The root carries fill="currentColor" AND color="#0f5e52". Inlined in
+       a page, the .brand-mark rule in components.css out-specifies the
+       color presentation attribute, so the mark follows the theme. Loaded
+       standalone, as an img or a file, nothing cascades in and the
+       attribute supplies the accent, so the logo is not black. Dropping
+       either one breaks one of those two cases.
+
+    Type is live text, not outlines, so it stays selectable and searchable
+    and always matches the headings. If you need it outline-locked for a
+    printer or a third party, that is a separate export.
+
+    Geometry: rule at y=30, columns 6 wide with 3 gaps, tops at 21 / 15 / 8
+    for the same 0.41 : 0.68 : 1 progression as the symbol. The tallest
+    column is split by a 1-unit gap with a lighter tip: the part-to-whole
+    bar the tools draw second.
+  -->
+  <style>
+    /* Only bites when this file is loaded on its own; any real CSS rule on
+       the inlined copy wins over an element selector. */
+    @media (prefers-color-scheme: dark) { svg { color: #4fb3a1 } }
+  </style>
+
+  <!-- the ledger rule both halves stand on -->
+  <rect x="0" y="30" width="163" height="1.8" rx=".9"/>
+
+  <!-- the columns -->
+  <path d="M0 30V22.5Q0 21 1.5 21H4.5Q6 21 6 22.5V30Z"/>
+  <path d="M9 30V16.5Q9 15 10.5 15H13.5Q15 15 15 16.5V30Z"/>
+  <rect x="18" y="15.4" width="6" height="14.6"/>
+  <path d="M18 14.4V9.5Q18 8 19.5 8H22.5Q24 8 24 9.5V14.4Z" fill-opacity=".45"/>
+
+  <!-- the wordmark, pinned to its measured width -->
+  <text x="34" y="30" font-family="'IBM Plex Serif', Georgia, 'Times New Roman', serif"
+        font-weight="600" font-size="26"
+        textLength="124.47" lengthAdjust="spacingAndGlyphs">TaxVisual</text>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" color="#0f5e52" role="img" aria-label="TaxVisual">
+  <title>TaxVisual</title>
+  <style>
+    /* Only applies when this file is loaded standalone; a real CSS rule on
+       an inlined copy out-specifies an element selector. See logo.svg. */
+    @media (prefers-color-scheme: dark) { svg { color: #4fb3a1 } }
+  </style>
+  <!--
+    The mark is the site's own picture, reduced until it survives 16px:
+    three ascending columns standing on a ledger rule — the progressive
+    bracket staircase every tool here ends up drawing. The tallest column
+    is split, with a 0.6-unit gap and a lighter tip, because the
+    part-to-whole bar ("some of this is taxable") is the second thing the
+    tools draw. Nothing is hinted at that the site does not actually do.
+
+    Geometry: baseline 20, columns 5 wide with 2.5 gaps, tops at 13.2 /
+    8.6 / 3.5 — a 0.41 : 0.69 : 1 progression. Drawn in currentColor so
+    it follows the theme rather than carrying its own palette.
+  -->
+  <rect x="2" y="20" width="20" height="1.3" rx=".65"/>
+  <path d="M2 20V14.7Q2 13.2 3.5 13.2H5.5Q7 13.2 7 14.7V20Z"/>
+  <path d="M9.5 20V10.1Q9.5 8.6 11 8.6H13Q14.5 8.6 14.5 10.1V20Z"/>
+  <rect x="17" y="9.3" width="5" height="10.7"/>
+  <path d="M17 8.7V5Q17 3.5 18.5 3.5H20.5Q22 3.5 22 5V8.7Z" fill-opacity=".45"/>
+</svg>

@@ -29,7 +29,7 @@
 
 .brand {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
   color: var(--ink);
   font-family: var(--font-serif);
@@ -41,19 +41,30 @@
 
 .brand:hover { color: var(--ink); }
 
+/* The mark: three ascending columns on a ledger rule — the bracket
+   staircase the tools draw, reduced until it survives 16px. It is inline
+   SVG rather than an <img> so it inherits currentColor and follows the
+   theme; an <img> would need two files and still be wrong in one of them.
+   The wordmark beside it stays live text in the serif face, so it always
+   matches the headings and is selectable and translatable.
+   Source of truth for the shape: assets/img/logo-mark.svg;
+   the full lockup with the wordmark is assets/img/logo.svg. */
 .brand-mark {
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-wide);
-  color: var(--muted);
-  text-transform: uppercase;
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--accent);
+  fill: currentColor;
 }
 
 .topbar nav ul {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
+  /* Wrap rather than squeeze: the CTA is the longest item and the nav has to
+     survive a 320px screen. Without this the CTA's text broke inside its own
+     border instead of moving to a new line. */
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -74,28 +85,6 @@
   font-weight: var(--weight-medium);
   border-bottom: 2px solid var(--accent);
   padding-bottom: 2px;
-}
-
-/* The persistent lead-capture CTA. Styled as a button, so it reads as an
-   action rather than a fifth nav item. */
-.topbar nav a.topbar-cta {
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-md);
-  color: var(--accent);
-  font-weight: var(--weight-medium);
-}
-
-.topbar nav a.topbar-cta:hover {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.topbar nav a.topbar-cta[aria-current="page"] {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-bottom-color: var(--accent);
-  padding-bottom: var(--space-2);
 }
 
 /* ---- Footer -------------------------------------------------------------- */

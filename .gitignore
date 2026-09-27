@@ -3,3 +3,32 @@ Thumbs.db
 *.log
 .vscode/
 .claude/
+
+# Source material the site is built FROM but never serves: design-tool
+# exports, reference PDFs, scans. Kept on disk, never committed.
+#
+# This ignore is the only thing keeping it off the live site. GitHub Pages
+# serves every file in the published branch, and `.nojekyll` switches off the
+# filtering that would otherwise skip underscore-prefixed paths — so a
+# `git add -f _source/` would publish a 2.7 MB PDF at a guessable URL.
+_source/
+
+# Source workbook for the Income Tax Ledger. Same reasoning as _source/: the
+# site is built from it but never serves it, and at the repo root it would
+# publish at a guessable URL. Nothing links to it.
+Tax_Bracket_Ledger_Docs.xls
+
+# Working folders that live beside the site but are not part of it. Same
+# reasoning as _source/ above: GitHub Pages serves every file in the published
+# branch, so the only thing keeping these off the live site is not committing
+# them.
+#
+#   data analytics/          a Python teaching workspace — a 252 MB .venv, a
+#                            32 MB .pptx, a 24 MB case data file, licensed case
+#                            PDFs, and the IRS workbooks. The one file the site
+#                            needs is the built dashboard, copied into
+#                            dashboard/irs-soi/ and committed from there.
+#   sample tax return …/     a 39-page practice return PDF carrying SSN-shaped
+#                            values, names and an address.
+data analytics/
+sample tax return for testing/

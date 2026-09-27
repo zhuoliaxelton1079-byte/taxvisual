@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /tools/_starter/
+Disallow: /dashboard/irs-soi/
 
 Sitemap: https://taxvisual.com/sitemap.xml

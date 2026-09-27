@@ -36,7 +36,7 @@
     --page:           #f9f9f7;
     --tool-ink:       #0b0b0b;
     --ink-soft:       #52514e;
-    --ink-muted:      #898781;
+    --ink-muted:      #75736e;  /* 4.6:1 on the light surface */
     --gridline:       #e1e0d9;
     --baseline:       #c3c2b7;
     --border:         rgba(11,11,11,0.10);
@@ -195,6 +195,7 @@
      so the chart keeps a legible floor and scrolls sideways instead — the
      same way the calculation table behaves in the bracket-ledger tool. */
   .chart-scroll{ overflow-x:auto; overflow-y:hidden; }
+  .chart-scroll:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
   .chart-shell{ min-width: 600px; }
   .chart-shell svg{ width:100%; height:auto; display:block; overflow:visible; }
   .axis-text{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10.5px; fill: var(--ink-muted); }
@@ -308,16 +309,16 @@
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="../../index.html" aria-label="TaxVisual home">
-        <span class="brand-mark">TV</span>
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="20" width="20" height="1.3" rx=".65"/><path d="M2 20V14.7Q2 13.2 3.5 13.2H5.5Q7 13.2 7 14.7V20Z"/><path d="M9.5 20V10.1Q9.5 8.6 11 8.6H13Q14.5 8.6 14.5 10.1V20Z"/><rect x="17" y="9.3" width="5" height="10.7"/><path d="M17 8.7V5Q17 3.5 18.5 3.5H20.5Q22 3.5 22 5V8.7Z" fill-opacity=".45"/></svg>
         <span>TaxVisual</span>
       </a>
       <nav aria-label="Primary">
         <ul>
-          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
           <li><a href="../../learn/index.html">Learn</a></li>
-          <li><a href="../../training/index.html">Training</a></li>
+          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../dashboard/index.html">Dashboard</a></li>
+          <li><a href="../../consulting/index.html">Consulting</a></li>
           <li><a href="../../about/index.html">About</a></li>
-          <li><a class="topbar-cta" href="../../contact/index.html">Request training</a></li>
         </ul>
       </nav>
     </div>
@@ -349,16 +350,14 @@
         <div class="field">
           <label for="benefitsSlider">Social Security benefits</label>
           <div class="amount" id="benefitsOut">$12,400</div>
-          <input type="range" id="benefitsSlider" min="0" max="60000" step="200" value="12400"
-                 aria-label="Social Security benefits received">
+          <input type="range" id="benefitsSlider" min="0" max="60000" step="200" value="12400">
           <div class="range-ends"><span>$0</span><span>$60k</span></div>
         </div>
 
         <div class="field">
           <label for="agiSlider">Income excluding Social Security</label>
           <div class="amount" id="agiOut">$36,000</div>
-          <input type="range" id="agiSlider" min="0" max="120000" step="500" value="36000"
-                 aria-label="Income excluding Social Security benefits">
+          <input type="range" id="agiSlider" min="0" max="120000" step="500" value="36000">
           <div class="range-ends"><span>$0</span><span>$120k</span></div>
         </div>
 
@@ -379,6 +378,7 @@
             <div class="sub" id="statPISub">&nbsp;</div>
           </div>
         </div>
+        <p class="sr-only" id="liveResult" role="status" aria-live="polite"></p>
       </aside>
 
       <div>
@@ -571,7 +571,8 @@
           <h3>Taxable benefits as other income rises</h3>
           <p class="lede" id="chartLede"></p>
 
-          <div class="chart-scroll">
+          <div class="chart-scroll" tabindex="0" role="region"
+               aria-label="Chart: taxable benefits as other income rises">
             <div class="chart-shell">
               <svg id="curveChart" viewBox="0 0 760 330" preserveAspectRatio="xMidYMid meet"
                    role="img" aria-labelledby="curveDesc"></svg>
@@ -610,46 +611,59 @@
     <div class="container">
       <nav aria-label="Footer">
         <div class="footer-cols">
-        <div class="footer-col">
-          <h2>Tools</h2>
-          <ul>
-            <li><a href="../../tools/index.html">All tools</a></li>
-            <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h2>Learn</h2>
-          <ul>
-            <li><a href="../../learn/textbook/index.html">The textbook</a></li>
-            <li><a href="../../learn/guides/index.html">Concept guides</a></li>
-            <li><a href="../../learn/glossary/index.html">Glossary</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h2>Training</h2>
-          <ul>
-            <li><a href="../../training/team/index.html">Team training</a></li>
-            <li><a href="../../training/workshops/index.html">Public workshops</a></li>
-            <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h2>About</h2>
-          <ul>
-            <li><a href="../../about/index.html">About TaxVisual</a></li>
-            <li><a href="../../about/team/index.html">Our team</a></li>
-            <li><a href="../../methodology/index.html">Methodology</a></li>
-            <li><a href="../../sitemap/index.html">Site map</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h2>Connect</h2>
-          <ul>
-            <li><a href="../../contact/index.html">Contact</a></li>
-            <li><a href="../../updates/index.html">Updates</a></li>
-            <li><a href="../../community/index.html">Community</a></li>
-          </ul>
-        </div>
+          <div class="footer-col">
+            <h2>Learn</h2>
+            <ul>
+              <li><a href="../../learn/index.html">Learn</a></li>
+              <li><a href="../../learn/textbook/index.html">Visualized tax guide</a></li>
+              <li><a href="../../learn/guides/index.html">Concept guides</a></li>
+              <li><a href="../../learn/glossary/index.html">Glossary</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Tools</h2>
+            <ul>
+              <li><a href="../../tools/index.html">All tools</a></li>
+              <li><a href="../../review/1040/index.html">1040 preview</a></li>
+              <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+              <li><a href="../../review/index.html">Return review</a></li>
+              <li><a href="../../review/how-it-works/index.html">How it works</a></li>
+              <li><a href="../../review/privacy/index.html">Privacy</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Dashboard</h2>
+            <ul>
+              <li><a href="../../dashboard/index.html">Dashboard</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Consulting</h2>
+            <ul>
+              <li><a href="../../consulting/index.html">Consulting</a></li>
+              <li><a href="../../consulting/planning/index.html">One-on-one tax planning</a></li>
+              <li><a href="../../training/team/index.html">Team training</a></li>
+              <li><a href="../../training/workshops/index.html">Public workshops</a></li>
+              <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>About</h2>
+            <ul>
+              <li><a href="../../about/index.html">About TaxVisual</a></li>
+              <li><a href="../../about/team/index.html">Our team</a></li>
+              <li><a href="../../methodology/index.html">Methodology</a></li>
+              <li><a href="../../sitemap/index.html">Site map</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Connect</h2>
+            <ul>
+              <li><a href="../../contact/index.html">Contact</a></li>
+              <li><a href="../../updates/index.html">Updates</a></li>
+              <li><a href="../../community/index.html">Community</a></li>
+            </ul>
+          </div>
         </div>
       </nav>
       <div class="footer-base">
@@ -754,6 +768,7 @@
 
   const $ = function(id){ return document.getElementById(id); };
   const els = {
+    liveResult:$('liveResult'),
     statusSeg:$('statusSeg'),
     benefitsSlider:$('benefitsSlider'), benefitsOut:$('benefitsOut'),
     agiSlider:$('agiSlider'), agiOut:$('agiOut'),
@@ -1080,12 +1095,40 @@
   }
 
   /* =============================== WIRING =============================== */
-  els.benefitsSlider.addEventListener('input', function(){
-    state.benefits = +this.value; render();
+
+  /* slider id, state key, readout id, spoken suffix. One table, so the value
+     shown in the rail and the value spoken by a screen reader cannot drift. */
+  const CONTROLS = [
+    ['benefitsSlider', 'benefits', 'benefitsOut'],
+    ['agiSlider',      'agi',      'agiOut']
+  ];
+
+  /* A range input announces its raw number, so each slider carries an
+     aria-valuetext holding the string the rail already shows. */
+  function valueText(c){ return els[c[2]].textContent + (c[3] || ''); }
+
+  /* The answer is announced on `change`, never on `input`: `input` fires on
+     every frame of a drag and would talk over itself, while `change` fires once
+     on release and once per arrow key. Read back out of the rail rather than
+     recomputed, so there is only ever one version of it. */
+  function announce(){
+    els.liveResult.textContent =
+      'Taxable benefits: ' + els.statTaxable.textContent + ', ' +
+      els.statTaxableSub.textContent + '. Next $1 of other income: ' +
+      els.statMarginal.textContent + ' more of the benefit becomes taxable. ' +
+      'Provisional income: ' + els.statPI.textContent + ', ' +
+      els.statPISub.textContent + '.';
+  }
+
+  CONTROLS.forEach(function(c){
+    els[c[0]].addEventListener('input', function(){
+      state[c[1]] = +this.value;
+      render();
+      this.setAttribute('aria-valuetext', valueText(c));
+    });
+    els[c[0]].addEventListener('change', announce);
   });
-  els.agiSlider.addEventListener('input', function(){
-    state.agi = +this.value; render();
-  });
+
   els.statusSeg.addEventListener('click', function(e){
     const b = e.target.closest('button');
     if (!b) return;
@@ -1094,9 +1137,11 @@
       x.setAttribute('aria-pressed', String(x.dataset.status === state.status));
     });
     render();
+    announce();
   });
 
   render();
+  CONTROLS.forEach(function(c){ els[c[0]].setAttribute('aria-valuetext', valueText(c)); });
   window.addEventListener('resize', hideTip);
 })();
 </script>

@@ -1,0 +1,1485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Individual Income Tax Formula | TaxVisual Return Review</title>
+<meta name="description" content="The individual income tax formula drawn as a map: fourteen major subtotals from gross income to the balance due, each opening into the workbook line items that derive it. Everything stays in your browser.">
+<link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<link rel="stylesheet" href="../../assets/css/components.css">
+<style>
+  /* ---------------------------------------------------------------------
+     Tool-scoped theme — see docs/interactive-tool-pattern.md §5.
+
+     Lifted deliberately from /review/flow-map/, because this page and that
+     one are now the same picture at two levels of evidence: that page maps a
+     return whose source documents are known, this one maps a return read off
+     its own face. They should not look like two products, so the palette,
+     the node shapes and the trace panel are shared.
+
+     The palette is categorical *by role*, not ordinal: a node's fill says
+     what kind of figure it is (read off the return, derived from the others,
+     a subtraction, the settlement). Roles are unordered, so the separation
+     that matters is hue plus surface, not lightness steps.
+
+     Two accessibility departures from the design mockup carry over:
+
+       1. The mockup's amber pill was #c98221 with white text — 2.6:1, well
+          under AA at 9.5px. Darkened to #8a4a06, 6.9:1 on white.
+       2. The mockup dimmed out-of-lineage nodes to opacity 0.32, which puts
+          the 10.5px metadata row at about 2.7:1. Lineage de-emphasis is
+          carried by surface and border here instead, so a node's text stays
+          at full strength whether or not it is in the traced line. Edges
+          still dim by opacity — they carry no text.
+     --------------------------------------------------------------------- */
+  :root{
+    color-scheme: light;
+    --page:            #f3f1eb;
+    --tool-surface:    #fbfaf6;
+    --panel:           #ffffff;
+    --recede:          #f0eee7;  /* out-of-lineage node fill */
+    --tool-ink:        #1b1a17;
+    --ink-soft:        #3a3730;
+    --ink-muted:       #5e594f;  /* 6.9:1 on the panel, 6.3:1 on --form-bg */
+    --rule:            #ddd7ca;
+    --row-rule:        #eeeae0;
+    --border:          #c9c2b2;
+    --edge:            #b3ac9c;
+
+    --tool-accent:     #0e5a5f;
+    --on-accent:       #ffffff;  /* 7.9:1 on --tool-accent */
+    --on-accent-soft:  #cfe3e1;  /* 5.9:1 on --tool-accent */
+    --accent-tint:     #e3eeec;
+    --accent-line:     #8fb7b3;
+    --accent-deep:     #0e4a4e;
+    --accent-wash:     #eff5f4;
+
+    --form-bg:         #f7f4ec;
+    --form-bc:         #b8b0a0;
+
+    /* Amber is "this figure was subtracted on the way through", which is the
+       same role the flow map gives it for a limitation: the number changed
+       between one box and the next, and the map says where. */
+    --limit-bg:        #fcf0dc;
+    --limit-bc:        #c98221;
+    --limit-edge:      #e7c38c;
+    --limit-ink:       #7a4206;  /* 7.2:1 on --limit-bg */
+    --limit-head:      #8a4a06;  /* 6.9:1 on --tool-surface */
+    --limit-body:      #3d2a10;
+    --limit-pill:      #8a4a06;  /* see note 1 above */
+
+    --flag:            #c2410c;  /* 5.2:1 against the white badge numeral */
+    --flag-ink:        #9a3412;  /* 6.2:1 on --flag-chip */
+    --flag-bg:         #fdf1ea;
+    --flag-bc:         #f1c3a8;
+    --flag-chip:       #fde8dc;
+
+    --shade:           rgba(27,26,23,0.06);
+    --ring:            rgba(14,90,95,0.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --page:            #14130f;
+      --tool-surface:    #1b1a16;
+      --panel:           #1d1c18;
+      --recede:          #201f1a;
+      --tool-ink:        #f2f0ea;
+      --ink-soft:        #d2cec4;
+      --ink-muted:       #a8a399;  /* 7.4:1 on --page */
+      --rule:            #33312b;
+      --row-rule:        #2a2822;
+      --border:          #4a473f;
+      --edge:            #565247;
+
+      --tool-accent:     #4fb3a1;  /* 7.3:1 on --page */
+      --on-accent:       #14130f;  /* dark on the light accent — 7.3:1 */
+      --on-accent-soft:  rgba(20,19,15,0.74);
+      --accent-tint:     #17322f;
+      --accent-line:     #3c6f68;
+      --accent-deep:     #8fd6c8;
+      --accent-wash:     #17302d;
+
+      --form-bg:         #23221d;
+      --form-bc:         #474338;
+
+      --limit-bg:        #33260f;
+      --limit-bc:        #a8781f;
+      --limit-edge:      #6b5220;
+      --limit-ink:       #e6b45f;  /* 7.8:1 on --limit-bg */
+      --limit-head:      #e6b45f;
+      --limit-body:      #e8dcc4;
+      --limit-pill:      #e6b45f;
+
+      --flag:            #e8703a;
+      --flag-ink:        #f0a07a;  /* 7.6:1 on --flag-bg */
+      --flag-bg:         #33190f;
+      --flag-bc:         #6b3a22;
+      --flag-chip:       #3d1e12;
+
+      --shade:           rgba(0,0,0,0.45);
+      --ring:            rgba(79,179,161,0.22);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page:            #14130f;
+    --tool-surface:    #1b1a16;
+    --panel:           #1d1c18;
+    --recede:          #201f1a;
+    --tool-ink:        #f2f0ea;
+    --ink-soft:        #d2cec4;
+    --ink-muted:       #a8a399;
+    --rule:            #33312b;
+    --row-rule:        #2a2822;
+    --border:          #4a473f;
+    --edge:            #565247;
+
+    --tool-accent:     #4fb3a1;
+    --on-accent:       #14130f;
+    --on-accent-soft:  rgba(20,19,15,0.74);
+    --accent-tint:     #17322f;
+    --accent-line:     #3c6f68;
+    --accent-deep:     #8fd6c8;
+    --accent-wash:     #17302d;
+
+    --form-bg:         #23221d;
+    --form-bc:         #474338;
+
+    --limit-bg:        #33260f;
+    --limit-bc:        #a8781f;
+    --limit-edge:      #6b5220;
+    --limit-ink:       #e6b45f;
+    --limit-head:      #e6b45f;
+    --limit-body:      #e8dcc4;
+    --limit-pill:      #e6b45f;
+
+    --flag:            #e8703a;
+    --flag-ink:        #f0a07a;
+    --flag-bg:         #33190f;
+    --flag-bc:         #6b3a22;
+    --flag-chip:       #3d1e12;
+
+    --shade:           rgba(0,0,0,0.45);
+    --ring:            rgba(79,179,161,0.22);
+  }
+
+
+  /* ---- Page shell -------------------------------------------------------- */
+
+  * { box-sizing: border-box; }
+  body{ margin:0; background: var(--page); }
+
+  .app{
+    background: var(--page); color: var(--tool-ink);
+    padding: var(--space-6) var(--space-4) var(--space-8);
+  }
+  .wrap{ max-width: 1480px; margin: 0 auto; }
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+  }
+
+  .masthead{ max-width:72ch; margin-bottom: var(--space-6); }
+  .kicker{
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11.5px;
+    letter-spacing:.08em; text-transform:uppercase; color: var(--ink-muted);
+    margin-bottom:10px;
+  }
+  .kicker a{ color: var(--tool-accent); text-decoration:none; }
+  .kicker a:hover{ text-decoration:underline; }
+  .app h1{
+    font-family:"IBM Plex Serif", Georgia, serif; font-weight:600;
+    font-size:clamp(26px,3.4vw,38px); line-height:1.15; margin:0 0 14px;
+  }
+  .standfirst{ font-size:15px; color: var(--ink-soft); margin:0 0 12px; line-height:1.55; max-width:68ch; }
+  .standfirst:last-child{ margin-bottom:0; }
+  .standfirst a{ color: var(--tool-accent); }
+
+  .tbtn{
+    appearance:none; font:inherit; font-size:13px; font-weight:500; cursor:pointer;
+    padding:8px 14px; border-radius:8px; border:1px solid var(--border);
+    background: var(--panel); color: var(--tool-ink);
+  }
+  .tbtn:hover{ border-color: var(--tool-accent); }
+  .tbtn:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .tbtn.primary{ background: var(--tool-accent); border-color: var(--tool-accent); color: var(--on-accent); }
+  .tbtn.primary:hover{ background: var(--accent-deep); border-color: var(--accent-deep); }
+
+  /* ---- The board --------------------------------------------------------- */
+
+  .board{
+    border:1px solid var(--rule); border-radius:12px; overflow:hidden;
+    background: var(--tool-surface);
+  }
+  .board-head{
+    padding:16px 20px 14px; border-bottom:1px solid var(--rule);
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .head-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:24px; flex-wrap:wrap; }
+  .head-eyebrow{
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11px;
+    letter-spacing:.08em; text-transform:uppercase; color: var(--ink-muted);
+  }
+  .board-head h2{
+    margin:4px 0 0; font-family:"IBM Plex Serif", Georgia, serif;
+    font-weight:600; font-size:22px; line-height:1.2;
+  }
+  .head-stats{ display:flex; gap:26px; flex-wrap:wrap; margin:0; }
+  .head-stats > div{ min-width:0; }
+  .head-stats dt{ font-size:11px; color: var(--ink-muted); }
+  .head-stats dd{
+    margin:2px 0 0; font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:17px; font-weight:500;
+  }
+  .head-stats dd.is-limit{ color: var(--limit-head); }
+  .head-stats dd.is-accent{ color: var(--tool-accent); }
+  .head-stats .ln{
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10px;
+    color: var(--ink-muted); margin-top:2px; white-space:nowrap;
+  }
+
+  .head-controls{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .head-controls .hint{ margin-left:auto; font-size:12.5px; color: var(--ink-muted); }
+  @media (max-width: 900px){ .head-controls .hint{ margin-left:0; } }
+
+  /* ---- Canvas ------------------------------------------------------------ */
+
+  .canvas-scroll{ overflow-x:auto; overflow-y:hidden; background: var(--panel); }
+  .canvas-scroll:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
+  .canvas{ position:relative; width:1320px; height:348px; }
+
+  .col-head{
+    position:absolute; top:18px; width:168px; font-size:10.5px;
+    letter-spacing:.08em; text-transform:uppercase; font-weight:600; color: var(--ink-muted);
+  }
+  .wires{ position:absolute; left:0; top:0; overflow:visible; pointer-events:none; }
+
+  /*  No amounts on the boxes. A formula is a shape; putting figures on it
+      turns the diagram back into the table it is meant to stand above. What
+      a box does carry is how many of its line items are filled in, which
+      says where the numbers are without being one. */
+  .node{
+    position:absolute; width:168px; height:68px; padding:8px 10px;
+    border-radius:8px; text-align:left; cursor:pointer;
+    display:flex; flex-direction:column; justify-content:flex-start;
+    background: var(--panel); border:1px solid var(--border);
+    font:inherit; color: var(--tool-ink);
+  }
+  .node .tags{
+    display:flex; justify-content:space-between; gap:6px; width:100%;
+    font-size:10.5px; color: var(--ink-muted); align-items:center;
+  }
+  .node .title{ margin-top:6px; font-size:12.5px; font-weight:600; line-height:1.25; color: var(--tool-ink); }
+
+  .node.kind-group{ background: var(--limit-bg); border-color: var(--limit-bc); }
+  .node.kind-group .tags{ color: var(--limit-ink); }
+  .node.kind-calc{ background: var(--accent-tint); border-color: var(--accent-line); }
+  .node.kind-calc .tags{ color: var(--accent-deep); }
+  .node.kind-result{ background: var(--tool-accent); border-color: var(--tool-accent); }
+  .node.kind-result .tags{ color: var(--on-accent-soft); }
+  .node.kind-result .title{ color: var(--on-accent); }
+
+  .node.is-off{ background: var(--recede); border-color: var(--rule); box-shadow:none; }
+  .node.is-off .tags{ color: var(--ink-muted); }
+  .node.is-off .title{ color: var(--ink-soft); font-weight:500; }
+
+  .node:hover{ box-shadow: 0 2px 8px var(--shade); }
+  .node.is-on{ border-width:2px; border-color: var(--tool-accent); box-shadow: 0 0 0 3px var(--ring); }
+  .node.kind-result.is-on{ border-color: var(--tool-ink); }
+  .node:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+
+  /* How many line items carry a figure. */
+  .node .count{
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10.5px;
+    padding:1px 5px; border-radius:4px; background: var(--panel);
+    border:1px solid var(--limit-bc); color: var(--limit-ink); white-space:nowrap;
+  }
+  .node .count.none{ opacity:.55; }
+  .node .caret{ font-size:9px; opacity:.8; }
+
+  .node .sub-pill{
+    position:absolute; left:10px; top:-9px; padding:1px 6px; border-radius:4px;
+    background: var(--limit-pill); color: var(--panel); font-size:9.5px;
+    font-weight:600; letter-spacing:.06em;
+  }
+  .node .sub-pill.floor{ left:auto; right:10px; background: var(--accent-deep); }
+
+  .legend{
+    position:absolute; left:16px; display:flex; gap:18px; align-items:center;
+    flex-wrap:wrap; font-size:11.5px; color: var(--ink-muted);
+  }
+  .legend .item{ display:flex; align-items:center; gap:6px; }
+  .legend i{
+    width:14px; height:10px; border-radius:3px; display:inline-block; flex:none;
+    background: var(--accent-tint); border:1px solid var(--accent-line);
+  }
+  .legend i.group{ background: var(--limit-bg); border-color: var(--limit-bc); }
+  .legend i.result{ background: var(--tool-accent); border-color: var(--tool-accent); }
+
+  .canvas-empty{
+    position:absolute; left:16px; top:52px; right:16px;
+    padding:22px 24px; border:1px dashed var(--border); border-radius:10px;
+    background: var(--tool-surface); max-width:62ch;
+  }
+  .canvas-empty p{ margin:0; font-size:13.5px; line-height:1.55; color: var(--ink-soft); }
+  .canvas-empty b{ color: var(--tool-ink); }
+
+  /* ---- The tables under the map -----------------------------------------
+     One per amber box, opening in place the way the sheet's own outline
+     groups do. Several can be open at once, which is the whole reason they
+     are stacked here rather than swapped through a single panel. */
+
+  .sheets{ border-top:1px solid var(--rule); background: var(--panel); }
+  .sheets-head{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:14px 20px; border-bottom:1px solid var(--rule); background: var(--tool-surface);
+  }
+  .sheets-head h3{
+    margin:0; font-family:"IBM Plex Serif", Georgia, serif; font-weight:600; font-size:17px;
+  }
+  .sheets-head .hint{ font-size:12.5px; color: var(--ink-muted); }
+  .sheets-head .spacer{ flex:1 1 auto; }
+
+  .sheet{ border-bottom:1px solid var(--rule); }
+  .sheet:last-child{ border-bottom:0; }
+
+  .sheet-toggle{
+    appearance:none; font:inherit; width:100%; text-align:left; cursor:pointer;
+    display:flex; align-items:center; gap:12px; padding:12px 20px;
+    background:transparent; border:0; color: var(--tool-ink);
+  }
+  .sheet-toggle:hover{ background: var(--accent-wash); }
+  .sheet-toggle:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
+  .sheet.is-open .sheet-toggle{ background: var(--limit-bg); }
+  .sheet-toggle .caret{
+    flex:none; width:19px; height:19px; border-radius:5px; display:flex;
+    align-items:center; justify-content:center; font-size:11px;
+    border:1px solid var(--limit-bc); background: var(--panel); color: var(--limit-ink);
+  }
+  .sheet-toggle .name{ font-size:13.5px; font-weight:600; }
+  .sheet-toggle .rows{
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11px; color: var(--ink-muted);
+  }
+  .sheet-toggle .count{
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11px;
+    padding:1px 6px; border-radius:4px; background: var(--limit-bg);
+    border:1px solid var(--limit-edge); color: var(--limit-ink);
+  }
+  .sheet-toggle .sum{
+    margin-left:auto; font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:14px; font-weight:600; white-space:nowrap;
+  }
+  .sheet-toggle .sum.zero{ color: var(--ink-muted); font-weight:400; }
+
+  .sheet-body{ padding:0 20px 18px; }
+  .sheet-body[hidden]{ display:none; }
+  .sheet-note{ font-size:12.5px; line-height:1.5; color: var(--ink-muted); margin:0 0 12px; max-width:74ch; }
+
+  .sheet-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .sheet-table th{
+    text-align:left; padding:7px 10px; font-size:11px; letter-spacing:.04em;
+    text-transform:uppercase; color: var(--ink-muted); font-weight:600;
+    border-bottom:1px solid var(--rule);
+  }
+  .sheet-table td{ padding:6px 10px; border-bottom:1px solid var(--row-rule); vertical-align:middle; }
+  .sheet-table .c-xl{
+    width:58px; font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11px; color: var(--ink-muted); white-space:nowrap;
+  }
+  .sheet-table .c-src{ width:140px; font-size:12px; color: var(--ink-muted); }
+  .sheet-table .c-amt{ width:170px; text-align:right; }
+  .sheet-table .c-note{ width:200px; font-size:11.5px; color: var(--ink-muted); }
+  .sheet-table .indent{ padding-left:26px; }
+
+  .sheet-table tr.is-filled td{ background: var(--accent-wash); }
+  .sheet-table tr.is-pick td{ background: var(--calc-row); font-weight:600; }
+  .sheet-table tr.is-total td{
+    border-bottom:0; border-top:2px solid var(--limit-bc);
+    font-weight:600; background: var(--limit-bg);
+  }
+  .sheet-table tr.is-total .c-amt{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:14px; }
+
+  .amt-in{
+    display:flex; align-items:center; gap:5px; justify-content:flex-end;
+    padding:5px 9px; border-radius:7px;
+    background: var(--limit-bg); border:1px solid var(--limit-bc);
+  }
+  .amt-in:focus-within{ border-color: var(--tool-accent); box-shadow:0 0 0 2px var(--ring); }
+  .amt-in span{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:12px; color: var(--limit-ink); }
+  .amt-in input{
+    width:100%; min-width:0; border:0; background:transparent; outline:none; font:inherit;
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:13px;
+    text-align:right; color: var(--tool-ink);
+  }
+  .amt-out{
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:13px;
+    font-weight:500; display:inline-block;
+  }
+  .amt-out.zero{ color: var(--ink-muted); font-weight:400; }
+
+  @media (max-width: 760px){
+    .sheet-table .c-src, .sheet-table .c-note{ display:none; }
+  }
+
+  /* ---- Sources ----------------------------------------------------------- */
+
+  .sources{
+    margin-top: var(--space-5); border:1px solid var(--rule); border-radius:12px;
+    background: var(--tool-surface); overflow:hidden;
+  }
+  .sources summary{
+    cursor:pointer; padding:14px 20px; font-size:13.5px; font-weight:600;
+    display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
+  }
+  .sources summary:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
+  .summary-hint{ font-weight:400; font-size:12px; color: var(--ink-muted); }
+  .sources-body{ padding:0 20px 20px; }
+  .sources-body p{ font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:72ch; margin:0 0 15px; }
+  .sources-body a{ color: var(--tool-accent); }
+  .linemap{
+    overflow-x:auto; border:1px solid var(--rule); border-radius:8px;
+    background: var(--panel); margin-bottom:15px;
+  }
+  .linemap table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .linemap caption{
+    text-align:left; padding:10px 12px; font-size:11px; letter-spacing:.06em;
+    text-transform:uppercase; color: var(--ink-muted); border-bottom:1px solid var(--rule);
+  }
+  .linemap th, .linemap td{
+    text-align:left; padding:8px 12px; border-bottom:1px solid var(--row-rule);
+    vertical-align:top; color: var(--ink-soft);
+  }
+  .linemap thead th{
+    font-size:11px; letter-spacing:.04em; text-transform:uppercase;
+    color: var(--ink-muted); font-weight:600;
+  }
+  .linemap td:first-child{
+    font-family:"IBM Plex Mono", ui-monospace, monospace; white-space:nowrap;
+    color: var(--tool-ink); font-weight:500;
+  }
+  .note{
+    font-size:12.5px; line-height:1.6; color: var(--ink-soft); margin:0;
+    padding:12px 14px; border-radius:8px; background: var(--limit-bg);
+    border:1px solid var(--limit-edge);
+  }
+  .note b{ color: var(--limit-body); font-weight:600; }
+
+  .footnote{ font-size:12px; color: var(--ink-muted); line-height:1.55; max-width:74ch; margin:18px 0 0; }
+
+  @media print{
+    .head-controls, .sheet-toggle .caret{ display:none; }
+    .canvas-scroll{ overflow:visible; }
+    .sheet-body[hidden]{ display:block; }
+  }
+
+  /* ---- Embedded mode (?embed=1) ------------------------------------------
+     Set when this page is iframed into the Dashboard's "1040 preview" tab.
+     The host page already supplies the topbar and footer, so hide ours rather
+     than showing the chrome twice. The markup stays in the DOM deliberately:
+     verify-links.mjs asserts every page carries the primary nav, and the skip
+     link still needs somewhere to land.
+     ------------------------------------------------------------------------ */
+  body.embed .topbar,
+  body.embed .site-footer,
+  body.embed .skip-link{ display:none; }
+  body.embed .app{ padding-top: var(--space-4); }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../../index.html" aria-label="TaxVisual home">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="20" width="20" height="1.3" rx=".65"/><path d="M2 20V14.7Q2 13.2 3.5 13.2H5.5Q7 13.2 7 14.7V20Z"/><path d="M9.5 20V10.1Q9.5 8.6 11 8.6H13Q14.5 8.6 14.5 10.1V20Z"/><rect x="17" y="9.3" width="5" height="10.7"/><path d="M17 8.7V5Q17 3.5 18.5 3.5H20.5Q22 3.5 22 5V8.7Z" fill-opacity=".45"/></svg>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../learn/index.html">Learn</a></li>
+          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../dashboard/index.html">Dashboard</a></li>
+          <li><a href="../../consulting/index.html">Consulting</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+<div class="app" id="main">
+  <div class="wrap">
+
+    <div class="masthead">
+      <div class="kicker">
+        <a href="../index.html">Return review</a> &middot; The tax formula
+      </div>
+      <h1>The individual income tax formula, drawn</h1>
+      <p class="standfirst">
+        Fourteen boxes, left to right, from gross income to the balance due &mdash; the major subtotals
+        of the <b>Income Tax Summary</b> in the ACCTG 410 Individual Taxation Toolbox. The map carries
+        labels only. A formula is a shape, and putting figures on it turns the diagram back into the
+        table it is meant to stand above.
+      </p>
+      <p class="standfirst">
+        The figures live underneath. Nine of the fourteen are amber, and each one opens into the sheet&rsquo;s
+        own line items &mdash; the nine income components under row 8, the three adjustments under row 18,
+        and so on. Type there and the box above fills in. Open as many as you like at once; nothing you
+        enter leaves this page.
+      </p>
+    </div>
+
+    <div class="board">
+      <div class="board-head">
+        <div class="head-top">
+          <div>
+            <div class="head-eyebrow" id="boardEyebrow">Income Tax Summary &middot; sheet rows 8&ndash;59</div>
+            <h2>Gross income to the balance due</h2>
+          </div>
+          <dl class="head-stats" id="headStats"></dl>
+        </div>
+        <div class="head-controls">
+          <button type="button" class="tbtn primary" id="sampleBtn">Load the workbook example</button>
+          <button type="button" class="tbtn" id="clearBtn">Clear</button>
+          <button type="button" class="tbtn" id="openAll">Open every table</button>
+          <button type="button" class="tbtn" id="closeAll">Close them</button>
+          <span class="hint">Select any box to trace what feeds it. Amber boxes open a table below.</span>
+        </div>
+      </div>
+
+      <div class="canvas-scroll" id="canvasScroll" tabindex="0" role="region"
+           aria-label="The individual income tax formula, drawn as a map. Scrolls sideways.">
+        <div class="canvas" id="canvas">
+          <svg class="wires" id="wires" width="1320" height="348" aria-hidden="true"></svg>
+          <div class="legend" id="legend" style="top:300px">
+            <span class="item"><i class="group"></i>Filled from its line items</span>
+            <span class="item"><i></i>A step in the formula</span>
+            <span class="item"><i class="result"></i>The answer</span>
+            <span class="item">
+              <svg width="22" height="8" aria-hidden="true"><path d="M1 4 L21 4"
+                style="stroke: var(--limit-bc); stroke-width:1.5; stroke-dasharray:5 4;"></path></svg>
+              Subtracted, not added
+            </span>
+            <span class="item">
+              <svg width="22" height="8" aria-hidden="true"><path d="M1 4 L21 4"
+                style="stroke: var(--edge); stroke-width:1.5; stroke-dasharray:2 3;"></path></svg>
+              Is the base for, not added
+            </span>
+          </div>
+        </div>
+      </div>
+      <p class="sr-only" id="mapDesc" role="status" aria-live="polite"></p>
+
+      <div class="sheets">
+        <div class="sheets-head">
+          <h3>The line items behind each box</h3>
+          <span class="hint">Nine tables, from the same sheet. Their entries are what derive the amber boxes above.</span>
+        </div>
+        <div id="sheetList"></div>
+      </div>
+    </div>
+
+    <details class="sources">
+      <summary>
+        Where this comes from
+        <span class="summary-hint">The workbook sheet, row by row &mdash; optional</span>
+      </summary>
+      <div class="sources-body">
+        <p>
+          <strong>Income Tax Summary</strong>, the framework tab of the ACCTG 410 Individual Taxation
+          Toolbox (<code>Individual taxation excel simulation master - organized.xlsx</code>), rows
+          8&ndash;59. That sheet is the individual income tax formula written out once, and every other
+          tab in the workbook feeds one of its lines. The map above is its fourteen major subtotals; the
+          tables are its line items.
+        </p>
+        <p>
+          The reference letters in the Ref column &mdash; <code>a</code>, <code>b</code>,
+          <code>a-b</code>, <code>c</code>, <code>d</code>, <code>e</code>, <code>c+d-e</code>,
+          <code>f</code>, <code>c+d-e+f</code> &mdash; are the sheet&rsquo;s own, from its column A.
+        </p>
+
+        <div class="linemap" tabindex="0" role="region" aria-label="The fourteen subtotals and their sheet rows">
+          <table>
+            <caption>The formula, row by row</caption>
+            <thead>
+              <tr><th scope="col">Row</th><th scope="col">Ref</th><th scope="col">Subtotal</th><th scope="col">Comes from</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>8</td><td></td><td>Gross income</td><td>rows 9&ndash;17</td></tr>
+              <tr><td>18</td><td></td><td>For AGI deductions</td><td>rows 19&ndash;21</td></tr>
+              <tr><td>22</td><td>a</td><td>Adjusted gross income</td><td>row 8 &minus; row 18</td></tr>
+              <tr><td>23</td><td>b</td><td>From AGI deductions</td><td>rows 24, 27&ndash;29</td></tr>
+              <tr><td>30</td><td>a-b</td><td>Taxable income</td><td>MAX(0, a &minus; b)</td></tr>
+              <tr><td>32</td><td>c</td><td>Income tax liability (tentative 1)</td><td>rows 33&ndash;34</td></tr>
+              <tr><td>35</td><td>d</td><td>Other taxes</td><td>rows 36&ndash;38</td></tr>
+              <tr><td>39</td><td>e</td><td>Nonrefundable tax credits</td><td>rows 40&ndash;43</td></tr>
+              <tr><td>44</td><td>c+d-e</td><td>Income tax liability (tentative 2)</td><td>MAX(0, c + d &minus; e)</td></tr>
+              <tr><td>45</td><td>f</td><td>Other taxes</td><td>rows 46&ndash;48</td></tr>
+              <tr><td>49</td><td>c+d-e+f</td><td>Total tax</td><td>row 44 + row 45</td></tr>
+              <tr><td>50</td><td></td><td>Refundable tax credits</td><td>rows 51&ndash;53</td></tr>
+              <tr><td>54</td><td></td><td>Prepayments</td><td>rows 55&ndash;58</td></tr>
+              <tr><td>59</td><td></td><td>Tax due or (refund)</td><td>row 49 &minus; row 50 &minus; row 54</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          <b>Two rows are floored at zero</b>, and the map marks both. Row 30 cannot go below zero, so
+          deductions past adjusted gross income do not carry anywhere. Row 44 cannot either, which is
+          what makes the credits on row 39 nonrefundable &mdash; past that point they stop being worth
+          anything. The taxes on row 45 are added after that floor, so those credits never reach them.
+        </p>
+        <p>
+          <b>This page does not compute a tax.</b> Rows 33 and 34 &mdash; ordinary tax and
+          preferential-rate tax &mdash; are figures the sheet takes as entries, worked out on its
+          Comprehensive Tax Calculation tab. They are entries here too, so no rate schedule is embedded
+          and none needs verifying.
+        </p>
+        <p class="note">
+          <b>The example is the sheet&rsquo;s own.</b> Salary 100,000, taxable interest 6,000, a 25,000
+          itemised deduction beating the 15,750 standard, ordinary tax of 13,127, one 500 credit and
+          10,000 withheld &mdash; landing on 2,627 due. It is illustrative, not a return, and the
+          figures are the workbook&rsquo;s rather than anyone&rsquo;s. Nothing here is tax advice.
+        </p>
+      </div>
+    </details>
+
+
+    <p class="footnote">
+      Educational use only. Ported from the Income Tax Summary sheet of the ACCTG 410 Individual
+      Taxation Toolbox; the Ref column throughout is that sheet&rsquo;s own row numbering. This page does
+      not recompute a tax liability &mdash; ordinary and preferential-rate tax are figures you enter, as
+      they are in the workbook &mdash; and it does not determine eligibility for anything. Take filing
+      decisions to a qualified tax professional.
+    </p>
+
+  </div>
+</div>
+
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav aria-label="Footer">
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h2>Learn</h2>
+            <ul>
+              <li><a href="../../learn/index.html">Learn</a></li>
+              <li><a href="../../learn/textbook/index.html">Visualized tax guide</a></li>
+              <li><a href="../../learn/guides/index.html">Concept guides</a></li>
+              <li><a href="../../learn/glossary/index.html">Glossary</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Tools</h2>
+            <ul>
+              <li><a href="../../tools/index.html">All tools</a></li>
+              <li><a href="../../review/1040/index.html" aria-current="page">1040 preview</a></li>
+              <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+              <li><a href="../../review/index.html">Return review</a></li>
+              <li><a href="../../review/how-it-works/index.html">How it works</a></li>
+              <li><a href="../../review/privacy/index.html">Privacy</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Dashboard</h2>
+            <ul>
+              <li><a href="../../dashboard/index.html">Dashboard</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Consulting</h2>
+            <ul>
+              <li><a href="../../consulting/index.html">Consulting</a></li>
+              <li><a href="../../consulting/planning/index.html">One-on-one tax planning</a></li>
+              <li><a href="../../training/team/index.html">Team training</a></li>
+              <li><a href="../../training/workshops/index.html">Public workshops</a></li>
+              <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>About</h2>
+            <ul>
+              <li><a href="../../about/index.html">About TaxVisual</a></li>
+              <li><a href="../../about/team/index.html">Our team</a></li>
+              <li><a href="../../methodology/index.html">Methodology</a></li>
+              <li><a href="../../sitemap/index.html">Site map</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Connect</h2>
+            <ul>
+              <li><a href="../../contact/index.html">Contact</a></li>
+              <li><a href="../../updates/index.html">Updates</a></li>
+              <li><a href="../../community/index.html">Community</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual publishes educational tax policy simulations for classrooms, policy workshops, and self-study. Not tax advice.</p>
+        <p class="footer-note"><a href="../../contact/index.html">Get email updates</a></p>
+      </div>
+    </div>
+  </footer>
+
+<script>
+/*  Embedded in the Dashboard tab? Drop the chrome. Mirrors the IRS dashboard's
+    own ?embed=1 switch so both tabs are driven the same way.               */
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.body.classList.add('embed');
+}
+
+/*  Money in, money out. Both are carried over from the return reader this
+    page replaced; they are the only two functions that survived it.        */
+function parseAmount(v){
+  if (v === null || v === undefined) return 0;
+  var s = String(v).replace(/[^0-9.\-]/g, '');
+  if (s === '' || s === '-' || s === '.') return 0;
+  var n = parseFloat(s);
+  return isFinite(n) ? n : 0;
+}
+
+function formatMoney(n){
+  var neg = n < 0, v = Math.round(Math.abs(n));
+  return (neg ? '-$' : '$') + v.toLocaleString('en-US');
+}
+
+/* ===========================================================================
+   The individual income tax formula.
+
+   Ported from the "Income Tax Summary" sheet of
+   `Individual taxation excel simulation master - organized.xlsx` (ACCTG 410
+   Individual Taxation Toolbox), rows 8–59 — the framework tab the whole
+   workbook hangs off.
+
+   The page is in two halves, and the split is the point:
+
+     the map      fourteen boxes, left to right, carrying the sheet's major
+                  subtotals and its reference letters. Labels only. No amounts,
+                  because a formula is a shape and putting figures on it turns
+                  a diagram back into a table.
+
+     the detail   nine of those fourteen are filled in from the sheet's own
+                  line items — the nine income components under row 8, the
+                  three adjustments under row 18, and so on. Those open below
+                  the map, one table each, and their entries are what derive
+                  the box above them.
+
+   So every figure is entered at the level the sheet enters it, and every box
+   on the map is either a sum of its own detail or a step in the formula. The
+   only things typed are the 36 line items.
+   =========================================================================== */
+
+function formulaColumns(){
+  return ['Income', 'Adjusted gross income', 'Taxable income',
+          'Tax before credits', 'Tentative liability', 'Total tax', 'Settlement'];
+}
+
+function formulaKindLabels(){
+  return { group:'Filled from its line items', calc:'A step in the formula', result:'The answer' };
+}
+
+/*  The fourteen boxes.
+
+      group   an amber box: a subtotal its own line items add up to
+      calc    a step the formula computes from other boxes
+      result  where the formula ends
+
+    `xl` is the sheet row, so a drift between this and the workbook shows up
+    in a diff rather than in someone's memory.                              */
+function formulaBoxes(){
+  return [
+    { id:'grossIncome', col:0, row:0, kind:'group', xl:8, ref:'Row 8',
+      title:'Gross income',
+      note:'Everything before any deduction. The sheet breaks it into nine line items — wages, interest, dividends, retirement, capital gains, Social Security — and this box is their total.' },
+
+    { id:'forAgi', col:0, row:1, kind:'group', xl:18, ref:'Row 18', reduces:true,
+      title:'For AGI deductions',
+      note:'The above-the-line deductions from Schedule 1 Part II. Subtracted from gross income to reach adjusted gross income, which is why they are worth more than a below-the-line deduction of the same size.' },
+
+    { id:'agi', col:1, row:0, kind:'calc', xl:22, ref:'Row 22 · a',
+      title:'Adjusted gross income',
+      note:'The formula’s first milestone, and the figure most phase-outs are measured against — which is why it matters more than what you earned.' },
+
+    { id:'fromAgi', col:1, row:1, kind:'group', xl:23, ref:'Row 23 · b', reduces:true,
+      title:'From AGI deductions',
+      note:'Below the line: the greater of the standard or itemised deduction, plus the qualified business income deduction and anything else. The standard-versus-itemised comparison is worked out inside this box’s own table.' },
+
+    { id:'taxable', col:2, row:0, kind:'calc', xl:30, ref:'Row 30 · a-b', floor:true,
+      title:'Taxable income',
+      note:'Cannot be below zero — the sheet floors it, and so does this. If deductions exceed adjusted gross income the excess does not carry anywhere on this map.' },
+
+    { id:'tentative1', col:3, row:0, kind:'group', xl:32, ref:'Row 32 · c',
+      title:'Income tax liability (tentative 1)',
+      note:'Ordinary tax plus preferential-rate tax. Both are figures the sheet takes as entries, worked out on its Comprehensive Tax Calculation tab — no rate schedule is embedded here.' },
+
+    { id:'otherTaxD', col:3, row:1, kind:'group', xl:35, ref:'Row 35 · d',
+      title:'Other taxes',
+      note:'Alternative minimum tax and excess advance premium tax credit repayment. Added before credits come off, so credits can reach them.' },
+
+    { id:'nonrefundable', col:3, row:2, kind:'group', xl:39, ref:'Row 39 · e', reduces:true,
+      title:'Nonrefundable tax credits',
+      note:'Foreign tax credit, the nonrefundable part of the child tax credit, dependent care. These can take the liability to zero but never below it.' },
+
+    { id:'tentative2', col:4, row:0, kind:'calc', xl:44, ref:'Row 44 · c+d-e', floor:true,
+      title:'Income tax liability (tentative 2)',
+      note:'Floored at zero, which is what makes those credits nonrefundable: past this point they stop being worth anything.' },
+
+    { id:'otherTaxF', col:4, row:1, kind:'group', xl:45, ref:'Row 45 · f',
+      title:'Other taxes',
+      note:'Self-employment tax and net investment income tax. They sit outside the floor above deliberately — nonrefundable credits cannot offset them.' },
+
+    { id:'totalTax', col:5, row:0, kind:'calc', xl:49, ref:'Row 49 · c+d-e+f',
+      title:'Total tax',
+      note:'The final liability, before anything already paid.' },
+
+    { id:'refundable', col:5, row:1, kind:'group', xl:50, ref:'Row 50', reduces:true,
+      title:'Refundable tax credits',
+      note:'Child tax credit and earned income credit. Refundable means they keep paying out after the liability reaches zero, which is why they sit here and not on row 39.' },
+
+    { id:'prepayments', col:5, row:2, kind:'group', xl:54, ref:'Row 54', reduces:true,
+      title:'Prepayments',
+      note:'Withholding on a W-2 or 1099, estimated payments, and anything applied from last year’s return.' },
+
+    { id:'dueOrRefund', col:6, row:0, kind:'result', xl:59, ref:'Row 59',
+      title:'Tax due or (refund)',
+      note:'Signed, as the sheet has it: positive is owed, negative in brackets is refunded.' }
+  ];
+}
+
+/*  op: +1 adds into the target, -1 subtracts, 0 means "is the base this was
+    computed from" — a real dependency with no arithmetic behind it.        */
+function formulaEdges(){
+  return [
+    { from:'grossIncome',   to:'agi',         op: 1 },
+    { from:'forAgi',        to:'agi',         op:-1 },
+    { from:'agi',           to:'taxable',     op: 1 },
+    { from:'fromAgi',       to:'taxable',     op:-1 },
+    { from:'taxable',       to:'tentative1',  op: 0 },
+    { from:'tentative1',    to:'tentative2',  op: 1 },
+    { from:'otherTaxD',     to:'tentative2',  op: 1 },
+    { from:'nonrefundable', to:'tentative2',  op:-1 },
+    { from:'tentative2',    to:'totalTax',    op: 1 },
+    { from:'otherTaxF',     to:'totalTax',    op: 1 },
+    { from:'totalTax',      to:'dueOrRefund', op: 1 },
+    { from:'refundable',    to:'dueOrRefund', op:-1 },
+    { from:'prepayments',   to:'dueOrRefund', op:-1 }
+  ];
+}
+
+/*  The sheet's line items, grouped under the box each one derives.
+
+      role 'item'  a figure you type
+           'pick'  a computed row inside a table — row 24 only, where the
+                   sheet takes the greater of the standard and itemised
+                   deductions before adding anything else
+      `under`      the row a 'pick' takes its candidates from, so the table
+                   can indent them beneath it
+      `tab`        the workbook tab that works this figure out, where one does
+      `only2025`   Schedule 1-A is an OBBBA provision; it has no 2024 row     */
+function formulaItems(){
+  return {
+    grossIncome: [
+      { key:'salary',       xl:9,  role:'item', source:'W-2',           label:'Salary' },
+      { key:'interest',     xl:10, role:'item', source:'Form 1099-INT', label:'Taxable interest income' },
+      { key:'dividends',    xl:11, role:'item', source:'Form 1099-B',   label:'Ordinary dividends' },
+      { key:'iraDist',      xl:12, role:'item', source:'Form 1099-R',   label:'Taxable IRA distributions' },
+      { key:'pension',      xl:13, role:'item', source:'Form 1099-R',   label:'Taxable pension and annuities', tab:'Annuity' },
+      { key:'socsec',       xl:14, role:'item', source:'Form SSA-1099', label:'Taxable social security benefits', tab:'Social Security' },
+      { key:'capGain',      xl:15, role:'item',                          label:'Capital gain (loss)', tab:'Gain and Loss Netting' },
+      { key:'sched1Income', xl:16, role:'item',                          label:'Additional income from Schedule 1 Part I' },
+      { key:'otherIncome',  xl:17, role:'item',                          label:'Other income', hint:'placeholder' }
+    ],
+    forAgi: [
+      { key:'retirement',  xl:19, role:'item', label:'Contributions to qualified retirement accounts' },
+      { key:'educator',    xl:20, role:'item', label:'Educator expenses' },
+      { key:'otherForAgi', xl:21, role:'item', label:'Other "for AGI deductions"', hint:'placeholder' }
+    ],
+    fromAgi: [
+      { key:'greaterOf',    xl:24, role:'pick', label:'Greater of (a) standard deduction or (b) itemized deduction',
+        picks:['stdDeduction','itemized'] },
+      { key:'stdDeduction', xl:25, role:'item', under:'greaterOf', label:'(a) Standard deduction for the filing status' },
+      { key:'itemized',     xl:26, role:'item', under:'greaterOf', label:'(b) Itemized deduction', tab:'Charitable Deduction' },
+      { key:'qbi',          xl:27, role:'item', label:'Deduction for qualified business income (20% of QBI)', tab:'QBI Deduction' },
+      { key:'sched1A',      xl:28, role:'item', label:'Additional deduction from Schedule 1-A',
+        hint:'no tax on overtime, tips, car loan interest', only2025:true },
+      { key:'otherFromAgi', xl:29, role:'item', label:'Other from AGI deductions', hint:'placeholder' }
+    ],
+    tentative1: [
+      { key:'ordinaryTax', xl:33, role:'item', label:'Ordinary income tax', tab:'Comprehensive Tax Calculation' },
+      { key:'prefTax',     xl:34, role:'item', label:'Qualified dividend and LT capital gain tax', tab:'Comprehensive Tax Calculation' }
+    ],
+    otherTaxD: [
+      { key:'amt',           xl:36, role:'item', label:'Alternative minimum tax' },
+      { key:'excessAptc',    xl:37, role:'item', label:'Excess advance premium tax credit repayment' },
+      { key:'otherTaxDItem', xl:38, role:'item', label:'Other taxes', hint:'placeholder' }
+    ],
+    nonrefundable: [
+      { key:'foreignCredit', xl:40, role:'item', label:'Foreign tax credit' },
+      { key:'ctcNonref',     xl:41, role:'item', label:'Nonrefundable portion of child tax credit and credit for other dependents' },
+      { key:'dependentCare', xl:42, role:'item', label:'Dependent care expenses credit' },
+      { key:'otherNonref',   xl:43, role:'item', label:'Other nonrefundable tax credits', hint:'placeholder' }
+    ],
+    otherTaxF: [
+      { key:'seTax',         xl:46, role:'item', label:'Self-employment tax', tab:'Self-Employment Tax' },
+      { key:'niit',          xl:47, role:'item', label:'Net investment income tax' },
+      { key:'otherTaxFItem', xl:48, role:'item', label:'Other taxes', hint:'placeholder' }
+    ],
+    refundable: [
+      { key:'ctcRefundable',   xl:51, role:'item', label:'Child tax credit' },
+      { key:'eitc',            xl:52, role:'item', label:'Earned income tax credit', tab:'Earned Income Tax Credit' },
+      { key:'otherRefundable', xl:53, role:'item', label:'Other refundable tax credit', hint:'placeholder' }
+    ],
+    prepayments: [
+      { key:'whW2',        xl:55, role:'item', label:'Withholding (Form W-2)' },
+      { key:'wh1099',      xl:56, role:'item', label:'Withholding (Form 1099)' },
+      { key:'estimated',   xl:57, role:'item', label:'Estimated tax payments and amount applied from prior year return' },
+      { key:'otherPrepay', xl:58, role:'item', label:'Other withholding and prepayments', hint:'placeholder' }
+    ]
+  };
+}
+
+/*  Every key you can type into, in sheet order. */
+function formulaInputs(){
+  var items = formulaItems(), out = [];
+  formulaBoxes().forEach(function(b){
+    (items[b.id] || []).forEach(function(it){
+      if (it.role === 'item') out.push(it.key);
+    });
+  });
+  return out;
+}
+
+function formulaBlank(){
+  var v = {};
+  formulaInputs().forEach(function(k){ v[k] = ''; });
+  return v;
+}
+
+/*  The workbook sheet's own scenario: salary 100,000, interest 6,000, a
+    25,000 itemised deduction beating the 15,750 standard, 13,127 of ordinary
+    tax, one 500 credit, 10,000 withheld. It lands on 2,627 due, as the sheet
+    does.                                                                     */
+function formulaSample(){
+  var v = formulaBlank();
+  v.salary = '100000';
+  v.interest = '6000';
+  v.retirement = '0';
+  v.stdDeduction = '15750';
+  v.itemized = '25000';
+  v.ordinaryTax = '13127';
+  v.prefTax = '0';
+  v.ctcNonref = '500';
+  v.whW2 = '10000';
+  return v;
+}
+
+/*  Every figure on the page: the 36 typed items, the one computed row inside
+    a table, the nine box subtotals, and the five formula steps.            */
+function formulaCompute(values){
+  var n = {}, items = formulaItems();
+  formulaInputs().forEach(function(k){ n[k] = parseAmount(values[k]); });
+
+  /* row 24 — the one computed row that lives inside a table */
+  n.greaterOf = Math.max(n.stdDeduction || 0, n.itemized || 0);
+
+  /* the nine amber boxes: each the total of its own line items */
+  Object.keys(items).forEach(function(boxId){
+    var total = 0;
+    items[boxId].forEach(function(it){
+      /* a 'pick' already stands for the rows indented beneath it */
+      if (it.under) return;
+      total += (n[it.key] || 0);
+    });
+    n[boxId] = total;
+  });
+
+  /* the formula itself */
+  n.agi         = n.grossIncome - n.forAgi;                                   /* row 22 */
+  n.taxable     = Math.max(0, n.agi - n.fromAgi);                             /* row 30 */
+  n.tentative2  = Math.max(0, n.tentative1 + n.otherTaxD - n.nonrefundable);  /* row 44 */
+  n.totalTax    = n.tentative2 + n.otherTaxF;                                 /* row 49 */
+  n.dueOrRefund = n.totalTax - n.refundable - n.prepayments;                  /* row 59 */
+  return n;
+}
+
+function formulaHasFigures(values){
+  var keys = formulaInputs();
+  for (var i = 0; i < keys.length; i++) if (parseAmount(values[keys[i]]) !== 0) return true;
+  return false;
+}
+
+/*  How many of a box's line items carry a figure. The map shows this instead
+    of an amount: it says where the numbers are without turning the diagram
+    back into a table.                                                       */
+function formulaFilled(values, boxId){
+  var rows = (formulaItems()[boxId] || []).filter(function(it){ return it.role === 'item'; });
+  var filled = rows.filter(function(it){ return parseAmount(values[it.key]) !== 0; });
+  return { filled: filled.length, total: rows.length };
+}
+
+function formulaGraph(values){
+  var n = formulaCompute(values);
+  var boxes = formulaBoxes(), edges = formulaEdges(), byId = {};
+  for (var i = 0; i < boxes.length; i++) byId[boxes[i].id] = boxes[i];
+
+  var into = {}, outOf = {};
+  for (var j = 0; j < edges.length; j++){
+    (into[edges[j].to] = into[edges[j].to] || []).push(edges[j]);
+    (outOf[edges[j].from] = outOf[edges[j].from] || []).push(edges[j]);
+  }
+
+  /*  A box is a sum when every edge into it carries a sign. `tentative1` is
+      the one that is not: op 0 disqualifies it, because total tax is not a
+      function of taxable income alone. Two boxes carry the sheet's floor.  */
+  var sums = [];
+  for (var k = 0; k < boxes.length; k++){
+    var inc = into[boxes[k].id];
+    if (!inc || !inc.length) continue;
+    if (inc.some(function(x){ return x.op === 0; })) continue;
+    var total = 0;
+    for (var m = 0; m < inc.length; m++) total += inc[m].op * n[inc[m].from];
+    if (boxes[k].floor) total = Math.max(0, total);
+    sums.push({ id: boxes[k].id, expected: total, actual: n[boxes[k].id], floored: !!boxes[k].floor });
+  }
+
+  return { values:values, n:n, boxes:boxes, edges:edges, byId:byId,
+           into:into, outOf:outOf, sums:sums };
+}
+
+function formulaLayout(){
+  var W = 168, H = 68, ROW = 78, TOP = 52, LEFT = 16, CANVAS = 1320, GUTTER = 64;
+  var boxes = formulaBoxes(), names = formulaColumns(), LAST = names.length - 1;
+  var spacing = Math.min(200, (CANVAS - LEFT - GUTTER - W) / LAST);
+
+  function colX(c){ return Math.round(LEFT + c * spacing); }
+
+  var placed = boxes.map(function(b){
+    return { id:b.id, col:b.col, row:b.row, kind:b.kind,
+             x:colX(b.col), y:Math.round(TOP + b.row * ROW) };
+  });
+
+  var cols = [];
+  for (var c = 0; c <= LAST; c++){
+    var count = boxes.filter(function(b){ return b.col === c; }).length;
+    cols.push({ col:c, x:colX(c), count:count, name:names[c], label:names[c] + ' · ' + count });
+  }
+
+  return { width:CANVAS, height:348, nodeW:W, nodeH:H, nodes:placed, cols:cols };
+}
+
+function formulaEdgePath(a, b, W){
+  var mid = 34;
+  if (a.col === b.col){
+    var x = a.x + W, ya = a.y + mid, yb = b.y + mid, bulge = 14 + 8 * Math.abs(b.row - a.row);
+    return 'M' + x + ' ' + ya + ' C' + (x + bulge) + ' ' + ya + ' ' + (x + bulge) + ' ' + yb + ' ' + x + ' ' + yb;
+  }
+  var x1 = a.x + W, y1 = a.y + mid, x2 = b.x, y2 = b.y + mid, mx = (x1 + x2) / 2;
+  return 'M' + x1 + ' ' + y1 + ' C' + mx + ' ' + y1 + ' ' + mx + ' ' + y2 + ' ' + x2 + ' ' + y2;
+}
+
+function formulaLineage(g, id){
+  var up = {}, down = {};
+  (function walkUp(x){
+    var inc = g.into[x] || [];
+    for (var i = 0; i < inc.length; i++){
+      if (up[inc[i].from]) continue;
+      up[inc[i].from] = true; walkUp(inc[i].from);
+    }
+  })(id);
+  (function walkDown(x){
+    var out = g.outOf[x] || [];
+    for (var i = 0; i < out.length; i++){
+      if (down[out[i].to]) continue;
+      down[out[i].to] = true; walkDown(out[i].to);
+    }
+  })(id);
+  return { up:up, down:down };
+}
+
+/*  What a computed box is made of, for the line under its label. */
+function formulaTerms(g, id){
+  return (g.into[id] || []).map(function(e){
+    return { id:e.from, op:e.op, title:g.byId[e.from].title, ref:g.byId[e.from].ref };
+  });
+}
+
+function formulaDescription(g, id, open){
+  if (!id) return 'Seven columns, fourteen boxes. ' + open.length + ' of nine tables open.';
+  var b = g.byId[id];
+  var terms = formulaTerms(g, id);
+  var from = terms.length
+    ? terms.map(function(t){ return (t.op === -1 ? 'less ' : t.op === 0 ? 'based on ' : '') + t.title; }).join(', ')
+    : 'its own line items, ' + formulaFilled(g.values, id).total + ' of them';
+  var to = (g.outOf[id] || []).map(function(e){ return g.byId[e.to].title; });
+  return b.title + ', sheet ' + b.ref + '. Comes from ' + from + '. ' +
+         (to.length ? 'Lands on ' + to.join(', ') + '.' : 'It is where the formula ends.');
+}
+
+/* ===========================================================================
+   Page wiring.
+   =========================================================================== */
+(function(){
+  'use strict';
+
+  var $ = function(id){ return document.getElementById(id); };
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var state = {
+    values: formulaSample(),
+    /* Which box is traced, and which tables are open. Several at once, which
+       is the whole reason they are stacked rather than swapped. */
+    selected: 'dueOrRefund',
+    open: {},
+    refocus: null
+  };
+
+  function el(tag, cls, text){
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined && text !== null) e.textContent = text;
+    return e;
+  }
+
+  /*  Accounting sense, as the sheet has it: brackets for a negative. */
+  function money(n){
+    if (n === 0) return '0';
+    var s = Math.abs(Math.round(n)).toLocaleString('en-US');
+    return n < 0 ? '(' + s + ')' : s;
+  }
+
+  function openCount(){
+    return Object.keys(state.open).filter(function(k){ return state.open[k]; });
+  }
+
+  /* ---- Render ------------------------------------------------------------ */
+
+  function render(){
+    var g = formulaGraph(state.values);
+    var has = formulaHasFigures(state.values);
+
+    if (state.selected && !g.byId[state.selected]) state.selected = 'dueOrRefund';
+
+    renderHeadStats(g, has);
+    renderCanvas(g, has);
+    renderSheets(g);
+
+    $('mapDesc').textContent = formulaDescription(g, state.selected, openCount());
+
+    if (state.refocus){
+      var back = $(state.refocus);
+      state.refocus = null;
+      if (back) back.focus();
+    }
+  }
+
+  /*  Amounts only, and never a line item's own field: rebuilding an <input>
+      under the caret loses both the caret and the selection. */
+  function repaint(){
+    var g = formulaGraph(state.values), n = g.n;
+
+    g.boxes.forEach(function(b){
+      var node = $('node-' + b.id);
+      if (!node) return;
+      var c = node.querySelector('.count');
+      if (c && b.kind === 'group'){
+        var f = formulaFilled(state.values, b.id);
+        c.textContent = f.filled + ' / ' + f.total;
+        if (f.filled) c.classList.remove('none'); else c.classList.add('none');
+      }
+    });
+
+    formulaBoxes().filter(function(b){ return b.kind === 'group'; }).forEach(function(b){
+      var sum = $('sum-' + b.id);
+      if (sum){
+        sum.textContent = money(n[b.id]);
+        if (n[b.id] === 0) sum.classList.add('zero'); else sum.classList.remove('zero');
+      }
+      var cnt = $('cnt-' + b.id);
+      if (cnt){
+        var f = formulaFilled(state.values, b.id);
+        cnt.textContent = f.filled + ' of ' + f.total + ' entered';
+      }
+      var tot = $('tot-' + b.id);
+      if (tot) tot.textContent = money(n[b.id]);
+    });
+
+    /* row 24 is the one computed row inside a table */
+    var pick = $('out-greaterOf');
+    if (pick){
+      pick.textContent = money(n.greaterOf);
+      if (n.greaterOf === 0) pick.classList.add('zero'); else pick.classList.remove('zero');
+    }
+
+    /* the filled highlight follows what is typed */
+    formulaInputs().forEach(function(k){
+      var row = $('row-' + k);
+      if (!row) return;
+      if (parseAmount(state.values[k]) !== 0) row.classList.add('is-filled');
+      else row.classList.remove('is-filled');
+    });
+
+    renderHeadStats(g, formulaHasFigures(state.values));
+  }
+
+  function renderHeadStats(g, has){
+    var mount = $('headStats'), n = g.n;
+    mount.textContent = '';
+    var owed = n.dueOrRefund > 0;
+    [
+      { k:'Adjusted gross income', ln:'Row 22 · a',       v: has ? money(n.agi) : '—' },
+      { k:'Taxable income',        ln:'Row 30 · a-b',     v: has ? money(n.taxable) : '—' },
+      { k:'Total tax',             ln:'Row 49 · c+d-e+f', v: has ? money(n.totalTax) : '—' },
+      { k:'Effective rate',        ln:'Derived · row 49 ÷ row 22',
+        v: has && n.agi > 0 ? (n.totalTax / n.agi * 100).toFixed(1) + '%' : '—', cls:'is-accent' },
+      { k: owed ? 'Tax due' : 'Refund', ln:'Row 59',
+        v: has ? money(Math.abs(n.dueOrRefund)) : '—',
+        cls: owed ? 'is-limit' : 'is-accent' }
+    ].forEach(function(r){
+      var wrap = el('div');
+      wrap.appendChild(el('dt', null, r.k));
+      wrap.appendChild(el('dd', r.cls || null, r.v));
+      wrap.appendChild(el('div', 'ln', r.ln));
+      mount.appendChild(wrap);
+    });
+  }
+
+  function renderCanvas(g, has){
+    var canvas = $('canvas'), wires = $('wires');
+    Array.prototype.slice.call(canvas.querySelectorAll('.node, .col-head, .canvas-empty'))
+      .forEach(function(x){ x.remove(); });
+    while (wires.firstChild) wires.removeChild(wires.firstChild);
+
+    var L = formulaLayout();
+    var pos = {};
+    L.nodes.forEach(function(p){ pos[p.id] = p; });
+
+    canvas.style.width = L.width + 'px';
+    canvas.style.height = L.height + 'px';
+    wires.setAttribute('width', String(L.width));
+    wires.setAttribute('height', String(L.height));
+
+    L.cols.forEach(function(c){
+      var h = el('div', 'col-head', c.label);
+      h.style.left = c.x + 'px';
+      canvas.appendChild(h);
+    });
+
+    var lin = state.selected ? formulaLineage(g, state.selected) : null;
+    function inTrace(id){
+      if (!lin) return true;
+      return id === state.selected || lin.up[id] || lin.down[id];
+    }
+
+    g.edges.forEach(function(e){
+      var a = pos[e.from], b = pos[e.to];
+      var on = inTrace(e.from) && inTrace(e.to);
+      var path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', formulaEdgePath(a, b, L.nodeW));
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', e.op === -1 ? 'var(--limit-bc)' : 'var(--edge)');
+      path.setAttribute('stroke-width', on ? '2' : '1.25');
+      if (e.op === -1) path.setAttribute('stroke-dasharray', '5 4');
+      if (e.op === 0) path.setAttribute('stroke-dasharray', '2 3');
+      path.setAttribute('opacity', on ? '0.95' : '0.28');
+      wires.appendChild(path);
+    });
+
+    g.boxes.forEach(function(b){
+      var p = pos[b.id];
+      var node = el('button', 'node kind-' + b.kind);
+      node.type = 'button';
+      node.id = 'node-' + b.id;
+      node.style.left = p.x + 'px';
+      node.style.top = p.y + 'px';
+      if (!inTrace(b.id)) node.classList.add('is-off');
+      if (b.id === state.selected) node.classList.add('is-on');
+      if (b.note) node.title = b.note;
+
+      var tags = el('div', 'tags');
+      tags.appendChild(el('span', null, b.ref));
+
+      var label = b.title + ', sheet ' + b.ref;
+      if (b.kind === 'group'){
+        var f = formulaFilled(state.values, b.id);
+        var chip = el('span', 'count' + (f.filled ? '' : ' none'), f.filled + ' / ' + f.total);
+        tags.appendChild(chip);
+        label += ', ' + f.filled + ' of ' + f.total + ' line items entered, opens a table below';
+      } else {
+        tags.appendChild(el('span', 'caret', b.kind === 'result' ? '=' : ''));
+      }
+      node.appendChild(tags);
+      node.appendChild(el('div', 'title', b.title));
+
+      if (b.reduces) node.appendChild(el('span', 'sub-pill', 'LESS'));
+      if (b.floor) node.appendChild(el('span', 'sub-pill floor', 'FLOOR 0'));
+
+      node.setAttribute('aria-label', label + (b.id === state.selected ? ', selected' : ''));
+      if (b.kind === 'group') node.setAttribute('aria-expanded', state.open[b.id] ? 'true' : 'false');
+
+      node.addEventListener('click', function(){
+        state.selected = b.id;
+        /* An amber box is the handle on its own table. */
+        if (b.kind === 'group'){
+          state.open[b.id] = !state.open[b.id];
+          state.refocus = state.open[b.id] ? 'toggle-' + b.id : 'node-' + b.id;
+        }
+        render();
+      });
+      canvas.appendChild(node);
+    });
+
+    $('legend').style.top = (L.height - 48) + 'px';
+    $('legend').style.display = has || true ? '' : 'none';
+  }
+
+  /* ---- The tables -------------------------------------------------------- */
+
+  function renderSheets(g){
+    var mount = $('sheetList'), items = formulaItems(), n = g.n;
+    mount.textContent = '';
+
+    formulaBoxes().filter(function(b){ return b.kind === 'group'; }).forEach(function(b){
+      var rows = items[b.id] || [];
+      var open = !!state.open[b.id];
+      var f = formulaFilled(state.values, b.id);
+
+      var sec = el('section', 'sheet' + (open ? ' is-open' : ''));
+
+      var toggle = el('button', 'sheet-toggle');
+      toggle.type = 'button';
+      toggle.id = 'toggle-' + b.id;
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      toggle.setAttribute('aria-controls', 'body-' + b.id);
+      toggle.appendChild(el('span', 'caret', open ? '−' : '+'));
+      toggle.appendChild(el('span', 'name', b.title));
+      toggle.appendChild(el('span', 'rows', 'Sheet rows ' + rows[0].xl + '–' + rows[rows.length - 1].xl));
+      var cnt = el('span', 'count', f.filled + ' of ' + f.total + ' entered');
+      cnt.id = 'cnt-' + b.id;
+      toggle.appendChild(cnt);
+      var sum = el('span', 'sum' + (n[b.id] === 0 ? ' zero' : ''), money(n[b.id]));
+      sum.id = 'sum-' + b.id;
+      toggle.appendChild(sum);
+      toggle.addEventListener('click', function(){
+        state.open[b.id] = !state.open[b.id];
+        state.selected = b.id;
+        state.refocus = 'toggle-' + b.id;
+        render();
+      });
+      sec.appendChild(toggle);
+
+      var body = el('div', 'sheet-body');
+      body.id = 'body-' + b.id;
+      body.hidden = !open;
+      if (b.note) body.appendChild(el('p', 'sheet-note', b.note));
+
+      var table = el('table', 'sheet-table');
+      var thead = el('thead'), htr = el('tr');
+      [['Ref','c-xl'],['Source','c-src'],['Line item',null],['Amount','c-amt'],['Notes','c-note']]
+        .forEach(function(h){
+          var th = el('th', h[1], h[0]);
+          th.scope = 'col';
+          htr.appendChild(th);
+        });
+      thead.appendChild(htr);
+      table.appendChild(thead);
+
+      var tbody = el('tbody');
+      rows.forEach(function(it){
+        var tr = el('tr', it.role === 'pick' ? 'is-pick' : '');
+        tr.id = 'row-' + it.key;
+        if (it.role === 'item' && parseAmount(state.values[it.key]) !== 0) tr.classList.add('is-filled');
+
+        tr.appendChild(el('td', 'c-xl', String(it.xl)));
+        tr.appendChild(el('td', 'c-src', it.source || ''));
+
+        var name = el('td', it.under ? 'indent' : null);
+        name.appendChild(document.createTextNode(it.label));
+        if (it.hint) name.appendChild(el('span', 'hint', ' (' + it.hint + ')'));
+        tr.appendChild(name);
+
+        var amt = el('td', 'c-amt');
+        if (it.role === 'pick'){
+          var out = el('span', 'amt-out' + (n[it.key] === 0 ? ' zero' : ''), money(n[it.key]));
+          out.id = 'out-' + it.key;
+          amt.appendChild(out);
+        } else {
+          var box = el('div', 'amt-in');
+          var input = document.createElement('input');
+          input.type = 'text';
+          input.inputMode = 'decimal';
+          input.autocomplete = 'off';
+          input.id = 'v-' + it.key;
+          input.placeholder = '0';
+          input.value = state.values[it.key] === undefined ? '' : state.values[it.key];
+          input.setAttribute('aria-label', it.label + ', sheet row ' + it.xl);
+          input.addEventListener('input', function(){
+            state.values[it.key] = input.value;
+            repaint();
+          });
+          box.appendChild(el('span', null, '$'));
+          box.appendChild(input);
+          amt.appendChild(box);
+        }
+        tr.appendChild(amt);
+
+        tr.appendChild(el('td', 'c-note', it.tab ? 'See the ' + it.tab + ' tab' : ''));
+        tbody.appendChild(tr);
+      });
+
+      var totTr = el('tr', 'is-total');
+      totTr.appendChild(el('td', 'c-xl', String(b.xl)));
+      totTr.appendChild(el('td', 'c-src', ''));
+      totTr.appendChild(el('td', null, b.title));
+      var totTd = el('td', 'c-amt');
+      var tot = el('span', 'amt-out', money(n[b.id]));
+      tot.id = 'tot-' + b.id;
+      totTd.appendChild(tot);
+      totTr.appendChild(totTd);
+      totTr.appendChild(el('td', 'c-note', ''));
+      tbody.appendChild(totTr);
+
+      table.appendChild(tbody);
+      body.appendChild(table);
+      sec.appendChild(body);
+      mount.appendChild(sec);
+    });
+  }
+
+  /* ---- Events ------------------------------------------------------------ */
+
+  $('sampleBtn').addEventListener('click', function(){
+    state.values = formulaSample();
+    render();
+  });
+
+  $('clearBtn').addEventListener('click', function(){
+    state.values = formulaBlank();
+    state.selected = 'grossIncome';
+    state.open.grossIncome = true;
+    state.refocus = 'v-salary';
+    render();
+  });
+
+  $('openAll').addEventListener('click', function(){
+    formulaBoxes().forEach(function(b){ if (b.kind === 'group') state.open[b.id] = true; });
+    render();
+  });
+
+  $('closeAll').addEventListener('click', function(){
+    state.open = {};
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

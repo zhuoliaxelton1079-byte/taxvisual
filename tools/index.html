@@ -13,6 +13,79 @@
   <link rel="stylesheet" href="../assets/css/tokens.css">
   <link rel="stylesheet" href="../assets/css/base.css">
   <link rel="stylesheet" href="../assets/css/components.css">
+  <style>
+    /* ----------------------------------------------------------------------
+       Page-scoped: the tablist and the embedded 1040 preview. Deliberately not
+       promoted into components.css — one page uses them, and the shared sheet
+       has no tab component yet. Shape is ported from /review/flow-map/, but
+       re-expressed in site tokens, since that page themes itself with
+       tool-scoped vars this page does not define.
+       ---------------------------------------------------------------------- */
+    :root{
+      /* The preview declares color-scheme: light and cannot follow the site
+         theme from inside an iframe. Pin the frame backdrop to its own page
+         colour so a dark-mode visitor gets no dark flash before paint. */
+      --embed-backdrop: #fbfaf6;
+    }
+
+    .tablist{
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1);
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: var(--space-6);
+    }
+    .tablist [role="tab"]{
+      margin-bottom: -1px;
+      padding: var(--space-3) var(--space-4);
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: var(--weight-semibold);
+      color: var(--muted);
+      cursor: pointer;
+      transition: color var(--transition);
+    }
+    .tablist [role="tab"]:hover{ color: var(--ink); }
+    .tablist [role="tab"][aria-selected="true"]{
+      color: var(--ink);
+      border-bottom-color: var(--accent);
+    }
+    .tablist [role="tab"]:focus-visible{
+      outline: 2px solid var(--accent);
+      outline-offset: -3px;
+    }
+
+    .panel[hidden]{ display: none; }
+
+    .embed-note{
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-2) var(--space-5);
+      margin: 0 0 var(--space-4);
+      color: var(--muted);
+      font-size: var(--text-sm);
+    }
+    .embed-note span{ max-width: var(--measure); }
+
+    /* The height here is only a fallback. When the page is served over http
+       the script measures the frame and sizes it to its content; under
+       file:// that measurement is blocked and these values stand. */
+    .embed-frame{
+      display: block;
+      width: 100%;
+      height: 1150px;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-lg);
+      background: var(--embed-backdrop);
+    }
+    @media (max-width: 900px){ .embed-frame{ height: 1400px; } }
+    @media (max-width: 600px){ .embed-frame{ height: 1600px; } }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -20,16 +93,16 @@
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="../index.html" aria-label="TaxVisual home">
-        <span class="brand-mark">TV</span>
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="20" width="20" height="1.3" rx=".65"/><path d="M2 20V14.7Q2 13.2 3.5 13.2H5.5Q7 13.2 7 14.7V20Z"/><path d="M9.5 20V10.1Q9.5 8.6 11 8.6H13Q14.5 8.6 14.5 10.1V20Z"/><rect x="17" y="9.3" width="5" height="10.7"/><path d="M17 8.7V5Q17 3.5 18.5 3.5H20.5Q22 3.5 22 5V8.7Z" fill-opacity=".45"/></svg>
         <span>TaxVisual</span>
       </a>
       <nav aria-label="Primary">
         <ul>
-          <li><a href="index.html" aria-current="page">Tools</a></li>
           <li><a href="../learn/index.html">Learn</a></li>
-          <li><a href="../training/index.html">Training</a></li>
+          <li><a href="../tools/index.html" aria-current="page">Tools</a></li>
+          <li><a href="../dashboard/index.html">Dashboard</a></li>
+          <li><a href="../consulting/index.html">Consulting</a></li>
           <li><a href="../about/index.html">About</a></li>
-          <li><a class="topbar-cta" href="../contact/index.html">Request training</a></li>
         </ul>
       </nav>
     </div>
@@ -43,7 +116,27 @@
     </div>
 
     <div class="container page-body">
-      <div id="catalog"></div>
+
+      <div class="tablist" role="tablist" aria-label="Tools views">
+        <button role="tab" type="button" id="tab-catalog"
+                aria-controls="panel-catalog" aria-selected="true">All tools</button>
+        <button role="tab" type="button" id="tab-preview"
+                aria-controls="panel-preview" aria-selected="false" tabindex="-1">1040 preview</button>
+      </div>
+
+      <section class="panel" role="tabpanel" id="panel-catalog" aria-labelledby="tab-catalog" tabindex="0">
+        <div id="catalog"></div>
+      </section>
+
+      <section class="panel" role="tabpanel" id="panel-preview" aria-labelledby="tab-preview" tabindex="0" hidden>
+        <p class="embed-note">
+          <span>The tools above each take one rule apart. This one takes a whole return: type your nine figures in, or load the sample, and the individual income tax formula is drawn out line by line. It runs entirely in your browser &mdash; nothing is uploaded and nothing is stored.</span>
+          <a href="../review/1040/index.html" target="_blank" rel="noopener">Open full screen &rarr;</a>
+        </p>
+        <iframe class="embed-frame" data-src="../review/1040/index.html?embed=1"
+                title="Form 1040 return review preview"></iframe>
+      </section>
+
     </div>
   </main>
 
@@ -51,46 +144,59 @@
     <div class="container">
       <nav aria-label="Footer">
         <div class="footer-cols">
-        <div class="footer-col">
-          <h2>Tools</h2>
-          <ul>
-            <li><a href="index.html" aria-current="page">All tools</a></li>
-            <li><a href="../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h2>Learn</h2>
-          <ul>
-            <li><a href="../learn/textbook/index.html">The textbook</a></li>
-            <li><a href="../learn/guides/index.html">Concept guides</a></li>
-            <li><a href="../learn/glossary/index.html">Glossary</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h2>Training</h2>
-          <ul>
-            <li><a href="../training/team/index.html">Team training</a></li>
-            <li><a href="../training/workshops/index.html">Public workshops</a></li>
-            <li><a href="../training/on-demand/index.html">On-demand course</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h2>About</h2>
-          <ul>
-            <li><a href="../about/index.html">About TaxVisual</a></li>
-            <li><a href="../about/team/index.html">Our team</a></li>
-            <li><a href="../methodology/index.html">Methodology</a></li>
-            <li><a href="../sitemap/index.html">Site map</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h2>Connect</h2>
-          <ul>
-            <li><a href="../contact/index.html">Contact</a></li>
-            <li><a href="../updates/index.html">Updates</a></li>
-            <li><a href="../community/index.html">Community</a></li>
-          </ul>
-        </div>
+          <div class="footer-col">
+            <h2>Learn</h2>
+            <ul>
+              <li><a href="../learn/index.html">Learn</a></li>
+              <li><a href="../learn/textbook/index.html">Visualized tax guide</a></li>
+              <li><a href="../learn/guides/index.html">Concept guides</a></li>
+              <li><a href="../learn/glossary/index.html">Glossary</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Tools</h2>
+            <ul>
+              <li><a href="../tools/index.html" aria-current="page">All tools</a></li>
+              <li><a href="../review/1040/index.html">1040 preview</a></li>
+              <li><a href="../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+              <li><a href="../review/index.html">Return review</a></li>
+              <li><a href="../review/how-it-works/index.html">How it works</a></li>
+              <li><a href="../review/privacy/index.html">Privacy</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Dashboard</h2>
+            <ul>
+              <li><a href="../dashboard/index.html">Dashboard</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Consulting</h2>
+            <ul>
+              <li><a href="../consulting/index.html">Consulting</a></li>
+              <li><a href="../consulting/planning/index.html">One-on-one tax planning</a></li>
+              <li><a href="../training/team/index.html">Team training</a></li>
+              <li><a href="../training/workshops/index.html">Public workshops</a></li>
+              <li><a href="../training/on-demand/index.html">On-demand course</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>About</h2>
+            <ul>
+              <li><a href="../about/index.html">About TaxVisual</a></li>
+              <li><a href="../about/team/index.html">Our team</a></li>
+              <li><a href="../methodology/index.html">Methodology</a></li>
+              <li><a href="../sitemap/index.html">Site map</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Connect</h2>
+            <ul>
+              <li><a href="../contact/index.html">Contact</a></li>
+              <li><a href="../updates/index.html">Updates</a></li>
+              <li><a href="../community/index.html">Community</a></li>
+            </ul>
+          </div>
         </div>
       </nav>
       <div class="footer-base">
@@ -106,5 +212,100 @@
     TaxVisual.renderToolGrid(document.getElementById('catalog'), { basePath: '../', groupByCategory: true });
   </script>
   <script src="../assets/js/reveal.js"></script>
+
+  <script>
+  /* ==========================================================================
+     Tools tabs.
+
+     renderTabs/wireTabs are ported from /review/flow-map/, which is the house
+     tab pattern: roving tabindex, Arrow/Home/End, aria-selected driving the
+     panel hidden attribute. The additions below exist because one panel hosts
+     a whole page in an iframe rather than markup of its own.
+     ========================================================================== */
+  (function(){
+    var TABS = ["catalog", "preview"];
+    var state = { tab: "catalog" };
+
+    /* The preview waits in data-src until its tab is first opened, so nobody
+       loads a whole second page they never look at. An iframe inside a hidden
+       panel still loads if its src is set up front.                        */
+    function mount(id){
+      var frame = document.querySelector("#panel-" + id + " .embed-frame");
+      if (!frame || frame.getAttribute("src")) return;
+      frame.addEventListener("load", function(){ fit(frame); watch(frame); });
+      frame.setAttribute("src", frame.getAttribute("data-src"));
+    }
+
+    /* Same-origin over http, so the nested document can be measured and the
+       frame grown to fit — no scrollbar inside a scrollbar. Under file:// the
+       browser refuses contentDocument, so every access is guarded and the CSS
+       fallback height stands. Double-click preview is a supported path.    */
+    function fit(frame){
+      var panel = frame.parentNode;
+      if (panel && panel.hidden) return;   /* a hidden frame measures as 0 */
+      try {
+        var doc = frame.contentDocument;
+        if (doc && doc.documentElement) {
+          frame.style.height = doc.documentElement.scrollHeight + "px";
+        }
+      } catch (e) { /* file:// — keep the CSS fallback height */ }
+    }
+
+    function watch(frame){
+      if (typeof ResizeObserver !== "function") return;
+      try {
+        var doc = frame.contentDocument;
+        if (!doc || !doc.documentElement) return;
+        new ResizeObserver(function(){ fit(frame); }).observe(doc.documentElement);
+      } catch (e) { /* file:// — no observer, so no live resize */ }
+    }
+
+    function renderTabs(){
+      TABS.forEach(function(id){
+        var on = id === state.tab;
+        var tab = document.getElementById("tab-" + id);
+        tab.setAttribute("aria-selected", on ? "true" : "false");
+        tab.tabIndex = on ? 0 : -1;
+        document.getElementById("panel-" + id).hidden = !on;
+      });
+      mount(state.tab);
+      var frame = document.querySelector("#panel-" + state.tab + " .embed-frame");
+      if (frame) fit(frame);
+    }
+
+    /* So the preview can be linked to directly. replaceState is guarded for
+       the same reason the embedded pages guard their own: file:// and some
+       sandboxed embeds refuse history writes.                              */
+    function go(id){
+      state.tab = id;
+      renderTabs();
+      try {
+        history.replaceState(null, "", id === TABS[0] ? location.pathname : "#" + id);
+      } catch (e) { /* not permitted here — the tab still switched */ }
+    }
+
+    function wireTabs(){
+      TABS.forEach(function(id, i){
+        var tab = document.getElementById("tab-" + id);
+        tab.addEventListener("click", function(){ go(id); });
+        tab.addEventListener("keydown", function(ev){
+          var step = ev.key === "ArrowRight" ? 1 : ev.key === "ArrowLeft" ? -1 :
+                     ev.key === "Home" ? -i : ev.key === "End" ? TABS.length - 1 - i : 0;
+          if (!step && ev.key !== "Home") return;
+          ev.preventDefault();
+          var next = (i + step + TABS.length) % TABS.length;
+          go(TABS[next]);
+          document.getElementById("tab-" + TABS[next]).focus();
+        });
+      });
+    }
+
+    var fromHash = location.hash.replace(/^#/, "");
+    if (TABS.indexOf(fromHash) > -1) state.tab = fromHash;
+
+    wireTabs();
+    renderTabs();
+  })();
+  </script>
 </body>
 </html>

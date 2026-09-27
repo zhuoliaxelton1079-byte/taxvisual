@@ -1,0 +1,1314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Return flow map | TaxVisual Return Review</title>
+<meta name="description" content="A reviewer's view of a filed Form 1040: every figure traced back to the document it came from and forward to the line it lands on, with the two places a limitation changed the number. Sample return, runs entirely in your browser.">
+<link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<link rel="stylesheet" href="../../assets/css/components.css">
+<style>
+  /* ---------------------------------------------------------------------
+     Tool-scoped theme — see docs/interactive-tool-pattern.md §5.
+
+     This page is not a chart, so there is no ordinal ramp to validate. The
+     palette is categorical *by role*: a node's fill says what kind of thing
+     it is (source document, form, schedule, 1040 line, total) and amber says
+     a limitation changed the amount on its way through. Roles are unordered,
+     so the separation that matters is hue plus surface, not lightness steps.
+
+     Two deliberate departures from the design mockup, both accessibility:
+
+       1. The LIMIT pill was #c98221 carrying white text — 2.6:1, well under
+          AA at its 9.5px size. Darkened to #8a4a06, which is 6.9:1 on white.
+       2. The mockup dimmed out-of-lineage nodes to opacity 0.32. Composited
+          against the page that puts the 10.5px metadata row at about 2.7:1.
+          Lineage de-emphasis is carried by surface and border here instead,
+          so a node's text stays at full strength whether or not it is in the
+          traced line. Edges still dim by opacity — they carry no text.
+     --------------------------------------------------------------------- */
+  :root{
+    color-scheme: light;
+    --page:            #f3f1eb;
+    --tool-surface:    #fbfaf6;
+    --panel:           #ffffff;
+    --recede:          #f0eee7;  /* out-of-lineage node fill */
+    --tool-ink:        #1b1a17;
+    --ink-soft:        #3a3730;
+    --ink-muted:       #5e594f;  /* 6.9:1 on the panel, 6.3:1 on --form-bg */
+    --rule:            #ddd7ca;
+    --row-rule:        #eeeae0;
+    --border:          #c9c2b2;
+    --edge:            #b3ac9c;
+
+    --tool-accent:     #0e5a5f;
+    --on-accent:       #ffffff;  /* 7.9:1 on --tool-accent */
+    --on-accent-soft:  #cfe3e1;  /* 5.9:1 on --tool-accent */
+    --accent-tint:     #e3eeec;
+    --accent-line:     #8fb7b3;
+    --accent-deep:     #0e4a4e;
+    --accent-wash:     #eff5f4;
+
+    --form-bg:         #f7f4ec;
+    --form-bc:         #b8b0a0;
+
+    --limit-bg:        #fcf0dc;
+    --limit-bc:        #c98221;
+    --limit-edge:      #e7c38c;
+    --limit-ink:       #7a4206;  /* 7.2:1 on --limit-bg */
+    --limit-head:      #8a4a06;  /* 6.9:1 on --tool-surface */
+    --limit-body:      #3d2a10;
+    --limit-pill:      #8a4a06;  /* see note 1 above */
+
+    --flag:            #c2410c;  /* 5.2:1 against the white badge numeral */
+    --flag-ink:        #9a3412;  /* 6.2:1 on --flag-chip */
+    --flag-bg:         #fdf1ea;
+    --flag-bc:         #f1c3a8;
+    --flag-chip:       #fde8dc;
+
+    --shade:           rgba(27,26,23,0.06);
+    --ring:            rgba(14,90,95,0.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --page:            #14130f;
+      --tool-surface:    #1b1a16;
+      --panel:           #1d1c18;
+      --recede:          #201f1a;
+      --tool-ink:        #f2f0ea;
+      --ink-soft:        #d2cec4;
+      --ink-muted:       #a8a399;  /* 7.4:1 on --page */
+      --rule:            #33312b;
+      --row-rule:        #2a2822;
+      --border:          #4a473f;
+      --edge:            #565247;
+
+      --tool-accent:     #4fb3a1;  /* 7.3:1 on --page */
+      --on-accent:       #14130f;  /* dark on the light accent — 7.3:1 */
+      --on-accent-soft:  rgba(20,19,15,0.74);
+      --accent-tint:     #17322f;
+      --accent-line:     #3c6f68;
+      --accent-deep:     #8fd6c8;
+      --accent-wash:     #17302d;
+
+      --form-bg:         #23221d;
+      --form-bc:         #474338;
+
+      --limit-bg:        #33260f;
+      --limit-bc:        #a8781f;
+      --limit-edge:      #6b5220;
+      --limit-ink:       #e6b45f;  /* 7.8:1 on --limit-bg */
+      --limit-head:      #e6b45f;
+      --limit-body:      #e8dcc4;
+      --limit-pill:      #e6b45f;
+
+      --flag:            #e8703a;
+      --flag-ink:        #f0a07a;  /* 7.6:1 on --flag-bg */
+      --flag-bg:         #33190f;
+      --flag-bc:         #6b3a22;
+      --flag-chip:       #3d1e12;
+
+      --shade:           rgba(0,0,0,0.45);
+      --ring:            rgba(79,179,161,0.22);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page:            #14130f;
+    --tool-surface:    #1b1a16;
+    --panel:           #1d1c18;
+    --recede:          #201f1a;
+    --tool-ink:        #f2f0ea;
+    --ink-soft:        #d2cec4;
+    --ink-muted:       #a8a399;
+    --rule:            #33312b;
+    --row-rule:        #2a2822;
+    --border:          #4a473f;
+    --edge:            #565247;
+
+    --tool-accent:     #4fb3a1;
+    --on-accent:       #14130f;
+    --on-accent-soft:  rgba(20,19,15,0.74);
+    --accent-tint:     #17322f;
+    --accent-line:     #3c6f68;
+    --accent-deep:     #8fd6c8;
+    --accent-wash:     #17302d;
+
+    --form-bg:         #23221d;
+    --form-bc:         #474338;
+
+    --limit-bg:        #33260f;
+    --limit-bc:        #a8781f;
+    --limit-edge:      #6b5220;
+    --limit-ink:       #e6b45f;
+    --limit-head:      #e6b45f;
+    --limit-body:      #e8dcc4;
+    --limit-pill:      #e6b45f;
+
+    --flag:            #e8703a;
+    --flag-ink:        #f0a07a;
+    --flag-bg:         #33190f;
+    --flag-bc:         #6b3a22;
+    --flag-chip:       #3d1e12;
+
+    --shade:           rgba(0,0,0,0.45);
+    --ring:            rgba(79,179,161,0.22);
+  }
+
+  * { box-sizing: border-box; }
+  body{ margin:0; background: var(--page); }
+  .app{
+    background: var(--page); color: var(--tool-ink);
+    font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 28px 16px 40px;
+  }
+  .wrap{ max-width: 1480px; margin: 0 auto; }
+
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+  }
+
+  /* ---- masthead -------------------------------------------------------- */
+  .masthead{
+    display:flex; flex-direction:column; gap:8px;
+    padding-bottom:20px; margin-bottom:22px; border-bottom:1px solid var(--rule);
+    max-width: 1040px;
+  }
+  .kicker{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase; color: var(--ink-muted);
+  }
+  .kicker a{ color: var(--tool-accent); text-decoration:none; }
+  .kicker a:hover{ text-decoration:underline; }
+  .app h1{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-weight:600; font-size: clamp(24px,3.4vw,32px);
+    margin:2px 0 0; text-wrap: balance; color: var(--tool-ink);
+  }
+  .standfirst{ font-size:15px; color: var(--ink-soft); margin:0; line-height:1.55; max-width:66ch; }
+  .standfirst a{ color: var(--tool-accent); }
+
+  .sample-note{
+    max-width: 1040px; margin:0 0 22px;
+    padding:11px 14px; border-radius:8px;
+    background: var(--limit-bg); border:1px solid var(--limit-edge);
+    font-size:13px; line-height:1.5; color: var(--limit-body);
+  }
+  .sample-note strong{ color: var(--limit-head); }
+  .sample-note a{ color: var(--limit-head); }
+
+  /* ---- board ----------------------------------------------------------- */
+  .board{
+    border:1px solid var(--rule); border-radius:10px; overflow:hidden;
+    background: var(--panel); box-shadow: 0 1px 2px var(--shade);
+  }
+
+  .board-head{
+    padding:14px 18px 12px; border-bottom:1px solid var(--rule);
+    background: var(--tool-surface);
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .head-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:24px; flex-wrap:wrap; }
+  .head-eyebrow{
+    font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color: var(--ink-muted); font-weight:500;
+  }
+  .board-head h2{
+    margin:4px 0 0; font-family:"IBM Plex Serif", Georgia, serif;
+    font-weight:600; font-size:24px; line-height:1.15; color: var(--tool-ink);
+  }
+  .head-stats{ display:flex; gap:26px; flex-wrap:wrap; margin:0; }
+  .head-stats > div{ min-width:0; }
+  .head-stats dt{ font-size:11px; color: var(--ink-muted); }
+  .head-stats dd{
+    margin:1px 0 0; font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:17px; font-weight:500; color: var(--tool-ink);
+  }
+  .head-stats dd.is-limit{ color: var(--limit-head); }
+  .head-stats dd.is-flag{ color: var(--flag-ink); }
+  .head-stats dd.is-idea{ color: var(--tool-accent); }
+
+  .head-controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .head-controls .label{ font-size:12.5px; color: var(--ink-muted); }
+  .head-controls .hint{ margin-left:auto; font-size:12.5px; color: var(--ink-muted); }
+  @media (max-width: 900px){ .head-controls .hint{ margin-left:0; } }
+  /* Five buttons do not fit a phone. Scrolling beats clipping: clipped, the
+     two deepest levels — one of which is the default — become unreachable. */
+  .levels{
+    display:flex; border:1px solid var(--border); border-radius:8px;
+    overflow-x:auto; overflow-y:hidden; background: var(--panel); max-width:100%;
+    scrollbar-width:thin;
+  }
+  .levels button{
+    flex:0 0 auto;
+    height:34px; padding:0 13px; border:0; border-right:1px solid var(--rule);
+    font-family:inherit; font-size:12.5px; font-weight:500; cursor:pointer;
+    background: var(--panel); color: var(--ink-soft); white-space:nowrap;
+    transition: background 180ms ease, color 180ms ease;
+  }
+  .levels button:last-child{ border-right:0; }
+  .levels button:hover{ background: var(--accent-wash); }
+  .levels button.is-under{ background: var(--accent-tint); color: var(--accent-deep); }
+  .levels button.is-on{ background: var(--tool-accent); color: var(--on-accent); }
+  .levels button:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
+
+  /* ---- layout ---------------------------------------------------------- */
+  .board-body{ display:grid; grid-template-columns: minmax(0,1fr) 400px; }
+  @media (max-width: 1180px){ .board-body{ grid-template-columns: minmax(0,1fr); } }
+
+  /* The canvas is a fixed 1040px coordinate space so the edges stay aligned
+     with the boxes they join. Below that it scrolls, the same way the bracket
+     ledger table does. */
+  .canvas-scroll{ overflow-x:auto; overflow-y:hidden; background: var(--panel); }
+  .canvas-scroll:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
+  .canvas{ position:relative; width:1040px; height:848px; }
+
+  .col-head{
+    position:absolute; top:18px; width:168px;
+    font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+    font-weight:600; color: var(--ink-muted);
+  }
+  .wires{ position:absolute; left:0; top:0; overflow:visible; pointer-events:none; }
+
+  /* ---- nodes ----------------------------------------------------------- */
+  .node{
+    position:absolute; width:168px; height:68px; padding:8px 10px;
+    border-radius:8px; border:1px solid var(--border); background: var(--panel);
+    font-family:inherit; text-align:left; cursor:pointer;
+    display:flex; flex-direction:column; justify-content:flex-start;
+    box-shadow: 0 1px 2px var(--shade);
+    transition: box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+  }
+  .node .tags{
+    display:flex; justify-content:space-between; gap:6px; width:100%;
+    font-size:10.5px; color: var(--ink-muted);
+  }
+  .node .amt{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11.5px; font-weight:500; color: var(--tool-ink);
+  }
+  .node .title{ margin-top:5px; font-size:12.5px; font-weight:600; line-height:1.25; color: var(--tool-ink); }
+
+  .node.kind-form, .node.kind-sched{ background: var(--form-bg); border-color: var(--form-bc); }
+  .node.kind-limit{ background: var(--limit-bg); border-color: var(--limit-bc); }
+  .node.kind-limit .tags, .node.kind-limit .amt{ color: var(--limit-ink); }
+  .node.kind-f1040{ background: var(--accent-tint); border-color: var(--accent-line); }
+  .node.kind-f1040 .tags{ color: var(--accent-deep); }
+  .node.kind-total{ background: var(--tool-accent); border-color: var(--tool-accent); }
+  .node.kind-total .tags{ color: var(--on-accent-soft); }
+  .node.kind-total .amt, .node.kind-total .title{ color: var(--on-accent); }
+
+  /* Out of the traced line: recede by surface, never by dimming text. */
+  .node.is-off{ background: var(--recede); border-color: var(--rule); box-shadow:none; }
+  .node.is-off .tags, .node.is-off .amt{ color: var(--ink-muted); }
+  .node.is-off .title{ color: var(--ink-soft); font-weight:500; }
+
+  .node:hover{ box-shadow: 0 2px 8px var(--shade); }
+  .node.is-on{
+    border-width:2px; border-color: var(--tool-accent); padding:7px 9px;
+    box-shadow: 0 0 0 4px var(--ring), 0 4px 12px var(--shade);
+  }
+  .node.kind-total.is-on{ border-color: var(--tool-ink); }
+  .node:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+
+  .node .limit-pill{
+    position:absolute; left:10px; top:-9px; padding:1px 6px; border-radius:4px;
+    background: var(--limit-pill); color: var(--on-accent);
+    font-size:9.5px; font-weight:600; letter-spacing:.06em;
+  }
+  .node .flag-dot{
+    position:absolute; right:-7px; top:-7px; width:18px; height:18px; border-radius:9px;
+    background: var(--flag); color:#ffffff; font-size:10.5px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* ---- legend ---------------------------------------------------------- */
+  .legend{
+    position:absolute; left:16px; top:792px; right:16px;
+    display:flex; gap:18px; flex-wrap:wrap; align-items:center;
+    font-size:11.5px; color: var(--ink-muted);
+  }
+  .legend .item{ display:flex; align-items:center; gap:6px; }
+  .legend i{
+    width:14px; height:10px; border-radius:3px; border:1px solid var(--border);
+    background: var(--panel); display:block;
+  }
+  .legend i.form{ background: var(--form-bg); border-color: var(--form-bc); }
+  .legend i.limit{ background: var(--limit-bg); border-color: var(--limit-bc); }
+  .legend i.f1040{ background: var(--accent-tint); border-color: var(--accent-line); }
+  .legend i.flag{ width:12px; height:12px; border-radius:6px; background: var(--flag); border:0; }
+
+  /* ---- detail rail ----------------------------------------------------- */
+  .detail{
+    border-left:1px solid var(--rule); background: var(--panel);
+    display:flex; flex-direction:column; min-width:0; height:848px;
+  }
+  @media (max-width: 1180px){
+    .detail{ border-left:0; border-top:1px solid var(--rule); height:auto; }
+  }
+  .tablist{ display:flex; gap:4px; padding:0 20px; border-bottom:1px solid var(--rule); flex-wrap:wrap; }
+  .tablist [role="tab"]{
+    height:46px; padding:0 10px; border:0; background:transparent;
+    font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    color: var(--ink-muted); border-bottom:2px solid transparent;
+  }
+  .tablist [role="tab"][aria-selected="true"]{ color: var(--tool-ink); border-bottom-color: var(--tool-accent); }
+  .tablist [role="tab"]:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-3px; }
+  .tablist .count{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11px; font-style:normal; }
+  .tablist .count.flags{ color: var(--flag-ink); }
+  .tablist .count.ideas{ color: var(--tool-accent); }
+
+  .panels{ flex-grow:1; overflow-y:auto; padding:20px 24px 28px; }
+  @media (max-width: 1180px){ .panels{ overflow-y:visible; } }
+  .panel{ display:flex; flex-direction:column; gap:18px; }
+  .panel[hidden]{ display:none; }
+
+  .d-kind{ display:flex; gap:8px; align-items:center; font-size:11px; flex-wrap:wrap; }
+  .pill{
+    padding:2px 7px; border-radius:4px; font-weight:600;
+    letter-spacing:.04em; text-transform:uppercase;
+    background: var(--form-bg); color: var(--ink-soft);
+  }
+  .pill.limit{ background: var(--limit-bg); color: var(--limit-ink); }
+  .pill.f1040, .pill.total{ background: var(--accent-tint); color: var(--accent-deep); }
+  .d-ref{ color: var(--ink-muted); }
+  .detail h3{
+    margin:8px 0 0; font-family:"IBM Plex Serif", Georgia, serif;
+    font-weight:600; font-size:23px; line-height:1.2; color: var(--tool-ink);
+  }
+  .d-amt{
+    margin-top:6px; font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:28px; font-weight:500; color: var(--tool-ink);
+  }
+  .d-py{ margin-top:4px; font-size:12.5px; color: var(--ink-muted); }
+  .d-py b{ color: var(--tool-ink); font-weight:500; }
+  .d-py .m{ font-family:"IBM Plex Mono", ui-monospace, monospace; }
+
+  .d-limit{ padding:12px 14px; border-radius:8px; background: var(--limit-bg); border:1px solid var(--limit-edge); }
+  .d-limit p{ margin:4px 0 0; font-size:13px; line-height:1.45; color: var(--limit-body); }
+
+  .sub{
+    font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    color: var(--ink-muted); margin:0 0 6px;
+  }
+  .sub.limit{ color: var(--limit-head); }
+  .sub.flag{ color: var(--flag-ink); }
+  .sub.idea{ color: var(--tool-accent); }
+
+  .calc{ margin:0; }
+  .calc > div{
+    display:flex; justify-content:space-between; gap:12px; padding:7px 0;
+    border-bottom:1px solid var(--row-rule); font-size:13px;
+  }
+  .calc dt{ color: var(--ink-soft); }
+  .calc dd{
+    margin:0; font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:12.5px; white-space:nowrap; color: var(--tool-ink);
+  }
+
+  .jumps{ display:flex; flex-direction:column; gap:6px; }
+  .jump{
+    display:flex; justify-content:space-between; gap:10px; width:100%; min-height:36px;
+    padding:8px 10px; border:1px solid var(--rule); border-radius:6px;
+    background: var(--tool-surface); font-family:inherit; font-size:12.5px;
+    color: var(--tool-ink); cursor:pointer; text-align:left;
+  }
+  .jump.down{ border-color: var(--accent-line); background: var(--accent-wash); }
+  .jump .m{ font-family:"IBM Plex Mono", ui-monospace, monospace; }
+  .jump:hover{ border-color: var(--tool-accent); }
+  .jump:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:1px; }
+
+  .d-note{ font-size:13px; line-height:1.5; color: var(--ink-soft); margin:0; }
+
+  .card{ padding:10px 12px; border-radius:8px; font-size:13px; line-height:1.45; }
+  .card.flag{ background: var(--flag-bg); border:1px solid var(--flag-bc); }
+  .card.idea{ background: var(--accent-wash); border:1px solid var(--accent-line); }
+  .card b{ display:block; font-weight:600; color: var(--tool-ink); }
+  .card p{ margin:3px 0 0; color: var(--ink-soft); }
+  .stack{ display:flex; flex-direction:column; gap:10px; }
+
+  .list-intro{ font-size:12.5px; color: var(--ink-muted); line-height:1.45; margin:0; }
+  .row-btn{
+    display:flex; flex-direction:column; gap:5px; width:100%; padding:12px 14px;
+    border:1px solid var(--rule); border-radius:8px; background: var(--panel);
+    font-family:inherit; text-align:left; cursor:pointer; color: var(--tool-ink);
+  }
+  .row-btn.idea{ border-color: var(--accent-line); background: var(--accent-wash); }
+  .row-btn:hover{ border-color: var(--tool-accent); }
+  .row-btn:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:1px; }
+  .row-btn .meta{ display:flex; gap:8px; align-items:center; font-size:11px; flex-wrap:wrap; }
+  .row-btn .where{ color: var(--ink-muted); }
+  .row-btn .where.idea{ color: var(--tool-accent); font-weight:600; }
+  .row-btn .t{ font-size:13.5px; font-weight:600; }
+  .row-btn .x{ font-size:12.5px; line-height:1.45; color: var(--ink-soft); }
+  .sev{ padding:2px 7px; border-radius:4px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+  .sev.warm{ background: var(--limit-bg); color: var(--limit-ink); }
+  .sev.hot{ background: var(--flag-chip); color: var(--flag-ink); }
+
+  .notefield{ display:flex; flex-direction:column; gap:6px; }
+  .notefield textarea{
+    min-height:72px; resize:vertical; padding:8px 10px;
+    border:1px solid var(--border); border-radius:6px;
+    font-family:inherit; font-size:13px; color: var(--tool-ink); background: var(--panel);
+  }
+  .notefield textarea:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:1px; }
+  .notefield .hint{ font-size:11.5px; color: var(--ink-muted); }
+
+  .source-ref{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    padding:10px 12px; border:1px dashed var(--border); border-radius:8px;
+    font-size:12.5px; color: var(--ink-muted); background: var(--tool-surface);
+  }
+  .source-ref .m{ font-family:"IBM Plex Mono", ui-monospace, monospace; color: var(--tool-ink); }
+
+  .footnote{ max-width:1040px; margin:22px 0 0; font-size:12.5px; line-height:1.6; color: var(--ink-muted); }
+  .footnote a{ color: var(--tool-accent); }
+
+  @media (prefers-reduced-motion: reduce){ .app *{ transition:none !important; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../../index.html" aria-label="TaxVisual home">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="20" width="20" height="1.3" rx=".65"/><path d="M2 20V14.7Q2 13.2 3.5 13.2H5.5Q7 13.2 7 14.7V20Z"/><path d="M9.5 20V10.1Q9.5 8.6 11 8.6H13Q14.5 8.6 14.5 10.1V20Z"/><rect x="17" y="9.3" width="5" height="10.7"/><path d="M17 8.7V5Q17 3.5 18.5 3.5H20.5Q22 3.5 22 5V8.7Z" fill-opacity=".45"/></svg>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../learn/index.html">Learn</a></li>
+          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../dashboard/index.html">Dashboard</a></li>
+          <li><a href="../../consulting/index.html">Consulting</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+<div class="app" id="main">
+  <div class="wrap">
+
+    <div class="masthead">
+      <div class="kicker"><a href="../index.html">Return review</a> &middot; Reviewer view &middot; Sample data</div>
+      <h1>Every figure on a return came from somewhere and lands somewhere</h1>
+      <p class="standfirst">
+        A filed return is a stack of forms that each show a total and hide the path to it. This is
+        one return drawn as the path instead: the source document on the left, the Form 1040 line it
+        ends up on at the right, and every schedule, form and worksheet it passed through in between.
+        Select any box to trace it in both directions.
+      </p>
+      <p class="standfirst">
+        The two amber boxes are the places where a limitation changed the number on the way through
+        &mdash; a capital loss capped at $3,000, a passive loss suspended in full. Those are the two
+        facts a reviewer most wants to find, and on the filed return they are invisible: the form
+        shows only what survived.
+      </p>
+    </div>
+
+    <p class="sample-note">
+      <strong>This is a sample return, not a service.</strong> Jordan &amp; Priya Ellis are fictional,
+      and the figures are constructed so that every relationship on the map closes exactly. Nothing
+      here uploads, reads or stores a return &mdash; the page is static sample data. The preview
+      that does read your own figures is the <a href="../1040/index.html">1040 preview</a>, a tab on
+      <a href="../../tools/index.html">Tools</a>.
+    </p>
+
+    <div class="board">
+
+      <div class="board-head">
+        <div class="head-top">
+          <div>
+            <div class="head-eyebrow">Return flow map &middot; Sample data</div>
+            <h2>Jordan &amp; Priya Ellis &mdash; 2025 Form 1040, MFJ</h2>
+          </div>
+          <dl class="head-stats" id="headStats"></dl>
+        </div>
+        <div class="head-controls">
+          <span class="label" id="levelLabel">Expand to</span>
+          <div class="levels" id="levels" role="group" aria-labelledby="levelLabel"></div>
+          <span class="hint">Select any box to trace where it came from and where it lands.</span>
+        </div>
+      </div>
+
+      <div class="board-body">
+
+        <div class="canvas-scroll" id="canvasScroll" tabindex="0" role="region"
+             aria-label="Return flow map. Scrolls horizontally; a written description of the current trace follows it.">
+          <div class="canvas" id="canvas">
+            <svg class="wires" id="wires" width="1040" height="848" aria-hidden="true"></svg>
+            <div class="legend">
+              <span class="item"><i></i>Source document</span>
+              <span class="item"><i class="form"></i>Form, worksheet, schedule</span>
+              <span class="item"><i class="limit"></i>Limitation applied</span>
+              <span class="item"><i class="f1040"></i>Form 1040 line</span>
+              <span class="item"><i class="flag"></i>Review flag</span>
+              <span class="item">
+                <svg width="22" height="8" aria-hidden="true"><path d="M1 4 L21 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4"></path></svg>
+                Amount changed by a limit
+              </span>
+            </div>
+          </div>
+        </div>
+        <p class="sr-only" id="mapDesc" role="status" aria-live="polite"></p>
+
+        <aside class="detail">
+          <div class="tablist" role="tablist" aria-label="Return flow map panels">
+            <button role="tab" type="button" id="tab-detail" aria-controls="panel-detail" aria-selected="true">Detail</button>
+            <button role="tab" type="button" id="tab-flags" aria-controls="panel-flags" aria-selected="false" tabindex="-1">Review flags <i class="count flags" id="flagCount"></i></button>
+            <button role="tab" type="button" id="tab-ideas" aria-controls="panel-ideas" aria-selected="false" tabindex="-1">Planning ideas <i class="count ideas" id="ideaCount"></i></button>
+          </div>
+          <div class="panels">
+            <section class="panel" role="tabpanel" id="panel-detail" aria-labelledby="tab-detail" tabindex="0"></section>
+            <section class="panel" role="tabpanel" id="panel-flags" aria-labelledby="tab-flags" tabindex="0" hidden></section>
+            <section class="panel" role="tabpanel" id="panel-ideas" aria-labelledby="tab-ideas" tabindex="0" hidden></section>
+          </div>
+        </aside>
+
+      </div>
+    </div>
+
+    <p class="footnote">
+      The map demonstrates how a reviewed return would be presented, built on a fictional 2025 return.
+      Amounts, limitations and carryovers are computed the way the cited forms compute them &mdash; the
+      $3,000 capital loss limit, the $25,000 active-participation allowance phased out above $150,000
+      of modified AGI, and the Form 8995 income limitation of 20% of taxable income before the QBI
+      deduction less net capital gain. Read it as an illustration of those rules, not as advice on a
+      real return, and verify anything you intend to rely on against the current forms and instructions.
+      Line references follow the 2025 Form 1040 (Cat. No. 11320B, revision of 5 September 2025),
+      retrieved 26 September 2026. The 2025 form renumbered several lines: adjusted gross income is
+      11a here, where a 2024 return would show it on line 11. This is a static copy of those
+      references and it will go stale silently.
+      <a href="../how-it-works/index.html">How the review works</a> &middot;
+      <a href="../privacy/index.html">How your data is handled</a>
+    </p>
+
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav aria-label="Footer">
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h2>Learn</h2>
+            <ul>
+              <li><a href="../../learn/index.html">Learn</a></li>
+              <li><a href="../../learn/textbook/index.html">Visualized tax guide</a></li>
+              <li><a href="../../learn/guides/index.html">Concept guides</a></li>
+              <li><a href="../../learn/glossary/index.html">Glossary</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Tools</h2>
+            <ul>
+              <li><a href="../../tools/index.html">All tools</a></li>
+              <li><a href="../../review/1040/index.html">1040 preview</a></li>
+              <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+              <li><a href="../../review/index.html">Return review</a></li>
+              <li><a href="../../review/how-it-works/index.html">How it works</a></li>
+              <li><a href="../../review/privacy/index.html">Privacy</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Dashboard</h2>
+            <ul>
+              <li><a href="../../dashboard/index.html">Dashboard</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Consulting</h2>
+            <ul>
+              <li><a href="../../consulting/index.html">Consulting</a></li>
+              <li><a href="../../consulting/planning/index.html">One-on-one tax planning</a></li>
+              <li><a href="../../training/team/index.html">Team training</a></li>
+              <li><a href="../../training/workshops/index.html">Public workshops</a></li>
+              <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>About</h2>
+            <ul>
+              <li><a href="../../about/index.html">About TaxVisual</a></li>
+              <li><a href="../../about/team/index.html">Our team</a></li>
+              <li><a href="../../methodology/index.html">Methodology</a></li>
+              <li><a href="../../sitemap/index.html">Site map</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Connect</h2>
+            <ul>
+              <li><a href="../../contact/index.html">Contact</a></li>
+              <li><a href="../../updates/index.html">Updates</a></li>
+              <li><a href="../../community/index.html">Community</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual publishes educational tax policy simulations for classrooms, policy workshops, and self-study. Not tax advice.</p>
+        <p class="footer-note"><a href="../../contact/index.html">Get email updates</a></p>
+      </div>
+    </div>
+  </footer>
+
+<script>
+(function(){
+'use strict';
+
+/* ===========================================================================
+   The model. Every function below is extracted out of this file by
+   tests/verify-return-flow-map.mjs and run under node, so each one has to
+   stand alone: no closure variables, no DOM. Data lives inside the functions
+   that return it for exactly that reason — the same arrangement as
+   sampleFigures() in review/1040/index.html.
+
+   The return is fictional but internally exact. Every calc row sums to the
+   amount on its node, every node's amount equals what its upstream nodes
+   contribute, and the harness asserts all of it.
+   =========================================================================== */
+
+function flowNodes(){
+  return [
+    /* ---- column 0: the documents in the file ---------------------------- */
+    { id:'w2', col:0, row:0, kind:'src', title:'W-2 · Acme Corp', ref:'WP p.3', amt:'185,000',
+      calc:[['Box 1 wages','185,000'],['Box 17 state income tax','11,200']],
+      note:'Wages tie to Box 1. State withholding feeds the SALT worksheet.' },
+    { id:'int', col:0, row:1, kind:'src', title:'1099-INT · Chase', ref:'WP p.5', amt:'1,240',
+      calc:[['Box 1 interest income','1,240']],
+      note:'Only 1099-INT in the file this year.' },
+    { id:'div', col:0, row:2, kind:'src', title:'1099-DIV · Vanguard', ref:'WP p.6', amt:'6,300',
+      calc:[['1a Ordinary dividends','6,300'],['1b Qualified dividends','5,100']],
+      note:'The qualified portion is taxed at capital-gain rates and is reported on Form 1040 line 3a.' },
+    { id:'b', col:0, row:3, kind:'src', title:'1099-B · Schwab', ref:'WP p.8–11', amt:'(14,300)',
+      calc:[['Short-term, basis reported','4,200'],['Long-term, basis reported','(18,500)'],['Net','(14,300)']],
+      note:'All lots are basis-reported, so no adjustments are needed on Form 8949.' },
+    { id:'k1h', col:0, row:4, kind:'src', title:'K-1 1120-S · Harbor Consulting', ref:'WP p.14', amt:'48,000',
+      calc:[['Box 1 ordinary business income','48,000'],['Box 17V QBI information','Provided'],['Owner W-2 from Harbor','None in file']],
+      note:'Nonpassive — the taxpayer materially participates. Flows to Schedule E and Form 8995.' },
+    { id:'k1r', col:0, row:5, kind:'src', title:'K-1 1065 · Riverbend Partners', ref:'WP p.18', amt:'(22,000)',
+      calc:[['Box 2 net rental real estate','(22,000)'],['Activity type','Passive']],
+      note:'A rental real estate loss routes through Form 8582 before it can reach Schedule E.' },
+    { id:'m1098', col:0, row:6, kind:'src', title:'1098 · Mortgage interest', ref:'WP p.21', amt:'14,800',
+      calc:[['Box 1 mortgage interest','14,800']],
+      note:'Main home; one lender.' },
+    { id:'ptax', col:0, row:7, kind:'src', title:'Property tax bill', ref:'WP p.22', amt:'9,600',
+      calc:[['Real estate tax paid in 2025','9,600']],
+      note:'County bill, paid in two installments.' },
+    { id:'char', col:0, row:8, kind:'src', title:'Charitable receipts (3)', ref:'WP p.23–25', amt:'3,500',
+      calc:[['Cash gifts, 3 receipts','3,500']],
+      note:'A written acknowledgment is on file for each gift.' },
+
+    /* ---- column 1: forms and worksheets --------------------------------- */
+    { id:'schb', col:1, row:1.5, kind:'form', title:'Schedule B', ref:'Return p.9', amt:'7,540',
+      calc:[['Part I interest','1,240'],['Part II ordinary dividends','6,300']],
+      note:'Interest is under the $1,500 threshold, but the dividends require Part II.' },
+    { id:'f8949', col:1, row:3, kind:'form', title:'Form 8949', ref:'Return p.11', amt:'(14,300)',
+      calc:[['Box A short-term','4,200'],['Box D long-term','(18,500)']],
+      note:'Summarized from the 1099-B totals.' },
+    { id:'f8582', col:1, row:5, kind:'limit', title:'Form 8582 · Passive loss', ref:'Return p.15', amt:'0 allowed',
+      calc:[['Rental real estate loss','(22,000)'],['Modified AGI','237,540'],['$25,000 special allowance','Phased out'],['Allowed this year','0'],['Suspended → 2026','(22,000)']],
+      limitText:'(22,000) passive loss reduced to 0. The full amount is suspended and carries to 2026.',
+      note:'Modified AGI is above $150,000, so the $25,000 active-participation allowance is fully phased out.' },
+    { id:'f8995', col:1, row:6, kind:'form', title:'Form 8995 · QBI', ref:'Return p.17', amt:'9,600',
+      calc:[['QBI — Harbor Consulting','48,000'],['× 20%','9,600'],['Income limit (20% of TI less net cap. gain)','38,668'],['Deduction','9,600']],
+      note:'Taxable income is below the threshold, so the simplified form applies and the wage and UBIA limits do not.' },
+    { id:'salt', col:1, row:7.5, kind:'form', title:'SALT worksheet', ref:'Return p.13', amt:'20,800',
+      calc:[['State income tax withheld','11,200'],['Real estate tax','9,600'],['Total, below cap','20,800']],
+      note:'Below the SALT cap, so no reduction is applied.' },
+
+    /* ---- column 2: the schedules ---------------------------------------- */
+    { id:'schd', col:2, row:3, kind:'limit', title:'Schedule D', ref:'Return p.10', amt:'(3,000)',
+      calc:[['Net short-term','4,200'],['Net long-term','(18,500)'],['Net capital loss','(14,300)'],['Allowed against ordinary income','(3,000)'],['Carryover → 2026 (long-term)','(11,300)']],
+      limitText:'(14,300) net loss reduced to (3,000). (11,300) of long-term loss carries to 2026.',
+      note:'The annual $3,000 capital loss limit applies (married filing jointly).' },
+    { id:'sche', col:2, row:4.5, kind:'sched', title:'Schedule E · Part II', ref:'Return p.14', amt:'48,000',
+      calc:[['Harbor Consulting (nonpassive)','48,000'],['Riverbend Partners (passive, allowed)','0'],['Line 32 total','48,000']],
+      note:'The Riverbend loss shows as 0 here because Form 8582 suspended it.' },
+    { id:'scha', col:2, row:7.5, kind:'sched', title:'Schedule A', ref:'Return p.8', amt:'39,100',
+      calc:[['Line 5e taxes (SALT)','20,800'],['Line 8a mortgage interest','14,800'],['Line 11 cash gifts','3,500'],['Line 17 total','39,100']],
+      note:'Itemizing beats the standard deduction this year.' },
+
+    /* ---- column 3: schedules 1–3 ---------------------------------------- */
+    { id:'sch1', col:3, row:4.5, kind:'sched', title:'Schedule 1', ref:'Return p.3', amt:'48,000',
+      calc:[['Line 5 rents, partnerships, S corps','48,000'],['Line 10 additional income','48,000']],
+      note:'Schedules 2 and 3 are not required: there are no additional taxes or credits on this return.' },
+
+    /* ---- column 4: the face of the 1040 --------------------------------- */
+    { id:'l1a', col:4, row:0, kind:'f1040', title:'Line 1a · Wages', ref:'1040 p.1', amt:'185,000', py:'176,000',
+      calc:[['W-2 Box 1, Acme Corp','185,000']],
+      note:'One W-2 this year and last year.' },
+    { id:'l2b', col:4, row:1, kind:'f1040', title:'Line 2b · Taxable interest', ref:'1040 p.1', amt:'1,240', py:'2,100',
+      calc:[['Schedule B, Part I','1,240']],
+      note:'Down from 2024 — the Ally Bank interest is missing.' },
+    { id:'l3b', col:4, row:2, kind:'f1040', title:'Line 3b · Ordinary dividends', ref:'1040 p.1', amt:'6,300', py:'5,800',
+      calc:[['Schedule B, Part II','6,300'],['Line 3a qualified dividends','5,100']],
+      note:'The qualified dividends drive the preferential-rate worksheet.' },
+    { id:'l7', col:4, row:3, kind:'f1040', title:'Line 7a · Capital gain or (loss)', ref:'1040 p.1', amt:'(3,000)', py:'1,900',
+      calc:[['Schedule D line 21','(3,000)']],
+      note:'The limited amount only — see Schedule D for the carryover.' },
+    { id:'l8', col:4, row:4, kind:'f1040', title:'Line 8 · Additional income', ref:'1040 p.1', amt:'48,000', py:'0',
+      calc:[['Schedule 1 line 10','48,000']],
+      note:'New this year: the Harbor Consulting K-1.' },
+    { id:'l11', col:4, row:5, kind:'total', title:'Line 11a · Adjusted gross income', ref:'1040 p.1', amt:'237,540', py:'185,800',
+      calc:[['Wages','185,000'],['Interest','1,240'],['Ordinary dividends','6,300'],['Capital gain or (loss)','(3,000)'],['Additional income','48,000'],['AGI','237,540']],
+      note:'There are no adjustments to income on Schedule 1, Part II.' },
+    { id:'l12', col:4, row:6, kind:'f1040', title:'Line 12e · Itemized deductions', ref:'1040 p.2', amt:'39,100', py:'36,400',
+      calc:[['Schedule A line 17','39,100']],
+      note:'Itemized in both years.' },
+    { id:'l13', col:4, row:7, kind:'f1040', title:'Line 13a · QBI deduction', ref:'1040 p.2', amt:'9,600', py:'0',
+      calc:[['Form 8995 line 15','9,600']],
+      note:'New this year, with the S corporation income.' },
+    { id:'l15', col:4, row:8, kind:'total', title:'Line 15 · Taxable income', ref:'1040 p.2', amt:'188,840', py:'149,400',
+      calc:[['AGI','237,540'],['Itemized deductions','(39,100)'],['QBI deduction','(9,600)'],['Taxable income','188,840']],
+      note:'Up about 26% on the new K-1 income.' }
+  ];
+}
+
+function flowEdges(){
+  return [
+    ['w2','l1a'], ['w2','salt'], ['int','schb'], ['div','schb'], ['schb','l2b'], ['schb','l3b'],
+    ['b','f8949'], ['f8949','schd'], ['schd','l7'],
+    ['k1h','sche'], ['k1h','f8995'], ['k1r','f8582'], ['f8582','sche'], ['sche','sch1'], ['sch1','l8'],
+    ['m1098','scha'], ['ptax','salt'], ['salt','scha'], ['char','scha'], ['scha','l12'], ['f8995','l13'],
+    ['l1a','l11'], ['l2b','l11'], ['l3b','l11'], ['l7','l11'], ['l8','l11'],
+    ['l11','l15'], ['l12','l15'], ['l13','l15']
+  ];
+}
+
+function flowFlags(){
+  return [
+    { node:'schd', sev:'Carryover', title:'New capital loss carryover (11,300)',
+      text:'Created this year; there was none on the 2024 return. Confirm it flows to the 2026 carryover worksheet.' },
+    { node:'f8582', sev:'Limitation', title:'Passive loss fully suspended (22,000)',
+      text:'Modified AGI is above the $150,000 phase-out ceiling. Track the suspended loss by activity, and ask whether Riverbend may be sold in 2026.' },
+    { node:'k1h', sev:'Check', title:'S corporation with no owner W-2',
+      text:'Harbor passes through 48,000 of ordinary income but no Harbor W-2 is in the file. Review reasonable-compensation exposure, and Form 7203 basis if distributions were taken.' },
+    { node:'int', sev:'Missing', title:'Prior-year payer missing: Ally Bank',
+      text:'The 2024 return reported 860 of interest from Ally Bank. No 2025 form is in the file — a closed account, or a missing document?' },
+    { node:'l15', sev:'Check', title:'Estimated tax / Form 2210',
+      text:'The K-1 income is new versus 2024 and no estimated payments are recorded. Confirm that withholding meets a safe harbor.' }
+  ];
+}
+
+function flowIdeas(){
+  return [
+    { node:'schd', title:'Put the 11,300 carryover to work',
+      text:'The carryover can absorb 2026 gains, such as a planned rebalance, instead of trickling out at 3,000 a year.' },
+    { node:'l11', title:'Net investment income tax headroom: 12,460',
+      text:'Modified AGI is 12,460 under the $250,000 threshold for joint filers. The timing of gains or K-1 income could trigger the 3.8% tax.' },
+    { node:'k1h', title:'Owner salary and retirement plan at Harbor',
+      text:'A reasonable W-2 salary from Harbor addresses the compensation flag and opens employer 401(k) contributions. Model the QBI trade-off.' },
+    { node:'f8582', title:'Material participation or grouping review',
+      text:'More involvement in Riverbend, or real estate professional status, could free the suspended losses. Document hours now.' },
+    { node:'scha', title:'Bunching charitable gifts',
+      text:'A donor-advised fund could concentrate several years of gifts into one. Check current-law changes to the charitable deduction before modeling.' }
+  ];
+}
+
+function flowKindLabels(){
+  return {
+    src:   'Source document',
+    form:  'Form / worksheet',
+    sched: 'Schedule',
+    limit: 'Limitation applied',
+    f1040: 'Form 1040 line',
+    total: 'Form 1040 total'
+  };
+}
+
+function flowColumns(){
+  return ['Source documents', 'Forms & worksheets', 'Schedules', 'Schedules 1–3', 'Form 1040'];
+}
+
+function flowLevels(){
+  return ['Form 1040', '+ Schedules 1–3', '+ Schedules', '+ Forms & worksheets', '+ Source documents'];
+}
+
+/* Amounts are carried as the strings the forms print — "(14,300)", "0 allowed",
+   "Phased out". Parentheses mean negative; anything with no digits is 0. */
+function parseAmt(s){
+  var str = String(s);
+  var neg = str.indexOf('(') >= 0;
+  var v = parseFloat(str.replace(/[^0-9.]/g, '')) || 0;
+  return neg ? -v : v;
+}
+
+function fmtAmt(v){
+  var a = Math.abs(Math.round(v)).toLocaleString('en-US');
+  return v < 0 ? '(' + a + ')' : a;
+}
+
+/* Adjacency, built once per call so the function has no external state. */
+function flowGraph(){
+  var nodes = flowNodes(), edges = flowEdges();
+  var byId = {}, up = {}, dn = {};
+  nodes.forEach(function(n){ byId[n.id] = n; });
+  edges.forEach(function(e){
+    (dn[e[0]] = dn[e[0]] || []).push(e[1]);
+    (up[e[1]] = up[e[1]] || []).push(e[0]);
+  });
+  return { nodes: nodes, edges: edges, byId: byId, up: up, dn: dn };
+}
+
+/* Everything that feeds a node, and everything it ends up in. */
+function lineageOf(id){
+  var g = flowGraph();
+  function walk(map){
+    var seen = {}, out = [], stack = [id];
+    while (stack.length){
+      var cur = stack.pop();
+      (map[cur] || []).forEach(function(x){
+        if (!seen[x]){ seen[x] = true; out.push(x); stack.push(x); }
+      });
+    }
+    return out;
+  }
+  return { up: walk(g.up), down: walk(g.dn) };
+}
+
+/* The disclosure level is how many columns of upstream detail are shown:
+   0 is the face of the 1040 alone, 4 is every source document. */
+function flowLayout(level){
+  var W = 168, H = 68, ROW = 78, TOP = 52, LEFT = 16, CANVAS = 1040, GUTTER = 64;
+  var nodes = flowNodes(), names = flowColumns();
+  var minCol = 4 - level;
+  var shown = 5 - minCol;
+  var spacing = shown > 1 ? Math.min(260, (CANVAS - LEFT - GUTTER - W) / (shown - 1)) : 0;
+  function colX(c){
+    return shown === 1 ? Math.round((CANVAS - W) / 2) : Math.round(LEFT + (c - minCol) * spacing);
+  }
+  var placed = nodes.filter(function(n){ return n.col >= minCol; }).map(function(n){
+    return { id:n.id, col:n.col, row:n.row, kind:n.kind, x:colX(n.col), y:Math.round(TOP + n.row * ROW) };
+  });
+  var cols = [];
+  for (var c = minCol; c <= 4; c++){
+    var count = nodes.filter(function(n){ return n.col === c; }).length;
+    cols.push({ col:c, x:colX(c), count:count, name:names[c], label:names[c] + ' · ' + count });
+  }
+  return { level:level, minCol:minCol, width:CANVAS, height:848, nodeW:W, nodeH:H, nodes:placed, cols:cols };
+}
+
+/* Same-column edges bulge out to the right and come back; the bulge grows with
+   the row gap so two of them never trace the same curve. */
+function edgePath(a, b, W){
+  var mid = 34;
+  if (a.col === b.col){
+    var x = a.x + W, ya = a.y + mid, yb = b.y + mid, bulge = 14 + 8 * Math.abs(b.row - a.row);
+    return 'M' + x + ' ' + ya + ' C' + (x + bulge) + ' ' + ya + ' ' + (x + bulge) + ' ' + yb + ' ' + x + ' ' + yb;
+  }
+  var x1 = a.x + W, y1 = a.y + mid, x2 = b.x, y2 = b.y + mid, mx = (x1 + x2) / 2;
+  return 'M' + x1 + ' ' + y1 + ' C' + mx + ' ' + y1 + ' ' + mx + ' ' + y2 + ' ' + x2 + ' ' + y2;
+}
+
+/* The five figures across the top. Counts are derived, never typed twice. */
+function headerStats(){
+  var g = flowGraph();
+  var limits = g.nodes.filter(function(n){ return n.kind === 'limit'; }).length;
+  return [
+    { label:'AGI',                 value:g.byId.l11.amt, cls:'' },
+    { label:'Taxable income',      value:g.byId.l15.amt, cls:'' },
+    { label:'Limitations applied', value:String(limits), cls:'is-limit' },
+    { label:'Review flags',        value:String(flowFlags().length), cls:'is-flag' },
+    { label:'Planning ideas',      value:String(flowIdeas().length), cls:'is-idea' }
+  ];
+}
+
+function detailFor(id){
+  var g = flowGraph(), n = g.byId[id];
+  var delta = '';
+  if (n.py !== undefined){
+    var dv = parseAmt(n.amt) - parseAmt(n.py);
+    delta = (dv >= 0 ? '+' : '−') + Math.abs(Math.round(dv)).toLocaleString('en-US') +
+            ' vs 2024' + (parseAmt(n.py) === 0 ? ' · new' : '');
+  }
+  function refs(ids){
+    return (ids || []).map(function(x){ return { id:x, title:g.byId[x].title, amt:g.byId[x].amt }; });
+  }
+  return {
+    id: id, title: n.title, ref: n.ref, amt: n.amt, kind: n.kind,
+    kindLabel: flowKindLabels()[n.kind],
+    py: n.py, delta: delta,
+    isLimit: n.kind === 'limit', limitText: n.limitText || '',
+    calc: n.calc.map(function(r){ return { k:r[0], v:r[1] }; }),
+    from: refs(g.up[id]), to: refs(g.dn[id]),
+    note: n.note,
+    flags: flowFlags().filter(function(f){ return f.node === id; }),
+    ideas: flowIdeas().filter(function(p){ return p.node === id; })
+  };
+}
+
+/* The prose the screen reader gets in place of the diagram. It names what is
+   on screen now, not what the diagram can show — see the tool pattern §7. */
+function mapDescription(id, level){
+  var g = flowGraph(), lay = flowLayout(level), lin = lineageOf(id), d = detailFor(id);
+  var onCanvas = lay.nodes.some(function(p){ return p.id === id; });
+  var parts = [];
+  parts.push('Showing ' + lay.nodes.length + ' of ' + g.nodes.length + ' items in ' +
+             lay.cols.length + ' column' + (lay.cols.length === 1 ? '' : 's') +
+             ', from ' + lay.cols[0].name + ' to ' + lay.cols[lay.cols.length - 1].name + '.');
+  parts.push('Selected: ' + d.title + ', ' + d.amt + ', a ' + d.kindLabel.toLowerCase() + '.');
+  if (!onCanvas) parts.push('It sits in a column the current level hides.');
+  parts.push(d.from.length
+    ? 'Fed directly by ' + d.from.map(function(c){ return c.title + ' ' + c.amt; }).join('; ') + '.'
+    : 'Nothing on the map feeds it; it is a source document.');
+  parts.push(d.to.length
+    ? 'Lands on ' + d.to.map(function(c){ return c.title + ' ' + c.amt; }).join('; ') + '.'
+    : 'It lands nowhere further; it is a final total.');
+  parts.push(lin.up.length + ' item' + (lin.up.length === 1 ? '' : 's') + ' upstream, ' +
+             lin.down.length + ' downstream.');
+  if (d.isLimit) parts.push('A limitation applies here: ' + d.limitText);
+  if (d.flags.length) parts.push(d.flags.length + ' review flag' + (d.flags.length === 1 ? '' : 's') + ' on this item.');
+  return parts.join(' ');
+}
+
+/* ===========================================================================
+   The view. Nothing below is extracted by the harness.
+   =========================================================================== */
+
+var SVG_NS = 'http://www.w3.org/2000/svg';
+var state = { sel: 'schd', tab: 'detail', level: 4, notes: {} };
+
+function el(tag, cls, text){
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined && text !== null) e.textContent = text;
+  return e;
+}
+
+function select(id){
+  state.sel = id;
+  state.tab = 'detail';
+  render();
+  var btn = document.getElementById('node-' + id);
+  if (btn) btn.focus();
+  else document.getElementById('tab-detail').focus();
+}
+
+/* ---- the header ---------------------------------------------------------- */
+function renderHead(){
+  var dl = document.getElementById('headStats');
+  dl.textContent = '';
+  headerStats().forEach(function(s){
+    var wrap = el('div');
+    wrap.appendChild(el('dt', null, s.label));
+    wrap.appendChild(el('dd', s.cls, s.value));
+    dl.appendChild(wrap);
+  });
+
+  var box = document.getElementById('levels');
+  box.textContent = '';
+  flowLevels().forEach(function(label, i){
+    var b = el('button', i === state.level ? 'is-on' : (i < state.level ? 'is-under' : ''), label);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', i === state.level ? 'true' : 'false');
+    b.addEventListener('click', function(){ state.level = i; render(); });
+    box.appendChild(b);
+  });
+
+  /* Where the group scrolls, keep the active level in view — on a phone the
+     default level sits off the right-hand end. Set scrollLeft directly rather
+     than scrollIntoView, which would drag the whole page on load. */
+  var active = box.children[state.level];
+  if (active && box.scrollWidth > box.clientWidth){
+    box.scrollLeft = Math.max(0, active.offsetLeft + active.offsetWidth - box.clientWidth);
+  }
+}
+
+/* ---- the canvas ---------------------------------------------------------- */
+function renderCanvas(){
+  var canvas = document.getElementById('canvas');
+  var wires = document.getElementById('wires');
+  var lay = flowLayout(state.level);
+  var g = flowGraph();
+  var lin = lineageOf(state.sel);
+
+  var upSet = {}, downSet = {};
+  lin.up.forEach(function(x){ upSet[x] = true; });
+  lin.down.forEach(function(x){ downSet[x] = true; });
+  var inLine = function(id){ return id === state.sel || upSet[id] || downSet[id]; };
+
+  Array.prototype.slice.call(canvas.querySelectorAll('.node, .col-head')).forEach(function(n){ n.remove(); });
+  wires.textContent = '';
+  canvas.style.width = lay.width + 'px';
+  canvas.style.height = lay.height + 'px';
+
+  lay.cols.forEach(function(c){
+    var h = el('div', 'col-head', c.label);
+    h.style.left = c.x + 'px';
+    canvas.appendChild(h);
+  });
+
+  var pos = {};
+  lay.nodes.forEach(function(p){ pos[p.id] = p; });
+
+  g.edges.forEach(function(e){
+    var a = pos[e[0]], b = pos[e[1]];
+    if (!a || !b) return;
+    var hot = (upSet[e[0]] && (e[1] === state.sel || upSet[e[1]])) ||
+              ((e[0] === state.sel || downSet[e[0]]) && downSet[e[1]]);
+    var touchesLimit = g.byId[e[0]].kind === 'limit' || g.byId[e[1]].kind === 'limit';
+    var path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', edgePath(a, b, lay.nodeW));
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', hot ? 'var(--tool-accent)' : 'var(--edge)');
+    path.setAttribute('stroke-width', hot ? '2' : '1.25');
+    if (touchesLimit) path.setAttribute('stroke-dasharray', '5 4');
+    path.setAttribute('opacity', hot ? '1' : '0.45');
+    wires.appendChild(path);
+  });
+
+  lay.nodes.forEach(function(p){
+    var n = g.byId[p.id];
+    var flags = flowFlags().filter(function(f){ return f.node === n.id; });
+    var cls = 'node kind-' + n.kind +
+      (n.id === state.sel ? ' is-on' : '') +
+      (inLine(n.id) ? '' : ' is-off');
+
+    var b = el('button', cls);
+    b.type = 'button';
+    b.id = 'node-' + n.id;
+    b.style.left = p.x + 'px';
+    b.style.top = p.y + 'px';
+    b.setAttribute('aria-pressed', n.id === state.sel ? 'true' : 'false');
+    b.setAttribute('aria-label',
+      n.title + ', ' + n.amt + ', ' + flowKindLabels()[n.kind] +
+      (n.kind === 'limit' ? ', amount changed by a limitation' : '') +
+      (flags.length ? ', ' + flags.length + ' review flag' + (flags.length === 1 ? '' : 's') : ''));
+
+    var tags = el('div', 'tags');
+    tags.appendChild(el('span', null, n.ref));
+    tags.appendChild(el('span', 'amt', n.amt));
+    b.appendChild(tags);
+    b.appendChild(el('div', 'title', n.title));
+
+    if (n.kind === 'limit') b.appendChild(el('span', 'limit-pill', 'LIMIT'));
+    if (flags.length) b.appendChild(el('span', 'flag-dot', String(flags.length)));
+
+    b.addEventListener('click', function(){ select(n.id); });
+    canvas.appendChild(b);
+  });
+
+  document.getElementById('mapDesc').textContent = mapDescription(state.sel, state.level);
+}
+
+/* ---- the detail panel ---------------------------------------------------- */
+function jumpButton(c, down){
+  var b = el('button', 'jump' + (down ? ' down' : ''));
+  b.type = 'button';
+  b.appendChild(el('span', null, c.title));
+  b.appendChild(el('span', 'm', c.amt));
+  b.addEventListener('click', function(){ select(c.id); });
+  return b;
+}
+
+function section(title, cls){
+  var s = el('div');
+  s.appendChild(el('div', 'sub' + (cls ? ' ' + cls : ''), title));
+  return s;
+}
+
+function renderDetail(){
+  var d = detailFor(state.sel);
+  var p = document.getElementById('panel-detail');
+  p.textContent = '';
+
+  var head = el('div');
+  var kind = el('div', 'd-kind');
+  kind.appendChild(el('span', 'pill ' + d.kind, d.kindLabel));
+  kind.appendChild(el('span', 'd-ref', d.ref));
+  head.appendChild(kind);
+  head.appendChild(el('h3', null, d.title));
+  head.appendChild(el('div', 'd-amt', d.amt));
+  if (d.py !== undefined){
+    var py = el('div', 'd-py');
+    py.appendChild(document.createTextNode('2024: '));
+    py.appendChild(el('span', 'm', d.py));
+    py.appendChild(document.createTextNode(' · '));
+    py.appendChild(el('b', null, d.delta));
+    head.appendChild(py);
+  }
+  p.appendChild(head);
+
+  if (d.isLimit){
+    var lim = el('div', 'd-limit');
+    lim.appendChild(el('div', 'sub limit', 'Limitation applied'));
+    lim.appendChild(el('p', null, d.limitText));
+    p.appendChild(lim);
+  }
+
+  var calcWrap = section('Calculation');
+  var dl = el('dl', 'calc');
+  d.calc.forEach(function(r){
+    var row = el('div');
+    row.appendChild(el('dt', null, r.k));
+    row.appendChild(el('dd', null, r.v));
+    dl.appendChild(row);
+  });
+  calcWrap.appendChild(dl);
+  p.appendChild(calcWrap);
+
+  if (d.from.length){
+    var f = section('Comes from');
+    var fb = el('div', 'jumps');
+    d.from.forEach(function(c){ fb.appendChild(jumpButton(c, false)); });
+    f.appendChild(fb);
+    p.appendChild(f);
+  }
+  if (d.to.length){
+    var t = section('Lands on');
+    var tb = el('div', 'jumps');
+    d.to.forEach(function(c){ tb.appendChild(jumpButton(c, true)); });
+    t.appendChild(tb);
+    p.appendChild(t);
+  }
+
+  p.appendChild(el('p', 'd-note', d.note));
+
+  if (d.flags.length){
+    var fl = section('Review flag' + (d.flags.length === 1 ? '' : 's'), 'flag');
+    var fs = el('div', 'stack');
+    d.flags.forEach(function(x){
+      var c = el('div', 'card flag');
+      c.appendChild(el('b', null, x.title));
+      c.appendChild(el('p', null, x.text));
+      fs.appendChild(c);
+    });
+    fl.appendChild(fs);
+    p.appendChild(fl);
+  }
+
+  if (d.ideas.length){
+    var id = section('Planning idea' + (d.ideas.length === 1 ? '' : 's'), 'idea');
+    var is = el('div', 'stack');
+    d.ideas.forEach(function(x){
+      var c = el('div', 'card idea');
+      c.appendChild(el('b', null, x.title));
+      c.appendChild(el('p', null, x.text));
+      is.appendChild(c);
+    });
+    id.appendChild(is);
+    p.appendChild(id);
+  }
+
+  var nf = el('div', 'notefield');
+  var lab = el('label', 'sub', 'Reviewer note');
+  lab.setAttribute('for', 'revnote');
+  var ta = el('textarea');
+  ta.id = 'revnote';
+  ta.placeholder = 'Add a note for the preparer on this item';
+  ta.value = state.notes[state.sel] || '';
+  ta.addEventListener('input', function(){ state.notes[state.sel] = ta.value; });
+  nf.appendChild(lab);
+  nf.appendChild(ta);
+  nf.appendChild(el('span', 'hint', 'Kept in this tab only. Nothing is sent anywhere, and a reload clears it.'));
+  p.appendChild(nf);
+
+  /* The mockup put an "open the PDF" button here. There is no return PDF —
+     this is sample data — so the slot states the reference instead of
+     offering an action that cannot happen. */
+  var ref = el('div', 'source-ref');
+  ref.appendChild(el('span', null, 'Sample return — no document is attached'));
+  ref.appendChild(el('span', 'm', d.ref));
+  p.appendChild(ref);
+}
+
+function renderLists(){
+  var byId = flowGraph().byId;
+
+  var fp = document.getElementById('panel-flags');
+  fp.textContent = '';
+  fp.appendChild(el('p', 'list-intro',
+    'Rule checks run against this year’s flow and the 2024 return. Select one to jump to the item.'));
+  var fs = el('div', 'stack');
+  flowFlags().forEach(function(f){
+    var b = el('button', 'row-btn');
+    b.type = 'button';
+    var meta = el('div', 'meta');
+    var warm = (f.sev === 'Carryover' || f.sev === 'Limitation');
+    meta.appendChild(el('span', 'sev ' + (warm ? 'warm' : 'hot'), f.sev));
+    meta.appendChild(el('span', 'where', byId[f.node].title));
+    b.appendChild(meta);
+    b.appendChild(el('div', 't', f.title));
+    b.appendChild(el('div', 'x', f.text));
+    b.addEventListener('click', function(){ select(f.node); });
+    fs.appendChild(b);
+  });
+  fp.appendChild(fs);
+
+  var ip = document.getElementById('panel-ideas');
+  ip.textContent = '';
+  ip.appendChild(el('p', 'list-intro',
+    'Starting points for the preparer to evaluate — not recommendations. Each is tied to the item that raised it.'));
+  var is = el('div', 'stack');
+  flowIdeas().forEach(function(p){
+    var b = el('button', 'row-btn idea');
+    b.type = 'button';
+    var meta = el('div', 'meta');
+    meta.appendChild(el('span', 'where idea', byId[p.node].title));
+    b.appendChild(meta);
+    b.appendChild(el('div', 't', p.title));
+    b.appendChild(el('div', 'x', p.text));
+    b.addEventListener('click', function(){ select(p.node); });
+    is.appendChild(b);
+  });
+  ip.appendChild(is);
+
+  document.getElementById('flagCount').textContent = String(flowFlags().length);
+  document.getElementById('ideaCount').textContent = String(flowIdeas().length);
+}
+
+/* ---- tabs ---------------------------------------------------------------- */
+var TABS = ['detail', 'flags', 'ideas'];
+
+function renderTabs(){
+  TABS.forEach(function(id){
+    var on = id === state.tab;
+    var tab = document.getElementById('tab-' + id);
+    tab.setAttribute('aria-selected', on ? 'true' : 'false');
+    tab.tabIndex = on ? 0 : -1;
+    document.getElementById('panel-' + id).hidden = !on;
+  });
+}
+
+function wireTabs(){
+  TABS.forEach(function(id, i){
+    var tab = document.getElementById('tab-' + id);
+    tab.addEventListener('click', function(){ state.tab = id; renderTabs(); });
+    tab.addEventListener('keydown', function(ev){
+      var step = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 :
+                 ev.key === 'Home' ? -i : ev.key === 'End' ? TABS.length - 1 - i : 0;
+      if (!step && ev.key !== 'Home') return;
+      ev.preventDefault();
+      var next = (i + step + TABS.length) % TABS.length;
+      state.tab = TABS[next];
+      renderTabs();
+      document.getElementById('tab-' + TABS[next]).focus();
+    });
+  });
+}
+
+function render(){
+  renderHead();
+  renderCanvas();
+  renderDetail();
+  renderTabs();
+}
+
+renderLists();
+wireTabs();
+render();
+})();
+</script>
+</body>
+</html>

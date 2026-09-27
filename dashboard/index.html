@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Site Map | TaxVisual</title>
-  <meta name="description" content="Every page on TaxVisual, including what is still to be built.">
+  <title>Dashboard | TaxVisual</title>
+  <meta name="description" content="Put your own figures in and see your tax position drawn out. Return review is the first function; everything here runs in your browser.">
   <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
   <script>document.documentElement.classList.add('js');</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,6 +13,44 @@
   <link rel="stylesheet" href="../assets/css/tokens.css">
   <link rel="stylesheet" href="../assets/css/base.css">
   <link rel="stylesheet" href="../assets/css/components.css">
+  <style>
+    /* ----------------------------------------------------------------------
+       Page-scoped: the embedded IRS explorer. See "Embedded artifacts" in
+       docs/site-architecture.md for why it is framed rather than inlined.
+       ---------------------------------------------------------------------- */
+    :root{
+      /* The explorer declares color-scheme: light and cannot follow the site
+         theme from inside an iframe. Pin the frame backdrop to its own page
+         colour so a dark-mode visitor gets no dark flash before paint. */
+      --embed-backdrop: #fbfaf6;
+    }
+
+    .embed-note{
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-2) var(--space-5);
+      margin: 0 0 var(--space-4);
+      color: var(--muted);
+      font-size: var(--text-sm);
+    }
+    .embed-note span{ max-width: var(--measure); }
+
+    /* The height here is only a fallback. When the page is served over http
+       the script measures the frame and sizes it to its content; under
+       file:// that measurement is blocked and these values stand. */
+    .embed-frame{
+      display: block;
+      width: 100%;
+      height: 1150px;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-lg);
+      background: var(--embed-backdrop);
+    }
+    @media (max-width: 900px){ .embed-frame{ height: 1400px; } }
+    @media (max-width: 600px){ .embed-frame{ height: 1600px; } }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -27,7 +65,7 @@
         <ul>
           <li><a href="../learn/index.html">Learn</a></li>
           <li><a href="../tools/index.html">Tools</a></li>
-          <li><a href="../dashboard/index.html">Dashboard</a></li>
+          <li><a href="../dashboard/index.html" aria-current="page">Dashboard</a></li>
           <li><a href="../consulting/index.html">Consulting</a></li>
           <li><a href="../about/index.html">About</a></li>
         </ul>
@@ -37,63 +75,18 @@
 
   <main id="main">
     <div class="container page-header">
-      <p class="eyebrow reveal">Site map</p>
-      <h1 class="reveal">Site map</h1>
-      <p class="reveal">Every page on TaxVisual. Pages marked <em>to be built</em> are scaffolded but have no content yet. The tool list is generated from the registry, so it is never out of date.</p>
+      <p class="eyebrow reveal">Dashboard</p>
+      <h1 class="reveal">What 160 million returns look like</h1>
+      <p class="reveal">Published IRS Statistics of Income estimates for tax year 2023, read off fifteen workbooks and drawn as one connected view &mdash; income, deductions, credits and tax, from the top of the return to the bottom. These are sample-based estimates of <em>returns</em>, not of people or households.</p>
     </div>
 
     <div class="container page-body">
-      <div class="prose reveal">
-        <h2>Pages</h2>
-        <ul>
-          <li><a href="../index.html">Home</a></li>
-          <li><a href="index.html" aria-current="page">Site map</a></li>
-        </ul>
-
-        <h2>Learn</h2>
-        <ul>
-          <li><a href="../learn/index.html">Learn</a></li>
-          <li><a href="../learn/textbook/index.html">Visualized tax guide</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../learn/guides/index.html">Concept guides</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../learn/glossary/index.html">Glossary</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../updates/index.html">Updates</a> <span class="sitemap-note">to be built</span></li>
-        </ul>
-
-        <h2>Tools</h2>
-        <ul>
-          <li><a href="../tools/index.html">All tools</a></li>
-          <li><a href="../review/1040/index.html">1040 preview</a> <span class="sitemap-note">a tab on /tools/, and its own page</span></li>
-          <li><a href="../review/index.html">Return review</a> <span class="sitemap-note">at /review/</span></li>
-          <li><a href="../review/flow-map/index.html">Return flow map</a> <span class="sitemap-note">reviewer view, sample return</span></li>
-          <li><a href="../review/how-it-works/index.html">How it works</a></li>
-          <li><a href="../review/privacy/index.html">How your return is handled</a></li>
-        </ul>
-        <div id="tool-links"></div>
-
-        <h2>Dashboard</h2>
-        <ul>
-          <li><a href="../dashboard/index.html">Dashboard</a> <span class="sitemap-note">IRS Statistics of Income, tax year 2023</span></li>
-        </ul>
-
-        <h2>Consulting</h2>
-        <ul>
-          <li><a href="../consulting/index.html">Consulting</a></li>
-          <li><a href="../consulting/planning/index.html">One-on-one tax planning</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../training/index.html">Training</a> <span class="sitemap-note">at /training/</span></li>
-          <li><a href="../training/team/index.html">Team training</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../training/workshops/index.html">Public workshops</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../training/on-demand/index.html">On-demand course</a> <span class="sitemap-note">to be built</span></li>
-        </ul>
-
-        <h2>About</h2>
-        <ul>
-          <li><a href="../about/index.html">About TaxVisual</a></li>
-          <li><a href="../about/team/index.html">Our team</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../methodology/index.html">Methodology</a></li>
-          <li><a href="../community/index.html">Community</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../contact/index.html">Contact</a></li>
-        </ul>
-      </div>
+      <p class="embed-note">
+        <span>Pick a topic to change the view, or filter it to a single AGI bracket. Every chart has its figures underneath it and its IRS source named.</span>
+        <a href="irs-soi/index.html" target="_blank" rel="noopener">Open full screen &rarr;</a>
+      </p>
+      <iframe class="embed-frame" src="irs-soi/index.html?embed=1"
+              title="IRS 2023 income tax data explorer"></iframe>
     </div>
   </main>
 
@@ -124,7 +117,7 @@
           <div class="footer-col">
             <h2>Dashboard</h2>
             <ul>
-              <li><a href="../dashboard/index.html">Dashboard</a></li>
+              <li><a href="../dashboard/index.html" aria-current="page">Dashboard</a></li>
             </ul>
           </div>
           <div class="footer-col">
@@ -143,7 +136,7 @@
               <li><a href="../about/index.html">About TaxVisual</a></li>
               <li><a href="../about/team/index.html">Our team</a></li>
               <li><a href="../methodology/index.html">Methodology</a></li>
-              <li><a href="../sitemap/index.html" aria-current="page">Site map</a></li>
+              <li><a href="../sitemap/index.html">Site map</a></li>
             </ul>
           </div>
           <div class="footer-col">
@@ -163,11 +156,50 @@
     </div>
   </footer>
 
-  <script src="../assets/js/tools-data.js"></script>
-  <script src="../assets/js/render.js"></script>
-  <script>
-    TaxVisual.renderToolLinks(document.getElementById('tool-links'), { basePath: '../' });
-  </script>
   <script src="../assets/js/reveal.js"></script>
+
+  <script>
+  /* ==========================================================================
+     Size the embedded explorer to its content, so there is no scrollbar inside
+     a scrollbar. The frame is same-origin over http, so the nested document
+     can be measured; under file:// the browser refuses contentDocument, every
+     access is guarded, and the CSS fallback height stands. Double-click
+     preview is a supported path, so that branch is real.
+     ========================================================================== */
+  (function(){
+    var frame = document.querySelector(".embed-frame");
+    if (!frame) return;
+
+    function fit(){
+      try {
+        var doc = frame.contentDocument;
+        if (doc && doc.documentElement) {
+          frame.style.height = doc.documentElement.scrollHeight + "px";
+        }
+      } catch (e) { /* file:// — keep the CSS fallback height */ }
+    }
+
+    function ready(){
+      fit();
+      if (typeof ResizeObserver !== "function") return;
+      try {
+        var doc = frame.contentDocument;
+        if (doc && doc.documentElement) {
+          new ResizeObserver(fit).observe(doc.documentElement);
+        }
+      } catch (e) { /* file:// — no observer, so no live resize */ }
+    }
+
+    frame.addEventListener("load", ready);
+
+    /* This frame carries its src in the markup rather than waiting for a tab,
+       so it can finish loading before this script runs — in which case the
+       load event has already been and gone. Catch that case explicitly. */
+    try {
+      var doc = frame.contentDocument;
+      if (doc && doc.readyState === "complete") ready();
+    } catch (e) { /* file:// — the CSS fallback height stands */ }
+  })();
+  </script>
 </body>
 </html>

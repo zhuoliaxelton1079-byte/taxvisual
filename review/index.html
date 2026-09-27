@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Site Map | TaxVisual</title>
-  <meta name="description" content="Every page on TaxVisual, including what is still to be built.">
+  <title>Return Review | TaxVisual</title>
+  <meta name="description" content="Type nine figures off a Form 1040 in and see your tax position laid out — where the money went, what it worked out to, and where the planning questions sit. Free, and it runs entirely in your browser.">
   <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
   <script>document.documentElement.classList.add('js');</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,7 +26,7 @@
       <nav aria-label="Primary">
         <ul>
           <li><a href="../learn/index.html">Learn</a></li>
-          <li><a href="../tools/index.html">Tools</a></li>
+          <li><a href="../tools/index.html" aria-current="true">Tools</a></li>
           <li><a href="../dashboard/index.html">Dashboard</a></li>
           <li><a href="../consulting/index.html">Consulting</a></li>
           <li><a href="../about/index.html">About</a></li>
@@ -37,63 +37,45 @@
 
   <main id="main">
     <div class="container page-header">
-      <p class="eyebrow reveal">Site map</p>
-      <h1 class="reveal">Site map</h1>
-      <p class="reveal">Every page on TaxVisual. Pages marked <em>to be built</em> are scaffolded but have no content yet. The tool list is generated from the registry, so it is never out of date.</p>
+      <p class="eyebrow reveal"><a href="../tools/index.html">Tools</a></p>
+      <h1 class="reveal">See where you actually stand</h1>
+      <p class="reveal">Type nine figures off a Form 1040 in, or load the sample return, and get your tax position drawn out rather than listed: what the money did on its way to a tax bill, what the year worked out to, and where the planning questions sit. It is free, it runs entirely in your browser, and nothing is uploaded or stored.</p>
     </div>
 
     <div class="container page-body">
-      <div class="prose reveal">
-        <h2>Pages</h2>
-        <ul>
-          <li><a href="../index.html">Home</a></li>
-          <li><a href="index.html" aria-current="page">Site map</a></li>
-        </ul>
 
-        <h2>Learn</h2>
-        <ul>
-          <li><a href="../learn/index.html">Learn</a></li>
-          <li><a href="../learn/textbook/index.html">Visualized tax guide</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../learn/guides/index.html">Concept guides</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../learn/glossary/index.html">Glossary</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../updates/index.html">Updates</a> <span class="sitemap-note">to be built</span></li>
-        </ul>
-
-        <h2>Tools</h2>
-        <ul>
-          <li><a href="../tools/index.html">All tools</a></li>
-          <li><a href="../review/1040/index.html">1040 preview</a> <span class="sitemap-note">a tab on /tools/, and its own page</span></li>
-          <li><a href="../review/index.html">Return review</a> <span class="sitemap-note">at /review/</span></li>
-          <li><a href="../review/flow-map/index.html">Return flow map</a> <span class="sitemap-note">reviewer view, sample return</span></li>
-          <li><a href="../review/how-it-works/index.html">How it works</a></li>
-          <li><a href="../review/privacy/index.html">How your return is handled</a></li>
-        </ul>
-        <div id="tool-links"></div>
-
-        <h2>Dashboard</h2>
-        <ul>
-          <li><a href="../dashboard/index.html">Dashboard</a> <span class="sitemap-note">IRS Statistics of Income, tax year 2023</span></li>
-        </ul>
-
-        <h2>Consulting</h2>
-        <ul>
-          <li><a href="../consulting/index.html">Consulting</a></li>
-          <li><a href="../consulting/planning/index.html">One-on-one tax planning</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../training/index.html">Training</a> <span class="sitemap-note">at /training/</span></li>
-          <li><a href="../training/team/index.html">Team training</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../training/workshops/index.html">Public workshops</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../training/on-demand/index.html">On-demand course</a> <span class="sitemap-note">to be built</span></li>
-        </ul>
-
-        <h2>About</h2>
-        <ul>
-          <li><a href="../about/index.html">About TaxVisual</a></li>
-          <li><a href="../about/team/index.html">Our team</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../methodology/index.html">Methodology</a></li>
-          <li><a href="../community/index.html">Community</a> <span class="sitemap-note">to be built</span></li>
-          <li><a href="../contact/index.html">Contact</a></li>
-        </ul>
+      <div class="cta-band reveal">
+        <div>
+          <h2>Open the preview</h2>
+          <p>It sits on the Tools page, beside the simulations of the individual rules it runs into. Load the sample return and see the shape of it before you put your own figures anywhere.</p>
+        </div>
+        <a class="btn btn-primary" href="../tools/index.html#preview">Open the preview</a>
       </div>
+
+      <h2 class="reveal" style="margin-top: var(--space-7)">How the preview works</h2>
+      <div class="card-grid reveal" style="margin-top: var(--space-4)">
+        <a class="nav-card" href="flow-map/index.html">
+          <h3>The return flow map</h3>
+          <p>A sample return drawn as a path rather than a stack of forms: every figure traced back to the document it came from and forward to the line it lands on &mdash; including the two places a limitation quietly changed the number.</p>
+          <span class="card-more">Trace a sample return &rarr;</span>
+        </a>
+        <a class="nav-card" href="how-it-works/index.html">
+          <h3>How it works</h3>
+          <p>The nine lines it reads, the three questions it raises, and the things it deliberately cannot tell you.</p>
+          <span class="card-more">What it checks &rarr;</span>
+        </a>
+        <a class="nav-card" href="privacy/index.html">
+          <h3>Your data</h3>
+          <p>The preview makes no request that carries your figures. What that means exactly, and the one piece of third-party code involved.</p>
+          <span class="card-more">How your return is handled &rarr;</span>
+        </a>
+        <a class="nav-card" href="../tools/index.html">
+          <h3>The underlying tools</h3>
+          <p>The free simulations behind the rules a return runs into &mdash; brackets, Social Security inclusion, the tax benefit rule, annuities.</p>
+          <span class="card-more">Browse the tools &rarr;</span>
+        </a>
+      </div>
+
     </div>
   </main>
 
@@ -116,7 +98,7 @@
               <li><a href="../tools/index.html">All tools</a></li>
               <li><a href="../review/1040/index.html">1040 preview</a></li>
               <li><a href="../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
-              <li><a href="../review/index.html">Return review</a></li>
+              <li><a href="../review/index.html" aria-current="page">Return review</a></li>
               <li><a href="../review/how-it-works/index.html">How it works</a></li>
               <li><a href="../review/privacy/index.html">Privacy</a></li>
             </ul>
@@ -143,7 +125,7 @@
               <li><a href="../about/index.html">About TaxVisual</a></li>
               <li><a href="../about/team/index.html">Our team</a></li>
               <li><a href="../methodology/index.html">Methodology</a></li>
-              <li><a href="../sitemap/index.html" aria-current="page">Site map</a></li>
+              <li><a href="../sitemap/index.html">Site map</a></li>
             </ul>
           </div>
           <div class="footer-col">
@@ -163,11 +145,6 @@
     </div>
   </footer>
 
-  <script src="../assets/js/tools-data.js"></script>
-  <script src="../assets/js/render.js"></script>
-  <script>
-    TaxVisual.renderToolLinks(document.getElementById('tool-links'), { basePath: '../' });
-  </script>
   <script src="../assets/js/reveal.js"></script>
 </body>
 </html>
