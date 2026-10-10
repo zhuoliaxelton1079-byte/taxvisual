@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Individual Income Tax Formula | TaxVisual Return Review</title>
-<meta name="description" content="The individual income tax formula drawn as a map: fourteen major subtotals from gross income to the balance due, each opening into the workbook line items that derive it. Everything stays in your browser.">
+<title>From Source Documents to Form 1040 | TaxVisual Return Review</title>
+<meta name="description" content="A Form 1040 viewer: a sample return traced from Form 1040 down through its schedules to the source documents, and an option to analyze a redacted PDF of your own return in the browser, with cross-checks between the forms. Nothing is uploaded.">
 <link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
 <script>document.documentElement.classList.add('js');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -171,320 +171,153 @@
   }
 
 
-  /* ---- Page shell -------------------------------------------------------- */
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /* ---- Page shell -------------------------------------------------------- */
   * { box-sizing: border-box; }
   body{ margin:0; background: var(--page); }
-
-  .app{
-    background: var(--page); color: var(--tool-ink);
-    padding: var(--space-6) var(--space-4) var(--space-8);
-  }
-  .wrap{ max-width: 1480px; margin: 0 auto; }
-  .sr-only{
-    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
-    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
-  }
-
-  .masthead{ max-width:72ch; margin-bottom: var(--space-6); }
-  .kicker{
-    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11.5px;
-    letter-spacing:.08em; text-transform:uppercase; color: var(--ink-muted);
-    margin-bottom:10px;
-  }
+  .app{ background: var(--page); color: var(--tool-ink); padding: var(--space-6) var(--space-4) var(--space-8); }
+  .wrap{ max-width: 1360px; margin: 0 auto; }
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+  .masthead{ max-width:74ch; margin-bottom: var(--space-6); }
+  .kicker{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color: var(--ink-muted); margin-bottom:10px; }
   .kicker a{ color: var(--tool-accent); text-decoration:none; }
   .kicker a:hover{ text-decoration:underline; }
-  .app h1{
-    font-family:"IBM Plex Serif", Georgia, serif; font-weight:600;
-    font-size:clamp(26px,3.4vw,38px); line-height:1.15; margin:0 0 14px;
-  }
-  .standfirst{ font-size:15px; color: var(--ink-soft); margin:0 0 12px; line-height:1.55; max-width:68ch; }
-  .standfirst:last-child{ margin-bottom:0; }
-  .standfirst a{ color: var(--tool-accent); }
-
-  .tbtn{
-    appearance:none; font:inherit; font-size:13px; font-weight:500; cursor:pointer;
-    padding:8px 14px; border-radius:8px; border:1px solid var(--border);
-    background: var(--panel); color: var(--tool-ink);
-  }
+  .app h1{ font-family:"IBM Plex Serif", Georgia, serif; font-weight:600; font-size:clamp(26px,3.4vw,38px); line-height:1.15; margin:0 0 14px; }
+  .standfirst{ font-size:15px; color: var(--ink-soft); margin:0 0 12px; line-height:1.55; }
+  .tbtn{ font:500 13px "IBM Plex Sans", system-ui, sans-serif; padding:7px 12px; border:1px solid var(--border); background: var(--panel); color: var(--tool-ink); border-radius:6px; cursor:pointer; }
   .tbtn:hover{ border-color: var(--tool-accent); }
-  .tbtn:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
-  .tbtn.primary{ background: var(--tool-accent); border-color: var(--tool-accent); color: var(--on-accent); }
-  .tbtn.primary:hover{ background: var(--accent-deep); border-color: var(--accent-deep); }
+  .tbtn[aria-pressed="true"]{ background: var(--tool-accent); color: var(--on-accent); border-color: var(--tool-accent); }
+  .tbtn:focus-visible, .doc:focus-visible, .row:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
 
-  /* ---- The board --------------------------------------------------------- */
+  /* ---- Board: the tree ----------------------------------------------------- */
+  .board{ border:1px solid var(--rule); background: var(--tool-surface); border-radius:8px; overflow:hidden; }
+  .board-head{ padding:14px 18px; border-bottom:1px solid var(--rule); display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justify-content:space-between; }
+  .board-head h2{ margin:0; font-size:16px; }
+  .board-head .eyebrow{ font:500 11px "IBM Plex Mono", monospace; letter-spacing:.08em; text-transform:uppercase; color: var(--ink-muted); }
+  .filing{ display:flex; flex-wrap:wrap; gap:14px 28px; margin:0; }
+  .filing > div{ min-width:150px; }
+  .filing dt{ font-size:11px; color: var(--ink-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; }
+  .filing dd{ margin:0; font-size:13.5px; line-height:1.45; }
+  .filing dd b{ font-weight:600; }
+  .filing .sub{ display:block; font-size:12px; color: var(--ink-muted); }
+  .tools{ display:flex; gap:8px; flex-wrap:wrap; }
+  .upload{ border:1px solid var(--rule); background: var(--tool-surface); border-radius:8px; padding:16px 18px; margin:0 0 20px; }
+  .upload h2{ margin:0 0 6px; font-size:16px; }
+  .upload p{ margin:0 0 10px; font-size:13.5px; line-height:1.55; color: var(--ink-soft); max-width:92ch; }
+  .upload .privacy{ border-left:3px solid var(--tool-accent); padding-left:10px; }
+  .upload a{ color: var(--tool-accent); }
+  .redact{ margin:0 0 10px; font-size:13.5px; }
+  .redact summary{ cursor:pointer; font-weight:600; color: var(--tool-accent); margin-bottom:6px; }
+  .uprow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:6px 0; }
+  .filebtn{ cursor:pointer; }
+  .sr-only:focus + .x, #fileIn:focus-visible + .x{ outline:2px solid var(--tool-accent); }
+  .upstatus{ min-height:1.4em; font-weight:500; color: var(--tool-ink); }
+  .upstatus.is-err{ color: var(--flag-ink); }
+  .upguard{ border:1px solid var(--flag-bc); background: var(--flag-bg); border-radius:6px; padding:10px 12px; }
+  .upguard p{ color: var(--flag-ink); }
+  .checks{ padding:12px 18px; border-bottom:1px solid var(--rule); font-size:13.5px; }
+  .checks h3{ margin:0 0 6px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color: var(--ink-muted); }
+  .checks .sum b{ font-weight:600; }
+  .checks ul{ margin:6px 0 0; padding-left:18px; }
+  .checks li{ margin:3px 0; line-height:1.45; }
+  .checks li.diff{ color: var(--flag-ink); }
+  .checks .num{ font-family:"IBM Plex Mono", monospace; }
+  .checks details{ margin-top:8px; }
+  .checks summary{ cursor:pointer; color: var(--tool-accent); }
+  .chip.flag{ background: var(--flag-bg); color: var(--flag-ink); border-color: var(--flag-bc); }
+  .viewhint{ font:500 11px "IBM Plex Sans", sans-serif; color: var(--tool-accent); margin-left:8px; white-space:nowrap; }
+  .viewer{ margin:2px 0 8px 28px; padding:10px 12px 12px; border:1px solid var(--accent-line); border-left:3px solid var(--tool-accent); border-radius:6px; background: var(--panel); }
+  .vtabs{ display:flex; gap:6px; flex-wrap:wrap; margin:0 0 8px; }
+  .vmeta{ margin:0 0 8px; font-size:13px; color: var(--ink-soft); line-height:1.45; }
+  .viewer img{ display:block; width:100%; max-width:780px; height:auto; background:#fff; border:1px solid var(--rule); }
+  .vfoot{ margin:8px 0 0; font-size:12.5px; display:flex; gap:16px; flex-wrap:wrap; }
+  .vfoot a, .vfoot button{ color: var(--tool-accent); background:none; border:0; padding:0; font:inherit; text-decoration:underline; cursor:pointer; }
+  .chk{ display:inline-flex; align-items:center; gap:6px; font-size:13px; color: var(--ink-soft); }
+  .docdlg{ width:min(1000px, 96vw); max-height:92vh; padding:0; border:1px solid var(--border); border-radius:10px; background: var(--tool-surface); color: var(--tool-ink); }
+  .docdlg[open]{ display:flex; flex-direction:column; }
+  .docdlg::backdrop{ background: rgba(20,19,15,.62); }
+  .dlg-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-bottom:1px solid var(--rule); }
+  .dlg-head h2{ margin:0; font-size:16px; }
+  .dlg-tabs{ display:flex; gap:6px; flex-wrap:wrap; padding:10px 16px 0; }
+  .dlg-tabs:empty{ display:none; }
+  .dlg-meta{ margin:0; padding:10px 16px 4px; font-size:13px; color: var(--ink-soft); line-height:1.45; }
+  .dlg-body{ overflow:auto; padding:6px 16px 8px; flex:1; min-height:0; }
+  .dlg-body img{ display:block; width:100%; max-width:935px; height:auto; margin:0 auto; background:#fff; border:1px solid var(--rule); }
+  .dlg-foot{ margin:0; padding:8px 16px 12px; font-size:12.5px; }
+  .dlg-foot a{ color: var(--tool-accent); }
+  .cases{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .cols{ display:grid; grid-template-columns: minmax(0,1fr); }
+  .col{ padding:14px 16px 20px; min-width:0; }
+  .col + .col{ border-left:1px solid var(--rule); }
+  .col h3{ margin:0 0 4px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color: var(--ink-muted); }
+  .col .sub{ margin:0 0 12px; font-size:12.5px; color: var(--ink-muted); line-height:1.45; }
+  .legend{ display:flex; gap:14px; flex-wrap:wrap; margin:0 0 12px; font-size:12px; color: var(--ink-muted); }
+  .legend .chip{ margin-right:5px; }
 
-  .board{
-    border:1px solid var(--rule); border-radius:12px; overflow:hidden;
-    background: var(--tool-surface);
-  }
-  .board-head{
-    padding:16px 20px 14px; border-bottom:1px solid var(--rule);
-    display:flex; flex-direction:column; gap:14px;
-  }
-  .head-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:24px; flex-wrap:wrap; }
-  .head-eyebrow{
-    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11px;
-    letter-spacing:.08em; text-transform:uppercase; color: var(--ink-muted);
-  }
-  .board-head h2{
-    margin:4px 0 0; font-family:"IBM Plex Serif", Georgia, serif;
-    font-weight:600; font-size:22px; line-height:1.2;
-  }
-  .head-stats{ display:flex; gap:26px; flex-wrap:wrap; margin:0; }
-  .head-stats > div{ min-width:0; }
-  .head-stats dt{ font-size:11px; color: var(--ink-muted); }
-  .head-stats dd{
-    margin:2px 0 0; font-family:"IBM Plex Mono", ui-monospace, monospace;
-    font-size:17px; font-weight:500;
-  }
-  .head-stats dd.is-limit{ color: var(--limit-head); }
-  .head-stats dd.is-accent{ color: var(--tool-accent); }
-  .head-stats .ln{
-    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10px;
-    color: var(--ink-muted); margin-top:2px; white-space:nowrap;
-  }
+  /* the tree */
+  .tree, .tree ul{ list-style:none; margin:0; padding:0; }
+  .tree ul{ margin-left:13px; padding-left:12px; border-left:1px solid var(--rule); }
+  .nrow{ display:flex; align-items:stretch; gap:2px; margin:2px 0; }
+  .tog{ flex:0 0 26px; border:1px solid transparent; background:transparent; color: var(--tool-accent); font:600 15px "IBM Plex Mono", monospace; cursor:pointer; border-radius:4px; padding:0; }
+  .tog:hover{ background: var(--accent-tint); }
+  .tog.is-leaf{ cursor:default; visibility:hidden; }
+  .pick{ flex:1; min-width:0; display:grid; grid-template-columns:auto 1fr auto; gap:4px 10px; align-items:baseline; text-align:left; padding:6px 9px; border:1px solid var(--row-rule); background: var(--panel); color:inherit; font:inherit; cursor:pointer; border-radius:5px; }
+  .pick:hover{ border-color: var(--tool-accent); }
+  .pick .ln{ font:500 11.5px "IBM Plex Mono", monospace; color: var(--ink-muted); white-space:nowrap; }
+  .pick .lb{ font-size:13.5px; line-height:1.35; min-width:0; }
+  .pick .am{ font:500 13.5px "IBM Plex Mono", monospace; text-align:right; white-space:nowrap; }
+  .pick .sub2{ grid-column:2 / 4; font-size:11.5px; color: var(--ink-muted); line-height:1.35; }
+  .node.k-page > .nrow .pick{ background: var(--accent-tint); border-color: var(--accent-line); }
+  .node.k-page > .nrow .pick .lb{ font:600 15px "IBM Plex Serif", Georgia, serif; }
+  .node.k-doc > .nrow .pick{ border-style:dashed; background: var(--form-bg); }
+  .node.k-sched > .nrow .pick{ background: var(--limit-bg); border-color: var(--limit-edge); }
+  .node.is-total > .nrow .pick .lb, .node.is-total > .nrow .pick .am{ font-weight:600; }
+  .pick[aria-pressed="true"]{ border-color: var(--tool-accent); box-shadow:0 0 0 3px var(--ring); }
+  .pick.is-feed{ box-shadow:0 0 0 2px var(--accent-line); }
+  .pick.is-same{ background: var(--accent-wash); border-color: var(--tool-accent); }
+  .pick:focus-visible, .tog:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .chip{ font:500 10.5px "IBM Plex Sans", sans-serif; padding:1px 6px; border-radius:9px; background: var(--accent-tint); color: var(--accent-deep); border:1px solid var(--accent-line); white-space:nowrap; }
+  .chip.sched{ background: var(--limit-bg); color: var(--limit-ink); border-color: var(--limit-edge); }
+  .chip.doc{ background: var(--form-bg); color: var(--tool-ink); border-color: var(--form-bc); }
+  .chip.none{ background: var(--recede); color: var(--ink-muted); border-color: var(--border); }
+  .chip.minus{ background: var(--flag-chip); color: var(--flag-ink); border-color: var(--flag-bc); }
 
-  .head-controls{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  .head-controls .hint{ margin-left:auto; font-size:12.5px; color: var(--ink-muted); }
-  @media (max-width: 900px){ .head-controls .hint{ margin-left:0; } }
 
-  /* ---- Canvas ------------------------------------------------------------ */
 
-  .canvas-scroll{ overflow-x:auto; overflow-y:hidden; background: var(--panel); }
-  .canvas-scroll:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
-  .canvas{ position:relative; width:1320px; height:348px; }
+  .notes{ margin-top:18px; font-size:12.5px; color: var(--ink-muted); line-height:1.55; max-width:80ch; }
+  .notes p{ margin:0 0 8px; }
 
-  .col-head{
-    position:absolute; top:18px; width:168px; font-size:10.5px;
-    letter-spacing:.08em; text-transform:uppercase; font-weight:600; color: var(--ink-muted);
+  @media (max-width: 980px){
+    .col + .col{ border-left:0; border-top:1px solid var(--rule); }
   }
-  .wires{ position:absolute; left:0; top:0; overflow:visible; pointer-events:none; }
-
-  /*  No amounts on the boxes. A formula is a shape; putting figures on it
-      turns the diagram back into the table it is meant to stand above. What
-      a box does carry is how many of its line items are filled in, which
-      says where the numbers are without being one. */
-  .node{
-    position:absolute; width:168px; height:68px; padding:8px 10px;
-    border-radius:8px; text-align:left; cursor:pointer;
-    display:flex; flex-direction:column; justify-content:flex-start;
-    background: var(--panel); border:1px solid var(--border);
-    font:inherit; color: var(--tool-ink);
-  }
-  .node .tags{
-    display:flex; justify-content:space-between; gap:6px; width:100%;
-    font-size:10.5px; color: var(--ink-muted); align-items:center;
-  }
-  .node .title{ margin-top:6px; font-size:12.5px; font-weight:600; line-height:1.25; color: var(--tool-ink); }
-
-  .node.kind-group{ background: var(--limit-bg); border-color: var(--limit-bc); }
-  .node.kind-group .tags{ color: var(--limit-ink); }
-  .node.kind-calc{ background: var(--accent-tint); border-color: var(--accent-line); }
-  .node.kind-calc .tags{ color: var(--accent-deep); }
-  .node.kind-result{ background: var(--tool-accent); border-color: var(--tool-accent); }
-  .node.kind-result .tags{ color: var(--on-accent-soft); }
-  .node.kind-result .title{ color: var(--on-accent); }
-
-  .node.is-off{ background: var(--recede); border-color: var(--rule); box-shadow:none; }
-  .node.is-off .tags{ color: var(--ink-muted); }
-  .node.is-off .title{ color: var(--ink-soft); font-weight:500; }
-
-  .node:hover{ box-shadow: 0 2px 8px var(--shade); }
-  .node.is-on{ border-width:2px; border-color: var(--tool-accent); box-shadow: 0 0 0 3px var(--ring); }
-  .node.kind-result.is-on{ border-color: var(--tool-ink); }
-  .node:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
-
-  /* How many line items carry a figure. */
-  .node .count{
-    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10.5px;
-    padding:1px 5px; border-radius:4px; background: var(--panel);
-    border:1px solid var(--limit-bc); color: var(--limit-ink); white-space:nowrap;
-  }
-  .node .count.none{ opacity:.55; }
-  .node .caret{ font-size:9px; opacity:.8; }
-
-  .node .sub-pill{
-    position:absolute; left:10px; top:-9px; padding:1px 6px; border-radius:4px;
-    background: var(--limit-pill); color: var(--panel); font-size:9.5px;
-    font-weight:600; letter-spacing:.06em;
-  }
-  .node .sub-pill.floor{ left:auto; right:10px; background: var(--accent-deep); }
-
-  .legend{
-    position:absolute; left:16px; display:flex; gap:18px; align-items:center;
-    flex-wrap:wrap; font-size:11.5px; color: var(--ink-muted);
-  }
-  .legend .item{ display:flex; align-items:center; gap:6px; }
-  .legend i{
-    width:14px; height:10px; border-radius:3px; display:inline-block; flex:none;
-    background: var(--accent-tint); border:1px solid var(--accent-line);
-  }
-  .legend i.group{ background: var(--limit-bg); border-color: var(--limit-bc); }
-  .legend i.result{ background: var(--tool-accent); border-color: var(--tool-accent); }
-
-  .canvas-empty{
-    position:absolute; left:16px; top:52px; right:16px;
-    padding:22px 24px; border:1px dashed var(--border); border-radius:10px;
-    background: var(--tool-surface); max-width:62ch;
-  }
-  .canvas-empty p{ margin:0; font-size:13.5px; line-height:1.55; color: var(--ink-soft); }
-  .canvas-empty b{ color: var(--tool-ink); }
-
-  /* ---- The tables under the map -----------------------------------------
-     One per amber box, opening in place the way the sheet's own outline
-     groups do. Several can be open at once, which is the whole reason they
-     are stacked here rather than swapped through a single panel. */
-
-  .sheets{ border-top:1px solid var(--rule); background: var(--panel); }
-  .sheets-head{
-    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    padding:14px 20px; border-bottom:1px solid var(--rule); background: var(--tool-surface);
-  }
-  .sheets-head h3{
-    margin:0; font-family:"IBM Plex Serif", Georgia, serif; font-weight:600; font-size:17px;
-  }
-  .sheets-head .hint{ font-size:12.5px; color: var(--ink-muted); }
-  .sheets-head .spacer{ flex:1 1 auto; }
-
-  .sheet{ border-bottom:1px solid var(--rule); }
-  .sheet:last-child{ border-bottom:0; }
-
-  .sheet-toggle{
-    appearance:none; font:inherit; width:100%; text-align:left; cursor:pointer;
-    display:flex; align-items:center; gap:12px; padding:12px 20px;
-    background:transparent; border:0; color: var(--tool-ink);
-  }
-  .sheet-toggle:hover{ background: var(--accent-wash); }
-  .sheet-toggle:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
-  .sheet.is-open .sheet-toggle{ background: var(--limit-bg); }
-  .sheet-toggle .caret{
-    flex:none; width:19px; height:19px; border-radius:5px; display:flex;
-    align-items:center; justify-content:center; font-size:11px;
-    border:1px solid var(--limit-bc); background: var(--panel); color: var(--limit-ink);
-  }
-  .sheet-toggle .name{ font-size:13.5px; font-weight:600; }
-  .sheet-toggle .rows{
-    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11px; color: var(--ink-muted);
-  }
-  .sheet-toggle .count{
-    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11px;
-    padding:1px 6px; border-radius:4px; background: var(--limit-bg);
-    border:1px solid var(--limit-edge); color: var(--limit-ink);
-  }
-  .sheet-toggle .sum{
-    margin-left:auto; font-family:"IBM Plex Mono", ui-monospace, monospace;
-    font-size:14px; font-weight:600; white-space:nowrap;
-  }
-  .sheet-toggle .sum.zero{ color: var(--ink-muted); font-weight:400; }
-
-  .sheet-body{ padding:0 20px 18px; }
-  .sheet-body[hidden]{ display:none; }
-  .sheet-note{ font-size:12.5px; line-height:1.5; color: var(--ink-muted); margin:0 0 12px; max-width:74ch; }
-
-  .sheet-table{ width:100%; border-collapse:collapse; font-size:13px; }
-  .sheet-table th{
-    text-align:left; padding:7px 10px; font-size:11px; letter-spacing:.04em;
-    text-transform:uppercase; color: var(--ink-muted); font-weight:600;
-    border-bottom:1px solid var(--rule);
-  }
-  .sheet-table td{ padding:6px 10px; border-bottom:1px solid var(--row-rule); vertical-align:middle; }
-  .sheet-table .c-xl{
-    width:58px; font-family:"IBM Plex Mono", ui-monospace, monospace;
-    font-size:11px; color: var(--ink-muted); white-space:nowrap;
-  }
-  .sheet-table .c-src{ width:140px; font-size:12px; color: var(--ink-muted); }
-  .sheet-table .c-amt{ width:170px; text-align:right; }
-  .sheet-table .c-note{ width:200px; font-size:11.5px; color: var(--ink-muted); }
-  .sheet-table .indent{ padding-left:26px; }
-
-  .sheet-table tr.is-filled td{ background: var(--accent-wash); }
-  .sheet-table tr.is-pick td{ background: var(--calc-row); font-weight:600; }
-  .sheet-table tr.is-total td{
-    border-bottom:0; border-top:2px solid var(--limit-bc);
-    font-weight:600; background: var(--limit-bg);
-  }
-  .sheet-table tr.is-total .c-amt{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:14px; }
-
-  .amt-in{
-    display:flex; align-items:center; gap:5px; justify-content:flex-end;
-    padding:5px 9px; border-radius:7px;
-    background: var(--limit-bg); border:1px solid var(--limit-bc);
-  }
-  .amt-in:focus-within{ border-color: var(--tool-accent); box-shadow:0 0 0 2px var(--ring); }
-  .amt-in span{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:12px; color: var(--limit-ink); }
-  .amt-in input{
-    width:100%; min-width:0; border:0; background:transparent; outline:none; font:inherit;
-    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:13px;
-    text-align:right; color: var(--tool-ink);
-  }
-  .amt-out{
-    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:13px;
-    font-weight:500; display:inline-block;
-  }
-  .amt-out.zero{ color: var(--ink-muted); font-weight:400; }
-
-  @media (max-width: 760px){
-    .sheet-table .c-src, .sheet-table .c-note{ display:none; }
-  }
-
-  /* ---- Sources ----------------------------------------------------------- */
-
-  .sources{
-    margin-top: var(--space-5); border:1px solid var(--rule); border-radius:12px;
-    background: var(--tool-surface); overflow:hidden;
-  }
-  .sources summary{
-    cursor:pointer; padding:14px 20px; font-size:13.5px; font-weight:600;
-    display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
-  }
-  .sources summary:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
-  .summary-hint{ font-weight:400; font-size:12px; color: var(--ink-muted); }
-  .sources-body{ padding:0 20px 20px; }
-  .sources-body p{ font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:72ch; margin:0 0 15px; }
-  .sources-body a{ color: var(--tool-accent); }
-  .linemap{
-    overflow-x:auto; border:1px solid var(--rule); border-radius:8px;
-    background: var(--panel); margin-bottom:15px;
-  }
-  .linemap table{ width:100%; border-collapse:collapse; font-size:12.5px; }
-  .linemap caption{
-    text-align:left; padding:10px 12px; font-size:11px; letter-spacing:.06em;
-    text-transform:uppercase; color: var(--ink-muted); border-bottom:1px solid var(--rule);
-  }
-  .linemap th, .linemap td{
-    text-align:left; padding:8px 12px; border-bottom:1px solid var(--row-rule);
-    vertical-align:top; color: var(--ink-soft);
-  }
-  .linemap thead th{
-    font-size:11px; letter-spacing:.04em; text-transform:uppercase;
-    color: var(--ink-muted); font-weight:600;
-  }
-  .linemap td:first-child{
-    font-family:"IBM Plex Mono", ui-monospace, monospace; white-space:nowrap;
-    color: var(--tool-ink); font-weight:500;
-  }
-  .note{
-    font-size:12.5px; line-height:1.6; color: var(--ink-soft); margin:0;
-    padding:12px 14px; border-radius:8px; background: var(--limit-bg);
-    border:1px solid var(--limit-edge);
-  }
-  .note b{ color: var(--limit-body); font-weight:600; }
-
-  .footnote{ font-size:12px; color: var(--ink-muted); line-height:1.55; max-width:74ch; margin:18px 0 0; }
-
   @media print{
-    .head-controls, .sheet-toggle .caret{ display:none; }
-    .canvas-scroll{ overflow:visible; }
-    .sheet-body[hidden]{ display:block; }
+    body{ background:#fff; }
+    .tbtn{ display:none; }
   }
 
   /* ---- Embedded mode (?embed=1) ------------------------------------------
-     Set when this page is iframed into the Dashboard's "1040 preview" tab.
-     The host page already supplies the topbar and footer, so hide ours rather
-     than showing the chrome twice. The markup stays in the DOM deliberately:
-     verify-links.mjs asserts every page carries the primary nav, and the skip
-     link still needs somewhere to land.
+     Set when this page is iframed into the Tools "1040 preview" tab. The host
+     supplies the topbar and footer, so hide ours rather than draw them twice.
+     The markup stays in the DOM: verify-links.mjs asserts every page carries
+     the primary nav, and the skip link still needs somewhere to land.
      ------------------------------------------------------------------------ */
   body.embed .topbar,
   body.embed .site-footer,
@@ -517,151 +350,103 @@
   <div class="wrap">
 
     <div class="masthead">
-      <div class="kicker">
-        <a href="../index.html">Return review</a> &middot; The tax formula
-      </div>
-      <h1>The individual income tax formula, drawn</h1>
+      <div class="kicker"><a href="../index.html">Return review</a> &middot; Source documents to Form 1040</div>
+      <h1>From Form 1040 down to the source documents</h1>
       <p class="standfirst">
-        Fourteen boxes, left to right, from gross income to the balance due &mdash; the major subtotals
-        of the <b>Income Tax Summary</b> in the ACCTG 410 Individual Taxation Toolbox. The map carries
-        labels only. A formula is a shape, and putting figures on it turns the diagram back into the
-        table it is meant to stand above.
-      </p>
-      <p class="standfirst">
-        The figures live underneath. Nine of the fourteen are amber, and each one opens into the sheet&rsquo;s
-        own line items &mdash; the nine income components under row 8, the three adjustments under row 18,
-        and so on. Type there and the box above fills in. Open as many as you like at once; nothing you
-        enter leaves this page.
+        An expandable tree, from the top down. Form 1040 page 1 and page 2 are the roots. Under each line are the
+        schedules and lines that flow into it, and under those, the source documents that feed the schedules.
+        Select a line or a document to unfold the documents behind it in place. The sample is a fictional
+        married-filing-jointly 2025 return built from replica source documents. To see how the same view reads a real
+        return, analyze a redacted PDF of your own below: it is read in your browser and never uploaded.
       </p>
     </div>
 
-    <div class="board">
+    <section class="upload" id="uploadSec" aria-labelledby="upTitle">
+      <h2 id="upTitle">Analyze your own return</h2>
+      <p>Choose a <b>text-based PDF of a filed return</b>: Form 1040 and its schedules. The page recognises each line by its printed
+      label (so a renumbered form still reads), builds the same tree for your return, shows your own pages as the documents, and
+      cross-checks the forms against each other. It was built and tested on a 2024 return; a layout it does not recognise is listed
+      as an unread page rather than guessed at.</p>
+      <details class="redact">
+        <summary>Redact it first</summary>
+        <p>The page needs only the labels and amounts. Before you choose the file, remove: names, Social Security numbers and ITINs,
+        EINs, home address, phone and email, bank routing and account numbers, and the preparer&rsquo;s name, PTIN and firm. If the
+        text still contains something that looks like one of these identifiers, the page stops and asks you to redact it.</p>
+      </details>
+      <p class="privacy"><b>Your file stays on this device.</b> It is read by your browser; nothing is sent anywhere, stored, or
+      logged. The only request the page makes for this is for the pdf.js reader from a public CDN, and it refuses to run it unless
+      the file matches a digest pinned in the page. <a href="../privacy/index.html">How to check this</a>.</p>
+      <div class="uprow">
+        <label class="filebtn tbtn" for="fileIn">Choose a PDF</label>
+        <input type="file" id="fileIn" accept="application/pdf,.pdf" class="sr-only">
+        <button type="button" class="tbtn" id="clearUpload" hidden>Remove my return</button>
+      </div>
+      <p class="upstatus" id="upStatus" role="status" aria-live="polite"></p>
+      <div class="upguard" id="upGuard" hidden>
+        <p id="upGuardText"></p>
+        <label class="chk"><input type="checkbox" id="upFictional"> These identifiers are fictional: this is a sample or practice return.</label>
+        <button type="button" class="tbtn" id="upContinue" disabled>Analyze anyway</button>
+      </div>
+    </section>
+
+    <div class="board" id="board">
       <div class="board-head">
-        <div class="head-top">
-          <div>
-            <div class="head-eyebrow" id="boardEyebrow">Income Tax Summary &middot; sheet rows 8&ndash;59</div>
-            <h2>Gross income to the balance due</h2>
+        <div>
+          <div class="eyebrow" id="caseEyebrow"></div>
+          <h2>From source document to refund</h2>
+          <div class="cases" role="group" aria-label="Choose a return">
+            <button type="button" class="tbtn" id="case-tp2" aria-pressed="true">Sample: Learner, 2025</button>
+            <button type="button" class="tbtn" id="case-upload" aria-pressed="false" hidden>Your return (uploaded)</button>
           </div>
-          <dl class="head-stats" id="headStats"></dl>
         </div>
-        <div class="head-controls">
-          <button type="button" class="tbtn primary" id="sampleBtn">Load the workbook example</button>
-          <button type="button" class="tbtn" id="clearBtn">Clear</button>
-          <button type="button" class="tbtn" id="openAll">Open every table</button>
-          <button type="button" class="tbtn" id="closeAll">Close them</button>
-          <span class="hint">Select any box to trace what feeds it. Amber boxes open a table below.</span>
+        <dl class="filing" id="filing" aria-label="Filing status and dependents"></dl>
+        <div class="tools">
+          <label class="chk"><input type="checkbox" id="popToggle"> Open documents in a pop-up instead</label>
+          <button type="button" class="tbtn" id="expandBtn">Expand all</button>
+          <button type="button" class="tbtn" id="collapseBtn">Collapse all</button>
         </div>
       </div>
 
-      <div class="canvas-scroll" id="canvasScroll" tabindex="0" role="region"
-           aria-label="The individual income tax formula, drawn as a map. Scrolls sideways.">
-        <div class="canvas" id="canvas">
-          <svg class="wires" id="wires" width="1320" height="348" aria-hidden="true"></svg>
-          <div class="legend" id="legend" style="top:300px">
-            <span class="item"><i class="group"></i>Filled from its line items</span>
-            <span class="item"><i></i>A step in the formula</span>
-            <span class="item"><i class="result"></i>The answer</span>
-            <span class="item">
-              <svg width="22" height="8" aria-hidden="true"><path d="M1 4 L21 4"
-                style="stroke: var(--limit-bc); stroke-width:1.5; stroke-dasharray:5 4;"></path></svg>
-              Subtracted, not added
-            </span>
-            <span class="item">
-              <svg width="22" height="8" aria-hidden="true"><path d="M1 4 L21 4"
-                style="stroke: var(--edge); stroke-width:1.5; stroke-dasharray:2 3;"></path></svg>
-              Is the base for, not added
-            </span>
-          </div>
-        </div>
-      </div>
-      <p class="sr-only" id="mapDesc" role="status" aria-live="polite"></p>
+      <div class="checks" id="checks" hidden></div>
 
-      <div class="sheets">
-        <div class="sheets-head">
-          <h3>The line items behind each box</h3>
-          <span class="hint">Nine tables, from the same sheet. Their entries are what derive the amber boxes above.</span>
+      <div class="cols">
+        <div class="col">
+          <h3>Form 1040 and what feeds it</h3>
+          <p class="sub">Start at the two pages of Form 1040. Open a line to see the schedules that flow into it; open those to reach the source documents. Select a line or a document to unfold it in place.</p>
+          <div class="legend" aria-label="Key">
+            <span><span class="chip">Form 1040</span>the return</span>
+            <span><span class="chip sched">Schedule</span>supporting form</span>
+            <span><span class="chip doc">Source</span>document</span>
+          </div>
+          <ul class="tree" id="tree"></ul>
         </div>
-        <div id="sheetList"></div>
       </div>
     </div>
 
-    <details class="sources">
-      <summary>
-        Where this comes from
-        <span class="summary-hint">The workbook sheet, row by row &mdash; optional</span>
-      </summary>
-      <div class="sources-body">
-        <p>
-          <strong>Income Tax Summary</strong>, the framework tab of the ACCTG 410 Individual Taxation
-          Toolbox (<code>Individual taxation excel simulation master - organized.xlsx</code>), rows
-          8&ndash;59. That sheet is the individual income tax formula written out once, and every other
-          tab in the workbook feeds one of its lines. The map above is its fourteen major subtotals; the
-          tables are its line items.
-        </p>
-        <p>
-          The reference letters in the Ref column &mdash; <code>a</code>, <code>b</code>,
-          <code>a-b</code>, <code>c</code>, <code>d</code>, <code>e</code>, <code>c+d-e</code>,
-          <code>f</code>, <code>c+d-e+f</code> &mdash; are the sheet&rsquo;s own, from its column A.
-        </p>
 
-        <div class="linemap" tabindex="0" role="region" aria-label="The fourteen subtotals and their sheet rows">
-          <table>
-            <caption>The formula, row by row</caption>
-            <thead>
-              <tr><th scope="col">Row</th><th scope="col">Ref</th><th scope="col">Subtotal</th><th scope="col">Comes from</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>8</td><td></td><td>Gross income</td><td>rows 9&ndash;17</td></tr>
-              <tr><td>18</td><td></td><td>For AGI deductions</td><td>rows 19&ndash;21</td></tr>
-              <tr><td>22</td><td>a</td><td>Adjusted gross income</td><td>row 8 &minus; row 18</td></tr>
-              <tr><td>23</td><td>b</td><td>From AGI deductions</td><td>rows 24, 27&ndash;29</td></tr>
-              <tr><td>30</td><td>a-b</td><td>Taxable income</td><td>MAX(0, a &minus; b)</td></tr>
-              <tr><td>32</td><td>c</td><td>Income tax liability (tentative 1)</td><td>rows 33&ndash;34</td></tr>
-              <tr><td>35</td><td>d</td><td>Other taxes</td><td>rows 36&ndash;38</td></tr>
-              <tr><td>39</td><td>e</td><td>Nonrefundable tax credits</td><td>rows 40&ndash;43</td></tr>
-              <tr><td>44</td><td>c+d-e</td><td>Income tax liability (tentative 2)</td><td>MAX(0, c + d &minus; e)</td></tr>
-              <tr><td>45</td><td>f</td><td>Other taxes</td><td>rows 46&ndash;48</td></tr>
-              <tr><td>49</td><td>c+d-e+f</td><td>Total tax</td><td>row 44 + row 45</td></tr>
-              <tr><td>50</td><td></td><td>Refundable tax credits</td><td>rows 51&ndash;53</td></tr>
-              <tr><td>54</td><td></td><td>Prepayments</td><td>rows 55&ndash;58</td></tr>
-              <tr><td>59</td><td></td><td>Tax due or (refund)</td><td>row 49 &minus; row 50 &minus; row 54</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <p>
-          <b>Two rows are floored at zero</b>, and the map marks both. Row 30 cannot go below zero, so
-          deductions past adjusted gross income do not carry anywhere. Row 44 cannot either, which is
-          what makes the credits on row 39 nonrefundable &mdash; past that point they stop being worth
-          anything. The taxes on row 45 are added after that floor, so those credits never reach them.
-        </p>
-        <p>
-          <b>This page does not compute a tax.</b> Rows 33 and 34 &mdash; ordinary tax and
-          preferential-rate tax &mdash; are figures the sheet takes as entries, worked out on its
-          Comprehensive Tax Calculation tab. They are entries here too, so no rate schedule is embedded
-          and none needs verifying.
-        </p>
-        <p class="note">
-          <b>The example is the sheet&rsquo;s own.</b> Salary 100,000, taxable interest 6,000, a 25,000
-          itemised deduction beating the 15,750 standard, ordinary tax of 13,127, one 500 credit and
-          10,000 withheld &mdash; landing on 2,627 due. It is illustrative, not a return, and the
-          figures are the workbook&rsquo;s rather than anyone&rsquo;s. Nothing here is tax advice.
-        </p>
+    <dialog class="docdlg" id="docDlg" aria-labelledby="docDlgTitle">
+      <div class="dlg-head">
+        <h2 id="docDlgTitle"></h2>
+        <button type="button" class="tbtn" id="docDlgClose">Close</button>
       </div>
-    </details>
+      <div class="dlg-tabs" id="docDlgTabs" role="group" aria-label="Documents behind this line"></div>
+      <p class="dlg-meta" id="docDlgMeta"></p>
+      <div class="dlg-body"><img id="docDlgImg" alt=""></div>
+      <p class="dlg-foot"><a id="docDlgOpen" href="#" target="_blank" rel="noopener">Open in a new tab</a></p>
+    </dialog>
 
-
-    <p class="footnote">
-      Educational use only. Ported from the Income Tax Summary sheet of the ACCTG 410 Individual
-      Taxation Toolbox; the Ref column throughout is that sheet&rsquo;s own row numbering. This page does
-      not recompute a tax liability &mdash; ordinary and preferential-rate tax are figures you enter, as
-      they are in the workbook &mdash; and it does not determine eligibility for anything. Take filing
-      decisions to a qualified tax professional.
-    </p>
+    <div class="notes">
+      <p><b>How the amounts are built.</b> A line that adds or subtracts other lines is computed here from those
+      lines, so the page cannot disagree with itself. A few lines have no source document and are given:
+      the standard deduction (filing status), the tax (a worksheet) and a credit that depends on the family
+      (the dependent&rsquo;s eligibility). They are marked &ldquo;no source document&rdquo;.</p>
+      <p id="caseNote"></p>
+      <p>Check line numbers against the forms for the year before relying on them. All names, numbers and addresses are fictional, the replicas are marked
+      &ldquo;Not an Official IRS Document&rdquo;, and nothing on this page is tax advice.</p>
+    </div>
 
   </div>
 </div>
-
 
   <footer class="site-footer">
     <div class="container">
@@ -728,757 +513,1217 @@
       </div>
     </div>
   </footer>
-
 <script>
-/*  Embedded in the Dashboard tab? Drop the chrome. Mirrors the IRS dashboard's
-    own ?embed=1 switch so both tabs are driven the same way.               */
+/*  Embedded in the Tools tab? Drop the chrome. */
 if (new URLSearchParams(location.search).get('embed') === '1') {
   document.body.classList.add('embed');
 }
 
-/*  Money in, money out. Both are carried over from the return reader this
-    page replaced; they are the only two functions that survived it.        */
-function parseAmount(v){
-  if (v === null || v === undefined) return 0;
-  var s = String(v).replace(/[^0-9.\-]/g, '');
-  if (s === '' || s === '-' || s === '.') return 0;
-  var n = parseFloat(s);
-  return isFinite(n) ? n : 0;
-}
-
-function formatMoney(n){
-  var neg = n < 0, v = Math.round(Math.abs(n));
-  return (neg ? '-$' : '$') + v.toLocaleString('en-US');
-}
-
-/* ===========================================================================
-   The individual income tax formula.
-
-   Ported from the "Income Tax Summary" sheet of
-   `Individual taxation excel simulation master - organized.xlsx` (ACCTG 410
-   Individual Taxation Toolbox), rows 8–59 — the framework tab the whole
-   workbook hangs off.
-
-   The page is in two halves, and the split is the point:
-
-     the map      fourteen boxes, left to right, carrying the sheet's major
-                  subtotals and its reference letters. Labels only. No amounts,
-                  because a formula is a shape and putting figures on it turns
-                  a diagram back into a table.
-
-     the detail   nine of those fourteen are filled in from the sheet's own
-                  line items — the nine income components under row 8, the
-                  three adjustments under row 18, and so on. Those open below
-                  the map, one table each, and their entries are what derive
-                  the box above them.
-
-   So every figure is entered at the level the sheet enters it, and every box
-   on the map is either a sum of its own detail or a step in the formula. The
-   only things typed are the 36 line items.
-   =========================================================================== */
-
-function formulaColumns(){
-  return ['Income', 'Adjusted gross income', 'Taxable income',
-          'Tax before credits', 'Tentative liability', 'Total tax', 'Settlement'];
-}
-
-function formulaKindLabels(){
-  return { group:'Filled from its line items', calc:'A step in the formula', result:'The answer' };
-}
-
-/*  The fourteen boxes.
-
-      group   an amber box: a subtotal its own line items add up to
-      calc    a step the formula computes from other boxes
-      result  where the formula ends
-
-    `xl` is the sheet row, so a drift between this and the workbook shows up
-    in a diff rather than in someone's memory.                              */
-function formulaBoxes(){
+/*  The case: Tax Project #2 (ACCTG 410), 2025, as filed. Source figures are read off
+    the replicas in tp2-docs/ and equal the check figures in that module's model.py.  */
+function returnDocsTp2(){
   return [
-    { id:'grossIncome', col:0, row:0, kind:'group', xl:8, ref:'Row 8',
-      title:'Gross income',
-      note:'Everything before any deduction. The sheet breaks it into nine line items — wages, interest, dividends, retirement, capital gains, Social Security — and this box is their total.' },
-
-    { id:'forAgi', col:0, row:1, kind:'group', xl:18, ref:'Row 18', reduces:true,
-      title:'For AGI deductions',
-      note:'The above-the-line deductions from Schedule 1 Part II. Subtracted from gross income to reach adjusted gross income, which is why they are worth more than a below-the-line deduction of the same size.' },
-
-    { id:'agi', col:1, row:0, kind:'calc', xl:22, ref:'Row 22 · a',
-      title:'Adjusted gross income',
-      note:'The formula’s first milestone, and the figure most phase-outs are measured against — which is why it matters more than what you earned.' },
-
-    { id:'fromAgi', col:1, row:1, kind:'group', xl:23, ref:'Row 23 · b', reduces:true,
-      title:'From AGI deductions',
-      note:'Below the line: the greater of the standard or itemised deduction, plus the qualified business income deduction and anything else. The standard-versus-itemised comparison is worked out inside this box’s own table.' },
-
-    { id:'taxable', col:2, row:0, kind:'calc', xl:30, ref:'Row 30 · a-b', floor:true,
-      title:'Taxable income',
-      note:'Cannot be below zero — the sheet floors it, and so does this. If deductions exceed adjusted gross income the excess does not carry anywhere on this map.' },
-
-    { id:'tentative1', col:3, row:0, kind:'group', xl:32, ref:'Row 32 · c',
-      title:'Income tax liability (tentative 1)',
-      note:'Ordinary tax plus preferential-rate tax. Both are figures the sheet takes as entries, worked out on its Comprehensive Tax Calculation tab — no rate schedule is embedded here.' },
-
-    { id:'otherTaxD', col:3, row:1, kind:'group', xl:35, ref:'Row 35 · d',
-      title:'Other taxes',
-      note:'Alternative minimum tax and excess advance premium tax credit repayment. Added before credits come off, so credits can reach them.' },
-
-    { id:'nonrefundable', col:3, row:2, kind:'group', xl:39, ref:'Row 39 · e', reduces:true,
-      title:'Nonrefundable tax credits',
-      note:'Foreign tax credit, the nonrefundable part of the child tax credit, dependent care. These can take the liability to zero but never below it.' },
-
-    { id:'tentative2', col:4, row:0, kind:'calc', xl:44, ref:'Row 44 · c+d-e', floor:true,
-      title:'Income tax liability (tentative 2)',
-      note:'Floored at zero, which is what makes those credits nonrefundable: past this point they stop being worth anything.' },
-
-    { id:'otherTaxF', col:4, row:1, kind:'group', xl:45, ref:'Row 45 · f',
-      title:'Other taxes',
-      note:'Self-employment tax and net investment income tax. They sit outside the floor above deliberately — nonrefundable credits cannot offset them.' },
-
-    { id:'totalTax', col:5, row:0, kind:'calc', xl:49, ref:'Row 49 · c+d-e+f',
-      title:'Total tax',
-      note:'The final liability, before anything already paid.' },
-
-    { id:'refundable', col:5, row:1, kind:'group', xl:50, ref:'Row 50', reduces:true,
-      title:'Refundable tax credits',
-      note:'Child tax credit and earned income credit. Refundable means they keep paying out after the liability reaches zero, which is why they sit here and not on row 39.' },
-
-    { id:'prepayments', col:5, row:2, kind:'group', xl:54, ref:'Row 54', reduces:true,
-      title:'Prepayments',
-      note:'Withholding on a W-2 or 1099, estimated payments, and anything applied from last year’s return.' },
-
-    { id:'dueOrRefund', col:6, row:0, kind:'result', xl:59, ref:'Row 59',
-      title:'Tax due or (refund)',
-      note:'Signed, as the sheet has it: positive is owed, negative in brackets is refunded.' }
+    { id:'wl', short:'W-2 Linda',  img:'tp2-docs/w2-linda.png',     title:'Form W-2, Linda Learner',          note:'Riverside Realty Group' },
+    { id:'wm', short:'W-2 Mark',  img:'tp2-docs/w2-mark.png',      title:'Form W-2, Mark Learner',           note:'Lakeshore Analytics, Inc.' },
+    { id:'rsa', short:'Stock award', img:'tp2-docs/rsa-award.png',    title:'Restricted stock award notice',    note:'3,000 shares granted to Mark' },
+    { id:'el', short:'83(b) election',  img:'tp2-docs/election-83b.png', title:'Section 83(b) election',           note:'Mark, filed 23 days after grant' },
+    { id:'sc', short:'Schedule C',  img:'tp2-docs/sch-c.png',        title:'Schedule C, Learner Consulting',   note:'Linda, sole proprietor' },
+    { id:'se', short:'Schedule SE',  img:'tp2-docs/sch-se.png',       title:'Schedule SE',                      note:'Linda, self-employment tax' },
+    { id:'sed', short:'Schedule E', img:'tp2-docs/sch-e.png',        title:'Schedule E, Birchwood Apartments', note:'Rental real estate' },
+    { id:'f82', short:'Form 8582', img:'tp2-docs/f8582.png',        title:'Form 8582',                        note:'Passive activity loss limits' },
+    { id:'f89', short:'Form 8995', img:'tp2-docs/f8995.png',        title:'Form 8995',                        note:'Qualified business income deduction' }
   ];
 }
 
-/*  op: +1 adds into the target, -1 subtracts, 0 means "is the base this was
-    computed from" — a real dependency with no arithmetic behind it.        */
-function formulaEdges(){
+/*  Each line is a sum of parts. A part is a figure read off a document ({doc, ref, amt})
+    or another line ({row, sign}). A line with no parts carries a given amount and says why. */
+function returnRowsTp2(){
+  var D = function(doc, ref, amt, sign){ return { doc:doc, ref:ref, amt:amt, sign: sign || 1 }; };
+  var R = function(row, sign){ return { row:row, sign: sign || 1 }; };
   return [
-    { from:'grossIncome',   to:'agi',         op: 1 },
-    { from:'forAgi',        to:'agi',         op:-1 },
-    { from:'agi',           to:'taxable',     op: 1 },
-    { from:'fromAgi',       to:'taxable',     op:-1 },
-    { from:'taxable',       to:'tentative1',  op: 0 },
-    { from:'tentative1',    to:'tentative2',  op: 1 },
-    { from:'otherTaxD',     to:'tentative2',  op: 1 },
-    { from:'nonrefundable', to:'tentative2',  op:-1 },
-    { from:'tentative2',    to:'totalTax',    op: 1 },
-    { from:'otherTaxF',     to:'totalTax',    op: 1 },
-    { from:'totalTax',      to:'dueOrRefund', op: 1 },
-    { from:'refundable',    to:'dueOrRefund', op:-1 },
-    { from:'prepayments',   to:'dueOrRefund', op:-1 }
+    /* ---- Schedule 1 ---- */
+    { id:'s1_3',  grp:'Schedule 1', form:'Sch. 1', ln:'3',  label:'Business income or (loss)', parts:[ D('sc','Schedule C, line 31', 62000) ],
+      cue:'Confirm the Schedule C net profit is the amount carried here and to Schedule SE line 2. Receipts 68,000 less expenses 6,000.' },
+    { id:'s1_5',  grp:'Schedule 1', form:'Sch. 1', ln:'5',  label:'Rental real estate, royalties, partnerships (Schedule E)', parts:[ D('sed','Schedule E, line 22 (after Form 8582)', 0) ], also:['f82'], from:['l1z','s1_3'],
+      cue:'Schedule E line 21 shows an 18,000 loss, but nothing is deductible: modified AGI of 164,000 is past the 150,000 point where the special allowance ends (Form 8582 line 9 = 0). The 18,000 is suspended and carries to 2026. Check Form 8582 Part IV and the carryforward, not just this line.' },
+    { id:'s1_10', grp:'Schedule 1', form:'Sch. 1', ln:'10', label:'Additional income (add lines 1 through 9)', parts:[ R('s1_3'), R('s1_5') ], total:true,
+      cue:'Flows to Form 1040 line 8.' },
+    { id:'s1_15', grp:'Schedule 1', form:'Sch. 1', ln:'15', label:'Deductible part of self-employment tax', parts:[ D('se','Schedule SE, line 13', 4380) ],
+      cue:'Half of SE tax of 8,760. It is an adjustment, not a business expense, so it does not reduce Schedule C profit. It does reduce qualified business income on Form 8995.' },
+    { id:'s1_26', grp:'Schedule 1', form:'Sch. 1', ln:'26', label:'Total adjustments to income', parts:[ R('s1_15') ], total:true,
+      cue:'Flows to Form 1040 line 10. No IRA deduction and no self-employed retirement plan deduction in this return as filed.' },
+    /* ---- Schedule 2 ---- */
+    { id:'s2_4',  grp:'Schedule 2', form:'Sch. 2', ln:'4',  label:'Self-employment tax', parts:[ D('se','Schedule SE, line 12', 8760) ],
+      cue:'Linda&rsquo;s own W-2 Box 3 (42,000) is on Schedule SE line 8a, not Mark&rsquo;s. 57,257 of net earnings: 7,100 social security + 1,660 Medicare.' },
+    { id:'s2_21', grp:'Schedule 2', form:'Sch. 2', ln:'21', label:'Total other taxes', parts:[ R('s2_4') ], total:true,
+      cue:'Flows to Form 1040 line 23. Additional Medicare Tax is 0 here: Medicare wages plus SE income are 164,257, below the 250,000 joint threshold.' },
+    /* ---- Schedule 8812 ---- */
+    { id:'f8812_14', grp:'Schedule 8812', form:'Sch. 8812', ln:'14', label:'Child tax credit', given:2200, from:['l11a','l16'],
+      why:'One qualifying child under 17 with a valid SSN (Noah, age 8) x 2,200. AGI of 159,620 is below the 400,000 joint threshold, so there is no phase-out, and the credit is limited to the 15,479 of tax available (Credit Limit Worksheet A).',
+      cue:'Eligibility comes from the facts, not a source document: confirm Noah\u2019s age, SSN and that he lived with them more than half the year. The whole credit is used against tax, so there is no additional child tax credit.' },
+    /* ---- Form 1040 ---- */
+    { id:'l1z',  grp:'Form 1040: income', form:'1040', ln:'1z', label:'Wages, salaries, tips (add lines 1a through 1h)',
+      parts:[ D('wl','W-2 Box 1, Linda', 37000), D('wm','W-2 Box 1, Mark', 65000) ], also:['rsa','el'],
+      cue:'Compare Box 1 with Boxes 3 and 5 on each W-2. Linda: 37,000 vs 42,000, because 5,000 went to a traditional 401(k) (code D). Mark: Box 1 65,000 is 30,000 above his 35,000 salary: the 83(b) election put the stock&rsquo;s grant-date value into wages; the award notice and election support it. His 3,000 Roth 401(k) (code AA) is after tax, so it reduces nothing.' },
+    { id:'l8',   grp:'Form 1040: income', form:'1040', ln:'8', label:'Additional income from Schedule 1, line 10', parts:[ R('s1_10') ] },
+    { id:'l9',   grp:'Form 1040: income', form:'1040', ln:'9', label:'Total income', parts:[ R('l1z'), R('l8') ], total:true },
+    { id:'l10',  grp:'Form 1040: income', form:'1040', ln:'10', label:'Adjustments to income from Schedule 1, line 26', parts:[ R('s1_26') ] },
+    { id:'l11a', grp:'Form 1040: income', form:'1040', ln:'11a', label:'Adjusted gross income', parts:[ R('l9'), R('l10', -1) ], total:true,
+      cue:'This is not the figure Form 8582 uses. Modified AGI for the passive loss rules ignores the SE-tax deduction and the rental loss: 102,000 + 62,000 = 164,000.' },
+    { id:'l12e', grp:'Form 1040: tax', form:'1040', ln:'12e', label:'Standard deduction or itemized deductions', given:31500,
+      why:'Married filing jointly standard deduction. Itemized deductions are below it (stated in the facts).' },
+    { id:'l13a', grp:'Form 1040: tax', form:'1040', ln:'13a', label:'Qualified business income deduction (Form 8995)', parts:[ D('f89','Form 8995, line 15', 11524) ], from:['s1_3','s1_15'],
+      cue:'20% of QBI of 57,620 (profit 62,000 less the 4,380 SE deduction). The rental is treated as not a trade or business, so it adds nothing. Taxable income is under the threshold, so the simplified form applies.' },
+    { id:'l15',  grp:'Form 1040: tax', form:'1040', ln:'15', label:'Taxable income', parts:[ R('l11a'), R('l12e', -1), R('l13a', -1) ], total:true },
+    { id:'l16',  grp:'Form 1040: tax', form:'1040', ln:'16', label:'Tax', given:15479, from:['l15'],
+      why:'Tax Computation Worksheet on taxable income, married filing jointly. Taxable income is over 100,000, so the worksheet, not the Tax Table, applies.' },
+    { id:'l19',  grp:'Form 1040: tax', form:'1040', ln:'19', label:'Child tax credit (Schedule 8812)', parts:[ R('f8812_14') ] },
+    { id:'l22',  grp:'Form 1040: tax', form:'1040', ln:'22', label:'Tax after nonrefundable credits', parts:[ R('l16'), R('l19', -1) ], total:true },
+    { id:'l23',  grp:'Form 1040: tax', form:'1040', ln:'23', label:'Other taxes from Schedule 2, line 21', parts:[ R('s2_21') ] },
+    { id:'l24',  grp:'Form 1040: tax', form:'1040', ln:'24', label:'Total tax', parts:[ R('l22'), R('l23') ], total:true },
+    { id:'l25d', grp:'Form 1040: payments and result', form:'1040', ln:'25d', label:'Federal income tax withheld',
+      parts:[ D('wl','W-2 Box 2, Linda', 13000), D('wm','W-2 Box 2, Mark', 9600) ],
+      cue:'Mark&rsquo;s 9,600 = 3,000 on salary + 6,600 withheld at the 22% flat supplemental rate on the 30,000 of stock. Linda raised her withholding to cover tax on her consulting profit; she makes no estimated payments.' },
+    { id:'l33',  grp:'Form 1040: payments and result', form:'1040', ln:'33', label:'Total payments', parts:[ R('l25d') ], total:true },
+    { id:'l34',  grp:'Form 1040: payments and result', form:'1040', ln:'34', label:'Overpayment', parts:[ R('l33'), R('l24', -1) ], total:true },
+    { id:'l35a', grp:'Form 1040: payments and result', form:'1040', ln:'35a', label:'Refund', parts:[ R('l34') ], total:true,
+      cue:'The refund exists only because of the extra withholding. Without it the return would owe, since total tax (22,039) is close to total withholding (22,600).' }
   ];
 }
 
-/*  The sheet's line items, grouped under the box each one derives.
+/*  ---- model ------------------------------------------------------------- */
+function returnModel(caseId, def){
+  caseId = caseId || 'tp2';
+  var rows = returnRows(caseId, def), byId = {}, memo = {};
+  rows.forEach(function(r){ byId[r.id] = r; });
+  function amount(id){
+    if (memo[id] !== undefined) return memo[id];
+    var r = byId[id], t = 0;
+    if (r.parts) r.parts.forEach(function(p){ t += p.sign * (p.row ? amount(p.row) : p.amt); });
+    else if (r.read) t = r.val === null ? 0 : r.val;
+    else t = r.given;
+    return (memo[id] = t);
+  }
+  rows.forEach(function(r){ r.amt = amount(r.id); });
 
-      role 'item'  a figure you type
-           'pick'  a computed row inside a table — row 24 only, where the
-                   sheet takes the greater of the standard and itemised
-                   deductions before adding anything else
-      `under`      the row a 'pick' takes its candidates from, so the table
-                   can indent them beneath it
-      `tab`        the workbook tab that works this figure out, where one does
-      `only2025`   Schedule 1-A is an OBBBA provision; it has no 2024 row     */
-function formulaItems(){
+  /* upstream: the lines a line is built from; downstream: the lines built from it */
+  rows.forEach(function(r){ r.up = []; r.down = []; r.docs = []; });
+  rows.forEach(function(r){
+    (r.parts || []).forEach(function(p){
+      if (p.row){ r.up.push(p.row); byId[p.row].down.push(r.id); }
+      else if (r.docs.indexOf(p.doc) < 0) r.docs.push(p.doc);
+    });
+    (r.from || []).forEach(function(u){ r.up.push(u); byId[u].down.push(r.id); });
+    (r.kids || []).forEach(function(u){ r.up.push(u); byId[u].down.push(r.id); });
+  });
+  function upstreamDocs(id, seen){
+    var r = byId[id], out = r.docs.slice();
+    r.up.forEach(function(u){ upstreamDocs(u).forEach(function(d){ if (out.indexOf(d) < 0) out.push(d); }); });
+    (r.also || []).forEach(function(d){ if (out.indexOf(d) < 0) out.push(d); });
+    return out;
+  }
+  rows.forEach(function(r){ r.allDocs = upstreamDocs(r.id); });
+  var imgs = returnFormImages(caseId, def);
+  rows.forEach(function(r){ if (imgs[r.form]) r.img = imgs[r.form]; });
+  return { rows: rows, byId: byId, docs: returnDocs(caseId, def), caseId: caseId };
+}
+
+
+/*  The cases, and what is specific to each.  */
+function returnCaseList(){
   return {
-    grossIncome: [
-      { key:'salary',       xl:9,  role:'item', source:'W-2',           label:'Salary' },
-      { key:'interest',     xl:10, role:'item', source:'Form 1099-INT', label:'Taxable interest income' },
-      { key:'dividends',    xl:11, role:'item', source:'Form 1099-B',   label:'Ordinary dividends' },
-      { key:'iraDist',      xl:12, role:'item', source:'Form 1099-R',   label:'Taxable IRA distributions' },
-      { key:'pension',      xl:13, role:'item', source:'Form 1099-R',   label:'Taxable pension and annuities', tab:'Annuity' },
-      { key:'socsec',       xl:14, role:'item', source:'Form SSA-1099', label:'Taxable social security benefits', tab:'Social Security' },
-      { key:'capGain',      xl:15, role:'item',                          label:'Capital gain (loss)', tab:'Gain and Loss Netting' },
-      { key:'sched1Income', xl:16, role:'item',                          label:'Additional income from Schedule 1 Part I' },
-      { key:'otherIncome',  xl:17, role:'item',                          label:'Other income', hint:'placeholder' }
-    ],
-    forAgi: [
-      { key:'retirement',  xl:19, role:'item', label:'Contributions to qualified retirement accounts' },
-      { key:'educator',    xl:20, role:'item', label:'Educator expenses' },
-      { key:'otherForAgi', xl:21, role:'item', label:'Other "for AGI deductions"', hint:'placeholder' }
-    ],
-    fromAgi: [
-      { key:'greaterOf',    xl:24, role:'pick', label:'Greater of (a) standard deduction or (b) itemized deduction',
-        picks:['stdDeduction','itemized'] },
-      { key:'stdDeduction', xl:25, role:'item', under:'greaterOf', label:'(a) Standard deduction for the filing status' },
-      { key:'itemized',     xl:26, role:'item', under:'greaterOf', label:'(b) Itemized deduction', tab:'Charitable Deduction' },
-      { key:'qbi',          xl:27, role:'item', label:'Deduction for qualified business income (20% of QBI)', tab:'QBI Deduction' },
-      { key:'sched1A',      xl:28, role:'item', label:'Additional deduction from Schedule 1-A',
-        hint:'no tax on overtime, tips, car loan interest', only2025:true },
-      { key:'otherFromAgi', xl:29, role:'item', label:'Other from AGI deductions', hint:'placeholder' }
-    ],
-    tentative1: [
-      { key:'ordinaryTax', xl:33, role:'item', label:'Ordinary income tax', tab:'Comprehensive Tax Calculation' },
-      { key:'prefTax',     xl:34, role:'item', label:'Qualified dividend and LT capital gain tax', tab:'Comprehensive Tax Calculation' }
-    ],
-    otherTaxD: [
-      { key:'amt',           xl:36, role:'item', label:'Alternative minimum tax' },
-      { key:'excessAptc',    xl:37, role:'item', label:'Excess advance premium tax credit repayment' },
-      { key:'otherTaxDItem', xl:38, role:'item', label:'Other taxes', hint:'placeholder' }
-    ],
-    nonrefundable: [
-      { key:'foreignCredit', xl:40, role:'item', label:'Foreign tax credit' },
-      { key:'ctcNonref',     xl:41, role:'item', label:'Nonrefundable portion of child tax credit and credit for other dependents' },
-      { key:'dependentCare', xl:42, role:'item', label:'Dependent care expenses credit' },
-      { key:'otherNonref',   xl:43, role:'item', label:'Other nonrefundable tax credits', hint:'placeholder' }
-    ],
-    otherTaxF: [
-      { key:'seTax',         xl:46, role:'item', label:'Self-employment tax', tab:'Self-Employment Tax' },
-      { key:'niit',          xl:47, role:'item', label:'Net investment income tax' },
-      { key:'otherTaxFItem', xl:48, role:'item', label:'Other taxes', hint:'placeholder' }
-    ],
-    refundable: [
-      { key:'ctcRefundable',   xl:51, role:'item', label:'Child tax credit' },
-      { key:'eitc',            xl:52, role:'item', label:'Earned income tax credit', tab:'Earned Income Tax Credit' },
-      { key:'otherRefundable', xl:53, role:'item', label:'Other refundable tax credit', hint:'placeholder' }
-    ],
-    prepayments: [
-      { key:'whW2',        xl:55, role:'item', label:'Withholding (Form W-2)' },
-      { key:'wh1099',      xl:56, role:'item', label:'Withholding (Form 1099)' },
-      { key:'estimated',   xl:57, role:'item', label:'Estimated tax payments and amount applied from prior year return' },
-      { key:'otherPrepay', xl:58, role:'item', label:'Other withholding and prepayments', hint:'placeholder' }
-    ]
+    tp2: { id:'tp2', label:'Learner, 2025 (Project #2)', eyebrow:'Fictional 2025 return \u00b7 Linda and Mark Learner, as filed',
+           filing:{ status:'Married filing jointly', statusNote:'Standard deduction (itemized deductions are lower)',
+                    filers:[ { name:'Linda Learner, 34', note:'Employee of Riverside Realty Group; sole proprietor, Learner Consulting' },
+                             { name:'Mark Learner, 35', note:'Employee of Lakeshore Analytics, Inc.' } ],
+                    dependents:[ { name:'Noah, age 8', note:'Son; lived with them all year; qualifies for the child tax credit' } ] },
+           note:'Line numbers follow the 2025 Form 1040 and Schedules 1 and 2. The replicas of the W-2s, Schedules C, E and SE and Forms 8582 and 8995 are read as source documents.',
+           forms:{ 'Sch. 8812':'tp2-docs/f8812.png' } }
   };
 }
+/*  A case is data: its rows, documents and pages. The built-in sample is one; an uploaded return is built by
+    rdBuildReturn() and passed in as `def`. */
+function returnDocs(c, def){ return def ? def.docs : returnDocsTp2(); }
+function returnRows(c, def){ return def ? def.rows : returnRowsTp2(); }
+function returnPages(c, def){ return def ? def.pages : returnPagesTp2(); }
+function returnFormImages(c, def){ return def ? {} : returnCaseList().tp2.forms; }
+function lnText(r){ return /^[0-9]/.test(r.ln) ? 'line ' + r.ln : r.ln; }
 
-/*  Every key you can type into, in sheet order. */
-function formulaInputs(){
-  var items = formulaItems(), out = [];
-  formulaBoxes().forEach(function(b){
-    (items[b.id] || []).forEach(function(it){
-      if (it.role === 'item') out.push(it.key);
+/*  Form 1040's two pages, and the lines on each (Tax Project #2).  */
+function returnPagesTp2(){
+  return [
+    { id:'p1', title:'Form 1040, page 1', note:'Income, through adjusted gross income', rows:['l1z','l8','l9','l10','l11a'] },
+    { id:'p2', title:'Form 1040, page 2', note:'Deductions, tax, credits, payments and the refund', rows:['l12e','l13a','l15','l16','l19','l22','l23','l24','l25d','l33','l34','l35a'] }
+  ];
+}
+
+/*  What sits under a line in the tree: the schedule lines and source documents that feed it,
+    then supporting documents that are not added in. Form 1040 lines never nest under other
+    Form 1040 lines (the line-to-line arithmetic is not drawn),
+    so the tree reads 1040 line -> schedule -> source document. A schedule line that is given rather
+    than summed (self-employment tax, the QBI deduction) shows the schedule lines it depends on. */
+function returnChildren(M, id){
+  var r = M.byId[id], out = [];
+  (r.parts || []).forEach(function(p){
+    if (p.row){ if (M.byId[p.row].form !== '1040') out.push({ kind:'row', id:p.row, sign:p.sign }); }
+    else out.push({ kind:'doc', id:p.doc, ref:p.ref, amt:p.amt, sign:p.sign });
+  });
+  (r.from || []).forEach(function(u){ if (M.byId[u].form !== '1040') out.push({ kind:'row', id:u, depends:true }); });
+  (r.kids || []).forEach(function(u){ out.push({ kind:'row', id:u }); });
+  (r.also || []).forEach(function(d){ out.push({ kind:'doc', id:d, supporting:true }); });
+  return out;
+}
+
+/*  What the pop-up shows when a node is picked: the documents directly behind a line, then the
+    replica of the form the line is on. kind 'doc' = a leaf in the tree (extra: {ref, amt, supporting}). */
+function returnPopupItems(M, kind, id, extra){
+  var byDoc = {}, out = [];
+  M.docs.forEach(function(d){ byDoc[d.id] = d; });
+  extra = extra || {};
+  function add(d, role, ref, amt){
+    /* the same document read twice (proceeds and basis on one 1099-B) is one item with two lines */
+    var hit = out.filter(function(i){ return i.img === d.img && i.role === role; })[0];
+    if (hit){ hit.lines.push({ ref:ref, amt:amt }); hit.ref = hit.lines.map(function(l){ return l.ref; }).join('; '); hit.amt = null; return; }
+    out.push({ title:d.title, short:d.short || d.title, img:d.img, role:role, ref:ref, amt:amt, lines:[{ ref:ref, amt:amt }] });
+  }
+  if (kind === 'doc'){
+    add(byDoc[id], extra.read ? 'Your return' : (extra.supporting ? 'Supporting document' : 'Source document'), extra.ref || byDoc[id].note,
+        extra.supporting || extra.amt === undefined ? null : extra.amt);
+  } else if (kind === 'row'){
+    var r = M.byId[id];
+    if (r.read){
+      add(byDoc['pg' + r.page], 'Your return', (/^[0-9]/.test(r.ln) ? 'Line ' : '') + r.ln + ': ' + r.label, r.val);
+      return out;
+    }
+    (r.parts || []).forEach(function(p){ if (p.doc) add(byDoc[p.doc], 'Source document', p.ref, p.sign * p.amt); });
+    (r.also || []).forEach(function(dd){ add(byDoc[dd], 'Supporting document', 'Explains an amount on this line; it is not added in', null); });
+    if (r.img) add({ title:(r.form === '1040' ? 'Form 1040' : r.form) + ' replica', short:'The form', img:r.img }, 'Schedule form',
+                   (/^[0-9]/.test(r.ln) ? 'Line ' : '') + r.ln + ': ' + r.label, r.amt);
+  }
+  return out;
+}
+
+/* READER:BEGIN */
+/* Return reader: turns the text items of each PDF page ({s, x, y, w}, y from the top) into the lines of a
+   filed return. Year-agnostic: a line is recognised by its printed LABEL, not its number, and the number the
+   form prints is reported as found. Plain ES5, no DOM, so a test can run it from the shipped HTML. */
+
+/* ---- numbers --------------------------------------------------------------------------------- */
+function rdNum(str){
+  var s = String(str).trim();
+  if (/^-\s*0\s*-$/.test(s)) return 0;
+  if (!/^[(\-]?\$?\s?\d[\d,]*(\.\d+)?\)?$/.test(s)) return null;
+  var neg = /^[(\-]/.test(s) || /\)$/.test(s);
+  var n = parseFloat(s.replace(/[^0-9.]/g, ''));
+  return isNaN(n) ? null : (neg ? -n : n);
+}
+var RD_LEADER = /^[.\s·•]+$/;
+var RD_BOXNUM = /^\d{1,2}\s?[a-z]?$/i;
+
+/* ---- rows ------------------------------------------------------------------------------------ */
+function rdRows(items){
+  var live = items.filter(function(i){ return String(i.s).trim() !== ''; }).slice().sort(function(a, b){ return a.y - b.y || a.x - b.x; });
+  var rows = [];
+  live.forEach(function(it){
+    var r = rows[rows.length - 1];
+    if (r && Math.abs(r.y - it.y) <= 3){ r.items.push(it); r.y = (r.y * (r.items.length - 1) + it.y) / r.items.length; }
+    else rows.push({ y: it.y, items: [it] });
+  });
+  rows.forEach(function(r){
+    r.items.sort(function(a, b){ return a.x - b.x; });
+    r.text = r.items.filter(function(i){ return !RD_LEADER.test(i.s); }).map(function(i){ return i.s.trim(); }).join(' ')
+      .replace(/\s+/g, ' ').trim()
+      .replace(/^(?:(?:\d{1,2}\s?[a-z]?|[a-z])\s+)+(?=[A-Za-z(“"])/, '');
+  });
+  return rows;
+}
+
+/* where the printed line-number boxes sit on this page: the token that follows a run of dot leaders */
+function rdBoxX(rows, width){
+  var xs = [];
+  rows.forEach(function(r){
+    var last = -1;
+    r.items.forEach(function(it, i){ if (RD_LEADER.test(it.s)) last = i; });
+    if (last >= 0 && r.items[last + 1] && RD_BOXNUM.test(r.items[last + 1].s.trim())) xs.push(Math.round(r.items[last + 1].x / 6) * 6);
+  });
+  var count = {};
+  xs.forEach(function(x){ count[x] = (count[x] || 0) + 1; });
+  var best = null;
+  Object.keys(count).forEach(function(k){ if (count[k] >= 3 && (best === null || +k > best)) best = +k; });
+  return best === null ? width * 0.78 : best;
+}
+
+/* the printed number at a label's left margin ("11", "25d"); a lone letter ("z") means a sub-line */
+function rdLeftNo(items, row){
+  var own = items.filter(function(i){ return Math.abs(i.y - row.y) <= 3 && i.x < 112 && (RD_BOXNUM.test(i.s.trim()) || /^[a-z]$/i.test(i.s.trim())); });
+  return own.length ? own[0].s.replace(/\s/g, '').toLowerCase() : null;
+}
+
+/* the line-number box that belongs to a label: the box carrying the same number as the label's margin number,
+   else the token that follows the row's dot leaders, else a number sitting in the page's box column */
+function rdSameNo(tx, left){
+  tx = tx.replace(/\s/g, '').toLowerCase();
+  return tx === left || (/^[a-z]$/.test(left) && tx.replace(/^\d+/, '') === left);   /* a lone letter is a sub-line: 18b, 1z */
+}
+
+/* a box on the label's own row is always acceptable (the right-hand "b" lines of Form 1040 share a row with
+   an "a" number); a box on another row must carry this label's number, or it is a neighbouring line's */
+function rdBoxFor(items, row, boxX, reach){
+  function near(list){
+    var best = null;
+    list.forEach(function(i){
+      var d = Math.abs(i.y - row.y);
+      if (best === null || d < best.d - 0.5 || (Math.abs(d - best.d) <= 0.5 && i.x > best.i.x)) best = { i: i, d: d };
     });
+    return best && best.i;
+  }
+  var left = rdLeftNo(items, row);
+  function ok(i){ return !left || Math.abs(i.y - row.y) <= 3 || rdSameNo(i.s, left); }
+  var cands = items.filter(function(i){ return i.x > 200 && RD_BOXNUM.test(i.s.trim()) && Math.abs(i.y - row.y) <= reach; });
+  if (left){
+    var same = near(cands.filter(function(i){ return rdSameNo(i.s, left); }));
+    if (same) return same;
+  }
+  var band = items.filter(function(i){ return Math.abs(i.y - row.y) <= Math.min(reach, 7); }).sort(function(a, b){ return a.x - b.x; });
+  var last = -1;
+  band.forEach(function(it, i){ if (RD_LEADER.test(it.s)) last = i; });
+  if (last >= 0 && band[last + 1] && RD_BOXNUM.test(band[last + 1].s.trim()) && ok(band[last + 1])) return band[last + 1];
+  return near(cands.filter(function(i){ return Math.abs(i.x - boxX) <= 14 && Math.abs(i.y - row.y) <= 7 && ok(i); }));
+}
+
+/* the amount on a label's line: right of its box, on the box's own row */
+function rdValue(items, row, boxX, spec){
+  var reach = spec && spec.dy ? spec.dy : 30;
+  var box = rdBoxFor(items, row, boxX, reach);
+  var left = rdLeftNo(items, row);
+  var no = box ? box.s.replace(/\s/g, '') : (left || null);
+  var from = (box ? box.x : boxX) + 6, yRef = box ? box.y : row.y, tol = box ? 4.5 : 7;
+  /* with no box of its own, an amount that sits beside another line's number is that line's */
+  var foreign = !box && left ? items.filter(function(i){
+    return i.x > 200 && RD_BOXNUM.test(i.s.trim()) && Math.abs(i.y - row.y) > 3 && !rdSameNo(i.s, left);
+  }) : [];
+  var best = null;
+  items.forEach(function(it){
+    if (it.x < from || Math.abs(it.y - yRef) > tol) return;
+    var v = rdNum(it.s);
+    if (v === null) return;
+    if (foreign.some(function(f){ return Math.abs(f.y - it.y) <= 4.5 && f.x < it.x; })) return;
+    var d = Math.abs(it.y - yRef);
+    if (best === null || d < best.d - 0.5 || (Math.abs(d - best.d) <= 0.5 && it.x > best.x)) best = { v: v, d: d, x: it.x };
+  });
+  if (!best) return { no: no, amt: null };
+  return { no: no, amt: spec && spec.neg ? -Math.abs(best.v) : best.v };
+}
+
+/* ---- forms and the lines read from each -------------------------------------------------------- */
+var RD_FORMS = {
+  f1040p1: { form: '1040', title: 'Form 1040, page 1', page: 'p1' },
+  f1040p2: { form: '1040', title: 'Form 1040, page 2', page: 'p2' },
+  sch1:  { form: 'Sch. 1',  title: 'Schedule 1' },
+  sch2:  { form: 'Sch. 2',  title: 'Schedule 2' },
+  schA:  { form: 'Sch. A',  title: 'Schedule A' },
+  schC:  { form: 'Sch. C',  title: 'Schedule C' },
+  schD:  { form: 'Sch. D',  title: 'Schedule D' },
+  schSE: { form: 'Sch. SE', title: 'Schedule SE' },
+  f4797: { form: 'Form 4797', title: 'Form 4797' },
+  f8812: { form: 'Sch. 8812', title: 'Schedule 8812' },
+  f8995: { form: 'Form 8995', title: 'Form 8995' },
+  f8960: { form: 'Form 8960', title: 'Form 8960' },
+  f4562: { form: 'Form 4562', title: 'Form 4562' },
+  f8949: { form: 'Form 8949', title: 'Form 8949', unread: true },
+  schE:  { form: 'Sch. E',  title: 'Schedule E', unread: true },
+  sch3:  { form: 'Sch. 3',  title: 'Schedule 3', unread: true },
+  schB:  { form: 'Sch. B',  title: 'Schedule B', unread: true },
+  f8582: { form: 'Form 8582', title: 'Form 8582', unread: true },
+  f8959: { form: 'Form 8959', title: 'Form 8959', unread: true },
+  w2:    { form: 'Form W-2', title: 'Form W-2', unread: true }
+};
+
+/* a page is recognised by its title text near the top (the body mentions other forms all the time) */
+var RD_TITLES = [
+  ['f1040p1', /u\.s\. individual income tax return/, /filing status/],
+  ['sch1', /additional income and adjustments to income/],
+  ['sch2', /additional taxes/, /schedule 2/],
+  ['sch3', /additional credits and payments/],
+  ['schA', /itemized deductions/, /schedule a/],
+  ['schB', /interest and ordinary dividends/, /schedule b/],
+  ['schC', /profit or loss from business/],
+  ['schD', /capital gains and losses/, /schedule d/],
+  ['schE', /supplemental income and loss/],
+  ['schSE', /self-employment tax/, /schedule se/],
+  ['f4797', /sales of business property/],
+  ['f8812', /credits for qualifying children/],
+  ['f8995', /qualified business income deduction/, /form 8995/],
+  ['f8960', /net investment income tax/, /form 8960/],
+  ['f4562', /depreciation and amortization/, /form 4562/],
+  ['f8949', /sales and other dispositions of capital assets/],
+  ['f8582', /passive activity loss limitations/],
+  ['f8959', /additional medicare tax/, /form 8959/],
+  ['w2', /wage and tax statement/]
+];
+
+var RD_HEADS = { 'schedule 1':'sch1', 'schedule 2':'sch2', 'schedule 3':'sch3', 'schedule a':'schA', 'schedule b':'schB', 'schedule c':'schC',
+  'schedule d':'schD', 'schedule e':'schE', 'schedule se':'schSE', 'schedule 8812':'f8812', 'form 4797':'f4797', 'form 4562':'f4562',
+  'form 8995':'f8995', 'form 8960':'f8960', 'form 8949':'f8949', 'form 8582':'f8582', 'form 8959':'f8959' };
+
+function rdClassify(rows, height){
+  var top = rows.filter(function(r){ return r.y < height * 0.34; }).map(function(r){ return r.text; }).join(' ').toLowerCase();
+  var all = rows.map(function(r){ return r.text; }).join(' ').toLowerCase();
+  if (/wisconsin|state of|department of revenue|franchise tax board/.test(all.slice(0, 400))) return null;
+  /* the running head of a later page: "Schedule 1 (Form 1040) 2024 ... Page 2" */
+  var head = top.slice(0, 220).match(/\b(schedule (?:1|2|3|a|b|c|d|e|se|8812)|form (?:4797|4562|8995|8960|8949|8582|8959)) \((?:form 1040|\d{4})[^)]*\)/);
+  if (head && /page\s*[2-9]/.test(top.slice(0, 260)) && RD_HEADS[head[1]]) return RD_HEADS[head[1]];
+  for (var i = 0; i < RD_TITLES.length; i++){
+    var t = RD_TITLES[i], ok = t[1].test(top);
+    for (var j = 2; j < t.length; j++) ok = ok && t[j].test(top + ' ' + (t[0] === 'f1040p1' ? all : ''));
+    if (ok) return t[0];
+  }
+  /* Form 1040 page 2 has no title, only the running head and its own section names */
+  if (/form 1040 \(\d{4}\)/.test(all.slice(0, 200)) && /page\s*2/.test(all.slice(0, 200)) && /(payments|refund|amount you owe)/.test(all)) return 'f1040p2';
+  if (/form 1040/.test(all.slice(0, 120)) && /(refund|amount you owe)/.test(all) && /sign\s*here/.test(all)) return 'f1040p2';
+  return null;
+}
+
+/* what to read from each form: k = key, rx = the label, neg = shown inside printed parentheses */
+var RD_LINES = {
+  f1040p1: [
+    { k:'wages', rx:/add lines 1a through 1h/, label:'Wages, salaries, tips' },
+    { k:'interest', rx:/taxable interest/, label:'Taxable interest' },
+    { k:'dividends', rx:/ordinary dividends/, label:'Ordinary dividends' },
+    { k:'ira', rx:/ira distributions/, label:'IRA distributions (taxable)' },
+    { k:'pensions', rx:/pensions and annuities/, label:'Pensions and annuities (taxable)' },
+    { k:'socsec', rx:/social security benefits/, label:'Social security benefits (taxable)' },
+    { k:'capgain', rx:/capital gain or \(loss\)/, label:'Capital gain or (loss)' },
+    { k:'sch1income', rx:/additional income from schedule 1/, label:'Additional income from Schedule 1' },
+    { k:'totalincome', rx:/this is your total income/, label:'Total income' },
+    { k:'adjustments', rx:/adjustments to income from schedule 1/, label:'Adjustments to income from Schedule 1' },
+    { k:'agi', rx:/this is your adjusted gross income/, label:'Adjusted gross income' },
+    { k:'deduction', rx:/standard deduction or itemized deductions/, label:'Standard or itemized deductions' },
+    { k:'qbi', rx:/qualified business income deduction/, label:'Qualified business income deduction' },
+    { k:'sch1a', rx:/additional deductions from schedule 1-a/, label:'Additional deductions from Schedule 1-A' },
+    { k:'totaldeductions', rx:/add lines 12[a-z]?(?: and|,) 13/, label:'Total deductions' },
+    { k:'taxable', rx:/this is your taxable income/, label:'Taxable income' }
+  ],
+  f1040p2: [
+    { k:'tax', rx:/tax \(see instructions\)/, label:'Tax' },
+    { k:'sch2l3', rx:/amount from schedule 2, line 3/, label:'Amount from Schedule 2, line 3' },
+    { k:'taxplus', rx:/add lines 16 and 17/, label:'Tax plus Schedule 2 additions' },
+    { k:'ctc', rx:/child tax credit or credit for other dependents/, label:'Child tax credit / credit for other dependents' },
+    { k:'sch3credits', rx:/amount from schedule 3, line 8/, label:'Amount from Schedule 3' },
+    { k:'credits', rx:/add lines 19 and 20/, label:'Total credits' },
+    { k:'taxaftercredits', rx:/subtract line 21 from line 18/, label:'Tax after credits' },
+    { k:'othertaxes', rx:/other taxes, including self-employment tax/, label:'Other taxes from Schedule 2' },
+    { k:'totaltax', rx:/this is your total tax/, label:'Total tax' },
+    { k:'withholding', rx:/add lines 25a through 25c/, label:'Federal income tax withheld' },
+    { k:'payments', rx:/these are your total payments/, label:'Total payments' },
+    { k:'overpaid', rx:/this is the amount you overpaid/, label:'Overpayment' },
+    { k:'refund', rx:/amount of line 34 you want refunded/, label:'Refund' },
+    { k:'owed', rx:/this is the amount you owe/, label:'Amount you owe' }
+  ],
+  sch1: [
+    { k:'business', rx:/business income or \(loss\)/, label:'Business income or (loss)' },
+    { k:'othergains', rx:/other gains or \(losses\)/, label:'Other gains or (losses)' },
+    { k:'rental', rx:/rental real estate, royalties/, label:'Rental real estate, royalties, partnerships' },
+    { k:'unemployment', rx:/unemployment compensation/, label:'Unemployment compensation' },
+    { k:'additional', rx:/this is your additional income/, label:'Additional income' },
+    { k:'setax', rx:/deductible part of self-employment tax/, label:'Deductible part of self-employment tax' },
+    { k:'adjtotal', rx:/these are your adjustments to income/, label:'Total adjustments to income' }
+  ],
+  sch2: [
+    { k:'amt', rx:/alternative minimum tax/, label:'Alternative minimum tax' },
+    { k:'setax', rx:/self-employment tax\. attach schedule se/, label:'Self-employment tax' },
+    { k:'addlmedicare', rx:/additional medicare tax\. attach form 8959/, label:'Additional Medicare Tax' },
+    { k:'niit', rx:/net investment income tax\. attach form 8960/, label:'Net investment income tax' },
+    { k:'total', rx:/these are your total other taxes/, label:'Total other taxes' }
+  ],
+  schA: [
+    { k:'total', rx:/(?:add|total) (?:the )?(?:lines 4, 7, 10, 14, 15, and 16|amounts in the far right column for lines 4 through 16)/, label:'Total itemized deductions' }
+  ],
+  schC: [
+    { k:'receipts', rx:/gross receipts or sales/, label:'Gross receipts or sales' },
+    { k:'grossincome', rx:/gross income\. add lines 5 and 6/, label:'Gross income' },
+    { k:'expenses', rx:/total expenses before expenses for business use of home/, label:'Total expenses' },
+    { k:'net', rx:/net profit or \(loss\)\. subtract line 30 from line 29/, label:'Net profit or (loss)' }
+  ],
+  schD: [
+    { k:'shortterm', rx:/net short-term capital gain or \(loss\)/, label:'Net short-term capital gain or (loss)' },
+    { k:'form4797', rx:/gain from form 4797, part i/, label:'Gain from Form 4797, Part I' },
+    { k:'carryover', rx:/long-term capital loss carryover/, label:'Long-term capital loss carryover', neg:true },
+    { k:'longterm', rx:/net long-term capital gain or \(loss\)/, label:'Net long-term capital gain or (loss)' },
+    { k:'combined', rx:/combine lines 7 and 15/, label:'Net capital gain or (loss)' }
+  ],
+  schSE: [
+    { k:'net', rx:/net profit or \(loss\) from schedule c, line 31/, label:'Net profit from Schedule C' },
+    { k:'tax', rx:/self-employment tax\. add lines 10 and 11/, label:'Self-employment tax' },
+    { k:'half', rx:/deduction for one-half of self-employment tax/, label:'Deduction for one-half of SE tax' }
+  ],
+  f4797: [
+    { k:'combined', rx:/combine lines 2 through 6/, label:'Combine lines 2 through 6' },
+    { k:'ltcg', rx:/subtract line 8 from line 7/, label:'Gain treated as long-term capital gain' },
+    { k:'ordinary', rx:/combine lines 10 through 16/, label:'Ordinary gains and losses' },
+    { k:'toSch1', rx:/redetermine the gain or \(loss\) on line 17/, label:'Ordinary gain to Schedule 1' }
+  ],
+  f8812: [
+    { k:'credit', rx:/enter the smaller of line 12 or line 13/, label:'Child tax credit and credit for other dependents' }
+  ],
+  f8995: [
+    { k:'qbi', rx:/total qualified business income or \(loss\)/, label:'Total qualified business income' },
+    { k:'deduction', rx:/qualified business income deduction\. enter the smaller/, label:'Qualified business income deduction' }
+  ],
+  f8960: [
+    { k:'niit', rx:/net investment income tax for individuals/, label:'Net investment income tax' }
+  ],
+  f4562: [
+    { k:'total', rx:/total\. add amounts from line 12/, label:'Total depreciation' }
+  ]
+};
+
+/* read every recognised line from the pages of one form */
+function rdReadForm(formKey, pages){
+  var out = {};
+  (RD_LINES[formKey] || []).forEach(function(spec){
+    for (var p = 0; p < pages.length; p++){
+      var pg = pages[p];
+      for (var i = 0; i < pg.rows.length; i++){
+        if (!spec.rx.test(pg.rows[i].text.toLowerCase())) continue;
+        var v = rdValue(pg.items, pg.rows[i], pg.boxX, spec);
+        out[spec.k] = { k: spec.k, ln: v.no, label: spec.label, amt: v.amt, page: pg.n };
+        break;
+      }
+      if (out[spec.k]) break;
+    }
   });
   return out;
 }
 
-function formulaBlank(){
-  var v = {};
-  formulaInputs().forEach(function(k){ v[k] = ''; });
-  return v;
+/* ---- identifiers: never analyse a return that still carries them, unless the user says it is fictional ---- */
+function rdIdentifiers(text){
+  var ssn = (text.match(/\b\d{3}-\d{2}-\d{4}\b/g) || []).length;
+  var ein = (text.match(/\b\d{2}-\d{7}\b/g) || []).length;
+  var nine = (text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, '').match(/(^|[^\d,.$-])\d{9}(?![\d,])/g) || []).length;
+  var acct = (text.match(/\b\d{10,17}\b/g) || []).length;
+  return { ssn: ssn, ein: ein, nineDigit: nine, account: acct, total: ssn + ein + nine + acct };
 }
 
-/*  The workbook sheet's own scenario: salary 100,000, interest 6,000, a
-    25,000 itemised deduction beating the 15,750 standard, 13,127 of ordinary
-    tax, one 500 credit, 10,000 withheld. It lands on 2,627 due, as the sheet
-    does.                                                                     */
-function formulaSample(){
-  var v = formulaBlank();
-  v.salary = '100000';
-  v.interest = '6000';
-  v.retirement = '0';
-  v.stdDeduction = '15750';
-  v.itemized = '25000';
-  v.ordinaryTax = '13127';
-  v.prefTax = '0';
-  v.ctcNonref = '500';
-  v.whW2 = '10000';
-  return v;
+/* ---- the whole return ------------------------------------------------------------------------------- */
+function rdAnalyze(pages){
+  /* pages: [{ n, width, height, items:[{s,x,y,w}] }] */
+  var info = { year: null, pages: [], forms: {}, filing: null, deps: null, text: '' };
+  var byForm = {};
+  pages.forEach(function(pg){
+    pg.rows = rdRows(pg.items);
+    pg.boxX = rdBoxX(pg.rows, pg.width);
+    pg.form = rdClassify(pg.rows, pg.height);
+    info.text += pg.rows.map(function(r){ return r.text; }).join('\n') + '\n';
+    info.pages.push({ n: pg.n, form: pg.form });
+    if (pg.form){
+      var grp = pg.form === 'f1040p1' || pg.form === 'f1040p2' ? pg.form : pg.form;
+      (byForm[grp] = byForm[grp] || []).push(pg);
+    }
+  });
+  var yr = info.text.match(/form 1040 \((\d{4})\)/i) || info.text.match(/tax year[:\s]+(\d{4})/i) || info.text.match(/\b(20[12]\d)\b/);
+  info.year = yr ? +yr[1] : null;
+  Object.keys(byForm).forEach(function(fk){
+    info.forms[fk] = { pages: byForm[fk].map(function(p){ return p.n; }), lines: RD_LINES[fk] ? rdReadForm(fk, byForm[fk]) : {} };
+  });
+  var p1 = byForm.f1040p1 && byForm.f1040p1[0];
+  if (p1){
+    info.filing = rdFilingStatus(p1);
+    info.deps = rdDependents(p1);
+  }
+  info.ids = rdIdentifiers(info.text);
+  return info;
 }
 
-/*  Every figure on the page: the 36 typed items, the one computed row inside
-    a table, the nine box subtotals, and the five formula steps.            */
-function formulaCompute(values){
-  var n = {}, items = formulaItems();
-  formulaInputs().forEach(function(k){ n[k] = parseAmount(values[k]); });
+function rdFilingStatus(pg){
+  var labels = [['single', /^single$/i], ['married filing jointly', /^married filing jointly/i], ['married filing separately', /^married filing separately/i],
+                ['head of household', /^head of household/i], ['qualifying surviving spouse', /^qualifying surviving spouse/i]];
+  var marks = pg.items.filter(function(i){ return /^[xX✓✗☒]$/.test(i.s.trim()); });
+  for (var m = 0; m < marks.length; m++){
+    for (var l = 0; l < pg.items.length; l++){
+      var it = pg.items[l];
+      if (it.x <= marks[m].x || it.x - marks[m].x > 40 || Math.abs(it.y - marks[m].y) > 5) continue;
+      for (var k = 0; k < labels.length; k++) if (labels[k][1].test(it.s.trim())) return labels[k][0];
+    }
+  }
+  return null;
+}
 
-  /* row 24 — the one computed row that lives inside a table */
-  n.greaterOf = Math.max(n.stdDeduction || 0, n.itemized || 0);
+function rdDependents(pg){
+  var head = pg.items.filter(function(i){ return /^child tax credit$/i.test(i.s.trim()); })[0];
+  var other = pg.items.filter(function(i){ return /^credit for other dependents$/i.test(i.s.trim()); })[0];
+  var income = pg.rows.filter(function(r){ return /^income\b/i.test(r.text); })[0];
+  if (!head || !income) return null;
+  var ctc = 0, odc = 0;
+  pg.items.forEach(function(i){
+    if (!/^[xX✓☒]$/.test(i.s.trim()) || i.y <= head.y || i.y >= income.y) return;
+    if (other && Math.abs(i.x - other.x) < 50 && Math.abs(i.x - other.x) < Math.abs(i.x - head.x)) odc++;
+    else if (Math.abs(i.x - head.x) < 50) ctc++;
+  });
+  return { ctc: ctc, other: odc };
+}
 
-  /* the nine amber boxes: each the total of its own line items */
-  Object.keys(items).forEach(function(boxId){
-    var total = 0;
-    items[boxId].forEach(function(it){
-      /* a 'pick' already stands for the rows indented beneath it */
-      if (it.under) return;
-      total += (n[it.key] || 0);
+/* ======================================================================================================
+   From the lines read to a return the page can draw: which schedule line feeds which Form 1040 line, and
+   the cross-checks that follow from it.
+   ====================================================================================================== */
+
+/* parent -> the lines that feed it (a key is "<form>.<line>") */
+var RD_GRAPH = {
+  'f1040p1.capgain': ['schD.combined'],
+  'f1040p1.sch1income': ['sch1.additional'],
+  'f1040p1.adjustments': ['sch1.adjtotal'],
+  'f1040p1.deduction': ['schA.total'],
+  'f1040p1.qbi': ['f8995.deduction'],
+  'f1040p2.ctc': ['f8812.credit'],
+  'f1040p2.othertaxes': ['sch2.total'],
+  'sch1.additional': ['sch1.business', 'sch1.othergains', 'sch1.rental', 'sch1.unemployment'],
+  'sch1.business': ['schC.net'],
+  'sch1.othergains': ['f4797.toSch1'],
+  'sch1.adjtotal': ['sch1.setax'],
+  'sch1.setax': ['schSE.half'],
+  'sch2.total': ['sch2.setax', 'sch2.niit', 'sch2.addlmedicare'],
+  'sch2.setax': ['schSE.tax'],
+  'sch2.niit': ['f8960.niit'],
+  'schC.net': ['schC.grossincome', 'schC.expenses'],
+  'schC.expenses': ['f4562.total'],
+  'schD.combined': ['schD.shortterm', 'schD.longterm'],
+  'schD.longterm': ['schD.form4797', 'schD.carryover'],
+  'schD.form4797': ['f4797.ltcg'],
+  'schSE.tax': ['schSE.net'],
+  'schSE.net': ['schC.net'],
+  'f4797.toSch1': ['f4797.ordinary'],
+  'f8995.deduction': ['f8995.qbi']
+};
+
+/* lines that must be equal: [parent, child] */
+var RD_EQUAL = [
+  ['f1040p1.sch1income', 'sch1.additional'], ['f1040p1.adjustments', 'sch1.adjtotal'], ['f1040p1.qbi', 'f8995.deduction'],
+  ['f1040p1.capgain', 'schD.combined'], ['f1040p2.ctc', 'f8812.credit'], ['f1040p2.othertaxes', 'sch2.total'],
+  ['sch1.business', 'schC.net'], ['sch1.othergains', 'f4797.toSch1'], ['sch1.setax', 'schSE.half'],
+  ['sch2.setax', 'schSE.tax'], ['sch2.niit', 'f8960.niit'], ['schSE.net', 'schC.net'], ['schD.form4797', 'f4797.ltcg']
+];
+
+function rdKeyForm(key){ return key.split('.')[0]; }
+function rdKeyLine(key){ return key.split('.')[1]; }
+
+/* the amount of a line: undefined if its form or its label was not found, 0 if it was found blank */
+function rdVal(info, key){
+  var f = info.forms[rdKeyForm(key)];
+  if (!f || !f.lines[rdKeyLine(key)]) return undefined;
+  var a = f.lines[rdKeyLine(key)].amt;
+  return a === null ? 0 : a;
+}
+function rdHas(info, key){
+  var f = info.forms[rdKeyForm(key)];
+  return !!(f && f.lines[rdKeyLine(key)]);
+}
+function rdLineName(info, key){
+  var f = info.forms[rdKeyForm(key)], l = f && f.lines[rdKeyLine(key)];
+  var form = RD_FORMS[rdKeyForm(key)];
+  var nm = form ? (form.form === '1040' ? 'Form 1040' : form.form) : rdKeyForm(key);
+  return nm + (l && l.ln ? ' line ' + l.ln : ' ' + rdKeyLine(key));
+}
+
+/* every cross-check that can be made on what was read. status: 'ok' | 'diff' | 'skip' */
+function rdCrossChecks(info){
+  var out = [];
+  function add(name, a, b, left, right){
+    out.push({ name: name, status: Math.abs(a - b) <= 1 ? 'ok' : 'diff', a: a, b: b, left: left, right: right, note: '' });
+  }
+  function z(n){ return n === undefined ? 0 : n; }
+  function f1(k){ return rdVal(info, 'f1040p1.' + k); }
+  function f2(k){ return rdVal(info, 'f1040p2.' + k); }
+  /* 1. a line on one form is carried to a line on another */
+  RD_EQUAL.forEach(function(pair){
+    var p = pair[0], c = pair[1];
+    if (!rdHas(info, p) || !rdHas(info, c)) return;
+    var cf = info.forms[rdKeyForm(c)];
+    var name = rdLineName(info, p) + ' equals ' + rdLineName(info, c);
+    if (cf.pages.length > 1 && (rdKeyForm(c) === 'schC' || rdKeyForm(c) === 'schSE')){
+      out.push({ name: name, status: 'skip', left: [p], right: [c],
+                 note: 'There is more than one ' + RD_FORMS[rdKeyForm(c)].title + ' in the file, so one line cannot be compared.' });
+      return;
+    }
+    if (p === 'f1040p1.capgain' && rdVal(info, c) < 0){
+      out.push({ name: name, status: 'skip', left: [p], right: [c], note: 'Schedule D shows a net loss, and Form 1040 carries at most the loss limit.' });
+      return;
+    }
+    add(name, rdVal(info, p), rdVal(info, c), [p], [c]);
+  });
+  /* 2. the arithmetic of Form 1040 itself */
+  if (rdHas(info, 'f1040p1.totalincome')){
+    var inc = ['wages', 'interest', 'dividends', 'ira', 'pensions', 'socsec', 'capgain', 'sch1income'];
+    add(rdLineName(info, 'f1040p1.totalincome') + ' is the sum of the income lines', f1('totalincome'),
+        inc.reduce(function(t, k){ return t + z(f1(k)); }, 0), ['f1040p1.totalincome'], inc.map(function(k){ return 'f1040p1.' + k; }));
+  }
+  if (rdHas(info, 'f1040p1.agi') && rdHas(info, 'f1040p1.totalincome'))
+    add(rdLineName(info, 'f1040p1.agi') + ' is total income less adjustments', f1('agi'), f1('totalincome') - z(f1('adjustments')),
+        ['f1040p1.agi'], ['f1040p1.totalincome', 'f1040p1.adjustments']);
+  var dsum = z(f1('deduction')) + z(f1('qbi')) + z(f1('sch1a'));
+  if (rdHas(info, 'f1040p1.totaldeductions'))
+    add(rdLineName(info, 'f1040p1.totaldeductions') + ' is the deductions added up', f1('totaldeductions'), dsum,
+        ['f1040p1.totaldeductions'], ['f1040p1.deduction', 'f1040p1.qbi']);
+  if (rdHas(info, 'f1040p1.taxable') && rdHas(info, 'f1040p1.agi'))
+    add(rdLineName(info, 'f1040p1.taxable') + ' is AGI less the deductions', f1('taxable'),
+        Math.max(0, f1('agi') - (rdHas(info, 'f1040p1.totaldeductions') ? f1('totaldeductions') : dsum)),
+        ['f1040p1.taxable'], ['f1040p1.agi', 'f1040p1.deduction', 'f1040p1.qbi']);
+  if (rdHas(info, 'f1040p2.taxplus'))
+    add(rdLineName(info, 'f1040p2.taxplus') + ' is the tax plus Schedule 2 additions', f2('taxplus'), z(f2('tax')) + z(f2('sch2l3')),
+        ['f1040p2.taxplus'], ['f1040p2.tax', 'f1040p2.sch2l3']);
+  if (rdHas(info, 'f1040p2.credits'))
+    add(rdLineName(info, 'f1040p2.credits') + ' is the credits added up', f2('credits'), z(f2('ctc')) + z(f2('sch3credits')),
+        ['f1040p2.credits'], ['f1040p2.ctc', 'f1040p2.sch3credits']);
+  if (rdHas(info, 'f1040p2.taxaftercredits'))
+    add(rdLineName(info, 'f1040p2.taxaftercredits') + ' is the tax less the credits', f2('taxaftercredits'),
+        Math.max(0, (rdHas(info, 'f1040p2.taxplus') ? f2('taxplus') : z(f2('tax'))) - z(f2('credits'))),
+        ['f1040p2.taxaftercredits'], ['f1040p2.taxplus', 'f1040p2.credits']);
+  if (rdHas(info, 'f1040p2.totaltax') && rdHas(info, 'f1040p2.taxaftercredits'))
+    add(rdLineName(info, 'f1040p2.totaltax') + ' is tax after credits plus other taxes', f2('totaltax'), f2('taxaftercredits') + z(f2('othertaxes')),
+        ['f1040p2.totaltax'], ['f1040p2.taxaftercredits', 'f1040p2.othertaxes']);
+  if (rdHas(info, 'f1040p2.totaltax')){
+    var paid = z(f2('payments')) || z(f2('withholding')), diff = paid - f2('totaltax');
+    if (rdHas(info, 'f1040p2.overpaid'))
+      add(rdLineName(info, 'f1040p2.overpaid') + ' is payments less total tax (or zero)', f2('overpaid'), Math.max(0, diff),
+          ['f1040p2.overpaid'], ['f1040p2.payments', 'f1040p2.totaltax']);
+    if (rdHas(info, 'f1040p2.owed'))
+      add(rdLineName(info, 'f1040p2.owed') + ' is total tax less payments (or zero)', f2('owed'), Math.max(0, -diff),
+          ['f1040p2.owed'], ['f1040p2.payments', 'f1040p2.totaltax']);
+  }
+  /* 3. a schedule identity */
+  if (rdHas(info, 'schD.combined') && (rdHas(info, 'schD.longterm') || rdHas(info, 'schD.shortterm')))
+    add(rdLineName(info, 'schD.combined') + ' is short-term plus long-term', rdVal(info, 'schD.combined'),
+        z(rdVal(info, 'schD.shortterm')) + z(rdVal(info, 'schD.longterm')), ['schD.combined'], ['schD.shortterm', 'schD.longterm']);
+  return out;
+}
+
+/* ---- from what was read to the tree ------------------------------------------------------------ */
+function rdBuildReturn(info){
+  var def = { id: 'upload', rows: [], docs: [], pages: [], checks: [] };
+  function hasVal(key, seen){
+    seen = seen || {};
+    if (seen[key] || !rdHas(info, key)) return false;
+    seen[key] = true;
+    var l = info.forms[rdKeyForm(key)].lines[rdKeyLine(key)];
+    if (l.amt !== null) return true;
+    return (RD_GRAPH[key] || []).some(function(c){ return hasVal(c, seen); });
+  }
+  function kidsOf(key){ return (RD_GRAPH[key] || []).filter(function(c){ return hasVal(c); }); }
+  function rowId(key){ return 'r_' + key.replace('.', '_'); }
+  var used = {};
+  function addRow(key, grp){
+    if (used[key]) return;
+    used[key] = true;
+    var l = info.forms[rdKeyForm(key)].lines[rdKeyLine(key)], meta = RD_FORMS[rdKeyForm(key)];
+    var kids = kidsOf(key);
+    def.rows.push({ id: rowId(key), key: key, grp: grp, form: meta.form, ln: l.ln || '', label: l.label, read: true, val: l.amt,
+                    page: l.page, kids: kids.map(rowId) });
+    kids.forEach(function(c){ addRow(c, grp); });
+  }
+  ['f1040p1', 'f1040p2'].forEach(function(fk){
+    var f = info.forms[fk];
+    if (!f) return;
+    var pg = { id: fk === 'f1040p1' ? 'p1' : 'p2', title: RD_FORMS[fk].title, note: 'Read from page ' + f.pages[0] + ' of your PDF', rows: [] };
+    (RD_LINES[fk] || []).forEach(function(spec){
+      var key = fk + '.' + spec.k;
+      if (!hasVal(key)) return;
+      addRow(key, 'Form 1040');
+      pg.rows.push(rowId(key));
     });
-    n[boxId] = total;
+    def.pages.push(pg);
   });
-
-  /* the formula itself */
-  n.agi         = n.grossIncome - n.forAgi;                                   /* row 22 */
-  n.taxable     = Math.max(0, n.agi - n.fromAgi);                             /* row 30 */
-  n.tentative2  = Math.max(0, n.tentative1 + n.otherTaxD - n.nonrefundable);  /* row 44 */
-  n.totalTax    = n.tentative2 + n.otherTaxF;                                 /* row 49 */
-  n.dueOrRefund = n.totalTax - n.refundable - n.prepayments;                  /* row 59 */
-  return n;
-}
-
-function formulaHasFigures(values){
-  var keys = formulaInputs();
-  for (var i = 0; i < keys.length; i++) if (parseAmount(values[keys[i]]) !== 0) return true;
-  return false;
-}
-
-/*  How many of a box's line items carry a figure. The map shows this instead
-    of an amount: it says where the numbers are without turning the diagram
-    back into a table.                                                       */
-function formulaFilled(values, boxId){
-  var rows = (formulaItems()[boxId] || []).filter(function(it){ return it.role === 'item'; });
-  var filled = rows.filter(function(it){ return parseAmount(values[it.key]) !== 0; });
-  return { filled: filled.length, total: rows.length };
-}
-
-function formulaGraph(values){
-  var n = formulaCompute(values);
-  var boxes = formulaBoxes(), edges = formulaEdges(), byId = {};
-  for (var i = 0; i < boxes.length; i++) byId[boxes[i].id] = boxes[i];
-
-  var into = {}, outOf = {};
-  for (var j = 0; j < edges.length; j++){
-    (into[edges[j].to] = into[edges[j].to] || []).push(edges[j]);
-    (outOf[edges[j].from] = outOf[edges[j].from] || []).push(edges[j]);
-  }
-
-  /*  A box is a sum when every edge into it carries a sign. `tentative1` is
-      the one that is not: op 0 disqualifies it, because total tax is not a
-      function of taxable income alone. Two boxes carry the sheet's floor.  */
-  var sums = [];
-  for (var k = 0; k < boxes.length; k++){
-    var inc = into[boxes[k].id];
-    if (!inc || !inc.length) continue;
-    if (inc.some(function(x){ return x.op === 0; })) continue;
-    var total = 0;
-    for (var m = 0; m < inc.length; m++) total += inc[m].op * n[inc[m].from];
-    if (boxes[k].floor) total = Math.max(0, total);
-    sums.push({ id: boxes[k].id, expected: total, actual: n[boxes[k].id], floored: !!boxes[k].floor });
-  }
-
-  return { values:values, n:n, boxes:boxes, edges:edges, byId:byId,
-           into:into, outOf:outOf, sums:sums };
-}
-
-function formulaLayout(){
-  var W = 168, H = 68, ROW = 78, TOP = 52, LEFT = 16, CANVAS = 1320, GUTTER = 64;
-  var boxes = formulaBoxes(), names = formulaColumns(), LAST = names.length - 1;
-  var spacing = Math.min(200, (CANVAS - LEFT - GUTTER - W) / LAST);
-
-  function colX(c){ return Math.round(LEFT + c * spacing); }
-
-  var placed = boxes.map(function(b){
-    return { id:b.id, col:b.col, row:b.row, kind:b.kind,
-             x:colX(b.col), y:Math.round(TOP + b.row * ROW) };
+  var readPages = {};
+  def.rows.forEach(function(r){ readPages[r.page] = true; });
+  var other = [];
+  info.pages.forEach(function(p){
+    var meta = p.form && RD_FORMS[p.form];
+    def.docs.push({ id: 'pg' + p.n, short: 'p. ' + p.n, img: 'pdf:' + p.n, title: 'Page ' + p.n + (meta ? ': ' + meta.title : ': not recognised'),
+                    note: meta ? (meta.unread ? 'Recognised; its figures are not read' : (readPages[p.n] ? 'Lines read from this page' : 'Recognised; nothing to read here')) : 'Page of your PDF' });
+    if (!readPages[p.n]) other.push('pg' + p.n);
   });
-
-  var cols = [];
-  for (var c = 0; c <= LAST; c++){
-    var count = boxes.filter(function(b){ return b.col === c; }).length;
-    cols.push({ col:c, x:colX(c), count:count, name:names[c], label:names[c] + ' · ' + count });
-  }
-
-  return { width:CANVAS, height:348, nodeW:W, nodeH:H, nodes:placed, cols:cols };
-}
-
-function formulaEdgePath(a, b, W){
-  var mid = 34;
-  if (a.col === b.col){
-    var x = a.x + W, ya = a.y + mid, yb = b.y + mid, bulge = 14 + 8 * Math.abs(b.row - a.row);
-    return 'M' + x + ' ' + ya + ' C' + (x + bulge) + ' ' + ya + ' ' + (x + bulge) + ' ' + yb + ' ' + x + ' ' + yb;
-  }
-  var x1 = a.x + W, y1 = a.y + mid, x2 = b.x, y2 = b.y + mid, mx = (x1 + x2) / 2;
-  return 'M' + x1 + ' ' + y1 + ' C' + mx + ' ' + y1 + ' ' + mx + ' ' + y2 + ' ' + x2 + ' ' + y2;
-}
-
-function formulaLineage(g, id){
-  var up = {}, down = {};
-  (function walkUp(x){
-    var inc = g.into[x] || [];
-    for (var i = 0; i < inc.length; i++){
-      if (up[inc[i].from]) continue;
-      up[inc[i].from] = true; walkUp(inc[i].from);
-    }
-  })(id);
-  (function walkDown(x){
-    var out = g.outOf[x] || [];
-    for (var i = 0; i < out.length; i++){
-      if (down[out[i].to]) continue;
-      down[out[i].to] = true; walkDown(out[i].to);
-    }
-  })(id);
-  return { up:up, down:down };
-}
-
-/*  What a computed box is made of, for the line under its label. */
-function formulaTerms(g, id){
-  return (g.into[id] || []).map(function(e){
-    return { id:e.from, op:e.op, title:g.byId[e.from].title, ref:g.byId[e.from].ref };
+  if (other.length) def.pages.push({ id: 'other', title: 'Other pages in your PDF', note: 'Pages with no line read into the tree: state forms, worksheets and supporting forms', rows: [], docs: other });
+  def.checks = rdCrossChecks(info);
+  def.checks.forEach(function(c){
+    if (c.status !== 'diff') return;
+    (c.left || []).concat(c.right || []).forEach(function(k){
+      var row = def.rows.filter(function(r){ return r.key === k; })[0];
+      if (row) (row.flags = row.flags || []).push(c.name);
+    });
   });
+  return def;
 }
 
-function formulaDescription(g, id, open){
-  if (!id) return 'Seven columns, fourteen boxes. ' + open.length + ' of nine tables open.';
-  var b = g.byId[id];
-  var terms = formulaTerms(g, id);
-  var from = terms.length
-    ? terms.map(function(t){ return (t.op === -1 ? 'less ' : t.op === 0 ? 'based on ' : '') + t.title; }).join(', ')
-    : 'its own line items, ' + formulaFilled(g.values, id).total + ' of them';
-  var to = (g.outOf[id] || []).map(function(e){ return g.byId[e.to].title; });
-  return b.title + ', sheet ' + b.ref + '. Comes from ' + from + '. ' +
-         (to.length ? 'Lands on ' + to.join(', ') + '.' : 'It is where the formula ends.');
+/* READER:END */
+
+function formatMoney(n){
+  var s = Math.abs(Math.round(n)).toLocaleString('en-US');
+  return n < 0 ? '(' + s + ')' : s;
 }
 
-/* ===========================================================================
-   Page wiring.
-   =========================================================================== */
 (function(){
   'use strict';
+  var CASES = returnCaseList(), M, PAGES, docById;
+  /* the uploaded return, held in memory only: { pdf, info, def, urls:{page -> blob url} } */
+  var upload = null;
 
+  /* "pdf:7" is page 7 of the uploaded PDF, drawn here on demand; anything else is an ordinary image path */
+  function pageUrl(n){
+    if (!upload) return Promise.reject(new Error('no upload'));
+    if (upload.urls[n]) return Promise.resolve(upload.urls[n]);
+    return upload.pdf.getPage(n).then(function(page){
+      var vp = page.getViewport({ scale: 1.7 });
+      var cv = document.createElement('canvas');
+      cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+      return page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function(){
+        return new Promise(function(resolve){
+          cv.toBlob(function(b){ upload.urls[n] = URL.createObjectURL(b); resolve(upload.urls[n]); }, 'image/png');
+        });
+      });
+    });
+  }
+  function setImg(im, src, link){
+    if (String(src).indexOf('pdf:') !== 0){ im.src = src; if (link) link.href = src; return; }
+    var n = +String(src).slice(4);
+    im.removeAttribute('src'); im.alt = 'Drawing page ' + n + ' of your PDF';
+    if (link) link.removeAttribute('href');
+    pageUrl(n).then(function(url){ im.src = url; if (link) link.href = url; })
+      .catch(function(){ im.alt = 'This page could not be drawn.'; });
+  }
   var $ = function(id){ return document.getElementById(id); };
-  var SVG_NS = 'http://www.w3.org/2000/svg';
-
-  var state = {
-    values: formulaSample(),
-    /* Which box is traced, and which tables are open. Several at once, which
-       is the whole reason they are stacked rather than swapped. */
-    selected: 'dueOrRefund',
-    open: {},
-    refocus: null
-  };
+  /* sel: {type:'row'|'doc'|'page', id}; open: set of node paths */
+  /* viewers: tree path -> index of the tab showing; popupMode: use the dialog instead of unfolding in place */
+  var state = { sel:null, open:{}, caseId:'tp2', viewers:{}, popupMode:false };
 
   function el(tag, cls, text){
     var e = document.createElement(tag);
     if (cls) e.className = cls;
-    if (text !== undefined && text !== null) e.textContent = text;
+    if (text !== undefined) e.textContent = text;
     return e;
   }
+  function html(tag, cls, markup){ var e = el(tag, cls); e.innerHTML = markup; return e; }
+  function formName(r){ return r.form === '1040' ? 'Form 1040' : r.form; }
 
-  /*  Accounting sense, as the sheet has it: brackets for a negative. */
-  function money(n){
-    if (n === 0) return '0';
-    var s = Math.abs(Math.round(n)).toLocaleString('en-US');
-    return n < 0 ? '(' + s + ')' : s;
+  function reach(docId){
+    var out = {};
+    M.rows.forEach(function(r){ if (r.allDocs.indexOf(docId) >= 0) out[r.id] = true; });
+    return out;
+  }
+  function direct(docId){
+    var out = {};
+    M.rows.forEach(function(r){ if (r.docs.indexOf(docId) >= 0) out[r.id] = true; });
+    return out;
   }
 
-  function openCount(){
-    return Object.keys(state.open).filter(function(k){ return state.open[k]; });
-  }
-
-  /* ---- Render ------------------------------------------------------------ */
-
-  function render(){
-    var g = formulaGraph(state.values);
-    var has = formulaHasFigures(state.values);
-
-    if (state.selected && !g.byId[state.selected]) state.selected = 'dueOrRefund';
-
-    renderHeadStats(g, has);
-    renderCanvas(g, has);
-    renderSheets(g);
-
-    $('mapDesc').textContent = formulaDescription(g, state.selected, openCount());
-
-    if (state.refocus){
-      var back = $(state.refocus);
-      state.refocus = null;
-      if (back) back.focus();
+  function renderFiling(){
+    var f = CASES[state.caseId].filing, dl = $('filing'); dl.textContent = '';
+    function group(label, rows){
+      var d = el('div'); d.appendChild(el('dt', null, label));
+      rows.forEach(function(r){ var dd = el('dd'); dd.appendChild(el('b', null, r[0])); if (r[1]) dd.appendChild(el('span', 'sub', r[1])); d.appendChild(dd); });
+      dl.appendChild(d);
     }
+    group('Filing status', [[f.status, f.statusNote]]);
+    group('Taxpayers', f.filers.map(function(p){ return [p.name, p.note]; }));
+    group('Dependents', f.dependents.length ? f.dependents.map(function(p){ return [p.name, p.note]; }) : [['None', '']]);
   }
 
-  /*  Amounts only, and never a line item's own field: rebuilding an <input>
-      under the caret loses both the caret and the selection. */
-  function repaint(){
-    var g = formulaGraph(state.values), n = g.n;
+  /* ---- the tree ---------------------------------------------------------- */
+  function isSel(type, id){ return !!state.sel && state.sel.type === type && state.sel.id === id; }
 
-    g.boxes.forEach(function(b){
-      var node = $('node-' + b.id);
-      if (!node) return;
-      var c = node.querySelector('.count');
-      if (c && b.kind === 'group'){
-        var f = formulaFilled(state.values, b.id);
-        c.textContent = f.filled + ' / ' + f.total;
-        if (f.filled) c.classList.remove('none'); else c.classList.add('none');
-      }
-    });
-
-    formulaBoxes().filter(function(b){ return b.kind === 'group'; }).forEach(function(b){
-      var sum = $('sum-' + b.id);
-      if (sum){
-        sum.textContent = money(n[b.id]);
-        if (n[b.id] === 0) sum.classList.add('zero'); else sum.classList.remove('zero');
-      }
-      var cnt = $('cnt-' + b.id);
-      if (cnt){
-        var f = formulaFilled(state.values, b.id);
-        cnt.textContent = f.filled + ' of ' + f.total + ' entered';
-      }
-      var tot = $('tot-' + b.id);
-      if (tot) tot.textContent = money(n[b.id]);
-    });
-
-    /* row 24 is the one computed row inside a table */
-    var pick = $('out-greaterOf');
-    if (pick){
-      pick.textContent = money(n.greaterOf);
-      if (n.greaterOf === 0) pick.classList.add('zero'); else pick.classList.remove('zero');
+  /* ---- the viewer that unfolds under a node ---------------------------------- */
+  function viewer(spec, items){
+    var wrap = el('div', 'viewer');
+    var tabs = el('div', 'vtabs'); tabs.setAttribute('role', 'group'); tabs.setAttribute('aria-label', 'Documents behind this line');
+    var meta = el('p', 'vmeta');
+    var im = document.createElement('img'); im.loading = 'lazy';
+    var foot = el('p', 'vfoot');
+    var full = el('a', null, 'Open full size in a new tab'); full.target = '_blank'; full.rel = 'noopener';
+    var fold = el('button', null, 'Fold'); fold.type = 'button';
+    fold.addEventListener('click', function(){ delete state.viewers[spec.path]; render(spec.path); });
+    foot.appendChild(full); foot.appendChild(fold);
+    function show(i){
+      var it = items[i];
+      state.viewers[spec.path] = i;
+      meta.textContent = metaText(it);
+      im.alt = it.title + (upload && state.caseId === 'upload' ? ' (page of your PDF). ' : ' (classroom replica). ') + it.ref;
+      setImg(im, it.img, full);
+      Array.prototype.forEach.call(tabs.children, function(t, j){ t.setAttribute('aria-pressed', j === i ? 'true' : 'false'); });
     }
-
-    /* the filled highlight follows what is typed */
-    formulaInputs().forEach(function(k){
-      var row = $('row-' + k);
-      if (!row) return;
-      if (parseAmount(state.values[k]) !== 0) row.classList.add('is-filled');
-      else row.classList.remove('is-filled');
-    });
-
-    renderHeadStats(g, formulaHasFigures(state.values));
-  }
-
-  function renderHeadStats(g, has){
-    var mount = $('headStats'), n = g.n;
-    mount.textContent = '';
-    var owed = n.dueOrRefund > 0;
-    [
-      { k:'Adjusted gross income', ln:'Row 22 · a',       v: has ? money(n.agi) : '—' },
-      { k:'Taxable income',        ln:'Row 30 · a-b',     v: has ? money(n.taxable) : '—' },
-      { k:'Total tax',             ln:'Row 49 · c+d-e+f', v: has ? money(n.totalTax) : '—' },
-      { k:'Effective rate',        ln:'Derived · row 49 ÷ row 22',
-        v: has && n.agi > 0 ? (n.totalTax / n.agi * 100).toFixed(1) + '%' : '—', cls:'is-accent' },
-      { k: owed ? 'Tax due' : 'Refund', ln:'Row 59',
-        v: has ? money(Math.abs(n.dueOrRefund)) : '—',
-        cls: owed ? 'is-limit' : 'is-accent' }
-    ].forEach(function(r){
-      var wrap = el('div');
-      wrap.appendChild(el('dt', null, r.k));
-      wrap.appendChild(el('dd', r.cls || null, r.v));
-      wrap.appendChild(el('div', 'ln', r.ln));
-      mount.appendChild(wrap);
-    });
-  }
-
-  function renderCanvas(g, has){
-    var canvas = $('canvas'), wires = $('wires');
-    Array.prototype.slice.call(canvas.querySelectorAll('.node, .col-head, .canvas-empty'))
-      .forEach(function(x){ x.remove(); });
-    while (wires.firstChild) wires.removeChild(wires.firstChild);
-
-    var L = formulaLayout();
-    var pos = {};
-    L.nodes.forEach(function(p){ pos[p.id] = p; });
-
-    canvas.style.width = L.width + 'px';
-    canvas.style.height = L.height + 'px';
-    wires.setAttribute('width', String(L.width));
-    wires.setAttribute('height', String(L.height));
-
-    L.cols.forEach(function(c){
-      var h = el('div', 'col-head', c.label);
-      h.style.left = c.x + 'px';
-      canvas.appendChild(h);
-    });
-
-    var lin = state.selected ? formulaLineage(g, state.selected) : null;
-    function inTrace(id){
-      if (!lin) return true;
-      return id === state.selected || lin.up[id] || lin.down[id];
+    if (items.length > 1){
+      items.forEach(function(it, i){
+        var t = el('button', 'tbtn', it.short); t.type = 'button'; t.title = it.title;
+        t.addEventListener('click', function(){ show(i); });
+        tabs.appendChild(t);
+      });
+      wrap.appendChild(tabs);
     }
+    wrap.appendChild(meta); wrap.appendChild(im); wrap.appendChild(foot);
+    show(Math.min(state.viewers[spec.path] || 0, items.length - 1));
+    return wrap;
+  }
 
-    g.edges.forEach(function(e){
-      var a = pos[e.from], b = pos[e.to];
-      var on = inTrace(e.from) && inTrace(e.to);
-      var path = document.createElementNS(SVG_NS, 'path');
-      path.setAttribute('d', formulaEdgePath(a, b, L.nodeW));
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', e.op === -1 ? 'var(--limit-bc)' : 'var(--edge)');
-      path.setAttribute('stroke-width', on ? '2' : '1.25');
-      if (e.op === -1) path.setAttribute('stroke-dasharray', '5 4');
-      if (e.op === 0) path.setAttribute('stroke-dasharray', '2 3');
-      path.setAttribute('opacity', on ? '0.95' : '0.28');
-      wires.appendChild(path);
-    });
+  function node(spec){
+    /* spec: {path, kind:'page'|'row'|'doc', id, ln, label, sub, amt, chips, total, hasKids, kids()} */
+    var li = el('li', 'node k-' + spec.cls + (spec.total ? ' is-total' : ''));
+    var row = el('div', 'nrow');
+    var tog = el('button', 'tog' + (spec.hasKids ? '' : ' is-leaf'));
+    tog.type = 'button';
+    if (spec.hasKids){
+      var open = !!state.open[spec.path];
+      tog.textContent = open ? '\u2212' : '+';
+      tog.setAttribute('aria-expanded', open ? 'true' : 'false');
+      tog.setAttribute('aria-label', (open ? 'Collapse ' : 'Expand ') + spec.label);
+      tog.addEventListener('click', function(){ state.open[spec.path] = !state.open[spec.path]; render(spec.path); });
+    } else { tog.tabIndex = -1; tog.setAttribute('aria-hidden', 'true'); tog.textContent = '+'; }
+    row.appendChild(tog);
 
-    g.boxes.forEach(function(b){
-      var p = pos[b.id];
-      var node = el('button', 'node kind-' + b.kind);
-      node.type = 'button';
-      node.id = 'node-' + b.id;
-      node.style.left = p.x + 'px';
-      node.style.top = p.y + 'px';
-      if (!inTrace(b.id)) node.classList.add('is-off');
-      if (b.id === state.selected) node.classList.add('is-on');
-      if (b.note) node.title = b.note;
-
-      var tags = el('div', 'tags');
-      tags.appendChild(el('span', null, b.ref));
-
-      var label = b.title + ', sheet ' + b.ref;
-      if (b.kind === 'group'){
-        var f = formulaFilled(state.values, b.id);
-        var chip = el('span', 'count' + (f.filled ? '' : ' none'), f.filled + ' / ' + f.total);
-        tags.appendChild(chip);
-        label += ', ' + f.filled + ' of ' + f.total + ' line items entered, opens a table below';
+    var b = el('button', 'pick'); b.type = 'button';
+    b.dataset.path = spec.path;
+    b.setAttribute('aria-pressed', isSel(spec.kind, spec.id) ? 'true' : 'false');
+    if (state.sel && state.sel.type === 'doc' && spec.kind === 'doc' && state.sel.id === spec.id) b.classList.add('is-same');
+    if (state.sel && state.sel.type === 'doc' && spec.kind === 'row' && reach(state.sel.id)[spec.id]) b.classList.add('is-feed');
+    b.appendChild(el('span', 'ln', spec.ln));
+    var items = spec.kind === 'page' ? [] : returnPopupItems(M, spec.kind, spec.id, spec.popup);
+    var lb = el('span', 'lb', spec.label);
+    if (items.length){
+      var isOpen = !state.popupMode && state.viewers[spec.path] !== undefined;
+      lb.appendChild(el('span', 'viewhint', isOpen ? 'Hide ' + (items.length > 1 ? 'documents' : 'document') : 'View ' + (items.length > 1 ? 'documents' : 'document')));
+      if (!state.popupMode) b.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+    b.appendChild(lb);
+    b.appendChild(el('span', 'am', spec.blank ? '\u2014' : (spec.amt === null ? '' : formatMoney(spec.amt))));
+    if (spec.chips && spec.chips.length || spec.sub){
+      var sub = el('span', 'sub2');
+      (spec.chips || []).forEach(function(c){ sub.appendChild(el('span', 'chip ' + c[1], c[0])); sub.appendChild(document.createTextNode(' ')); });
+      if (spec.sub) sub.appendChild(document.createTextNode(spec.sub));
+      b.appendChild(sub);
+    }
+    b.addEventListener('click', function(){
+      var was = isSel(spec.kind, spec.id);
+      state.sel = was ? null : { type:spec.kind, id:spec.id };
+      if (state.popupMode){
+        render(spec.path);
+        if (!was) showDocs(items);
       } else {
-        tags.appendChild(el('span', 'caret', b.kind === 'result' ? '=' : ''));
+        if (items.length){ if (state.viewers[spec.path] !== undefined) delete state.viewers[spec.path]; else state.viewers[spec.path] = 0; }
+        render(spec.path);
       }
-      node.appendChild(tags);
-      node.appendChild(el('div', 'title', b.title));
-
-      if (b.reduces) node.appendChild(el('span', 'sub-pill', 'LESS'));
-      if (b.floor) node.appendChild(el('span', 'sub-pill floor', 'FLOOR 0'));
-
-      node.setAttribute('aria-label', label + (b.id === state.selected ? ', selected' : ''));
-      if (b.kind === 'group') node.setAttribute('aria-expanded', state.open[b.id] ? 'true' : 'false');
-
-      node.addEventListener('click', function(){
-        state.selected = b.id;
-        /* An amber box is the handle on its own table. */
-        if (b.kind === 'group'){
-          state.open[b.id] = !state.open[b.id];
-          state.refocus = state.open[b.id] ? 'toggle-' + b.id : 'node-' + b.id;
-        }
-        render();
-      });
-      canvas.appendChild(node);
     });
+    row.appendChild(b);
+    li.appendChild(row);
+    if (!state.popupMode && items.length && state.viewers[spec.path] !== undefined) li.appendChild(viewer(spec, items));
 
-    $('legend').style.top = (L.height - 48) + 'px';
-    $('legend').style.display = has || true ? '' : 'none';
+    if (spec.hasKids && state.open[spec.path]){
+      var ul = el('ul'); ul.setAttribute('role', 'group');
+      spec.kids().forEach(function(k){ ul.appendChild(k); });
+      li.appendChild(ul);
+    }
+    return li;
   }
 
-  /* ---- The tables -------------------------------------------------------- */
+  function rowNode(id, path, via){
+    var r = M.byId[id];
+    var kids = returnChildren(M, id);
+    var chips = [];
+    if (r.form !== '1040') chips.push([r.form, 'sched']);
+    if (via && via.sign < 0) chips.push(['subtracted', 'minus']);
+    if (via && via.depends) chips.push(['depends on, not added', 'none']);
+    if (!r.parts && !r.read) chips.push(['no source document', 'none']);
+    if (r.flags && r.flags.length) chips.push(['check: ' + r.flags[0] + (r.flags.length > 1 ? ' (+' + (r.flags.length - 1) + ')' : ''), 'flag']);
+    return node({
+      path: path, kind:'row', id:id, cls: r.form === '1040' ? 'row' : 'sched', total: r.total,
+      ln: lnText(r), label: r.label, amt: r.amt, blank: r.read && r.val === null, chips: chips,
+      hasKids: kids.length > 0,
+      kids: function(){ return kids.map(function(k){ return childNode(k, path); }); }
+    });
+  }
 
-  function renderSheets(g){
-    var mount = $('sheetList'), items = formulaItems(), n = g.n;
-    mount.textContent = '';
+  function docNode(k, path){
+    var d = docById[k.id];
+    var chips = [[state.caseId === 'upload' ? 'Your PDF' : 'Source', 'doc']];
+    if (k.sign < 0) chips.push(['subtracted', 'minus']);
+    if (k.supporting) chips.push(['supporting, not added', 'none']);
+    return node({ path: path, kind:'doc', id:k.id, cls:'doc', ln: '', label: d.title,
+      amt: k.supporting || k.amt === undefined ? null : k.amt, chips: chips, sub: k.ref || d.note, hasKids:false,
+      popup: { ref:k.ref || d.note, amt:k.amt, supporting:k.supporting, read: state.caseId === 'upload' } });
+  }
 
-    formulaBoxes().filter(function(b){ return b.kind === 'group'; }).forEach(function(b){
-      var rows = items[b.id] || [];
-      var open = !!state.open[b.id];
-      var f = formulaFilled(state.values, b.id);
+  function childNode(k, parentPath){
+    var path = parentPath + '/' + (k.kind === 'doc' ? 'd:' : '') + k.id + (k.supporting ? ':s' : '');
+    return k.kind === 'row' ? rowNode(k.id, path, k) : docNode(k, path);
+  }
 
-      var sec = el('section', 'sheet' + (open ? ' is-open' : ''));
+  function renderTree(){
+    var ul = $('tree'); ul.textContent = '';
+    PAGES.forEach(function(p){
+      var path = p.id;
+      ul.appendChild(node({
+        path: path, kind:'page', id:p.id, cls:'page', ln:'', label:p.title, amt:null, sub:p.note,
+        hasKids: p.rows.length + (p.docs || []).length > 0,
+        kids: function(){
+          return p.rows.map(function(id){ return rowNode(id, path + '/' + id, null); })
+            .concat((p.docs || []).map(function(id){ return docNode({ kind:'doc', id:id }, path + '/d:' + id); }));
+        }
+      }));
+    });
+  }
 
-      var toggle = el('button', 'sheet-toggle');
-      toggle.type = 'button';
-      toggle.id = 'toggle-' + b.id;
-      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-      toggle.setAttribute('aria-controls', 'body-' + b.id);
-      toggle.appendChild(el('span', 'caret', open ? '−' : '+'));
-      toggle.appendChild(el('span', 'name', b.title));
-      toggle.appendChild(el('span', 'rows', 'Sheet rows ' + rows[0].xl + '–' + rows[rows.length - 1].xl));
-      var cnt = el('span', 'count', f.filled + ' of ' + f.total + ' entered');
-      cnt.id = 'cnt-' + b.id;
-      toggle.appendChild(cnt);
-      var sum = el('span', 'sum' + (n[b.id] === 0 ? ' zero' : ''), money(n[b.id]));
-      sum.id = 'sum-' + b.id;
-      toggle.appendChild(sum);
-      toggle.addEventListener('click', function(){
-        state.open[b.id] = !state.open[b.id];
-        state.selected = b.id;
-        state.refocus = 'toggle-' + b.id;
-        render();
+  /* ---- cross-checks (uploaded returns) -------------------------------------------- */
+  function renderChecks(){
+    var box = $('checks'); box.textContent = '';
+    var c = state.caseId === 'upload' && CASES.upload ? CASES.upload.def.checks : null;
+    box.hidden = !c;
+    if (!c) return;
+    var ok = c.filter(function(x){ return x.status === 'ok'; }), diff = c.filter(function(x){ return x.status === 'diff'; }), skip = c.filter(function(x){ return x.status === 'skip'; });
+    box.appendChild(el('h3', null, 'Cross-checks on your return'));
+    var sum = el('p', 'sum');
+    sum.appendChild(el('b', null, c.length + ' checks: '));
+    sum.appendChild(document.createTextNode(ok.length + ' tie' + (diff.length ? ', ' : '') + (diff.length ? diff.length + ' differ' : '') + (skip.length ? ', ' + skip.length + ' not compared' : '') + '. '));
+    sum.appendChild(document.createTextNode(diff.length
+      ? 'A difference is a question to ask, not a conclusion: it can be a rounding, a missing page, or a line this page reads differently from your software.'
+      : 'Every comparison it could make agrees. That does not prove the return is right: it only means these lines are consistent with each other.'));
+    box.appendChild(sum);
+    function item(x){
+      var li = el('li', x.status === 'diff' ? 'diff' : '');
+      li.appendChild(document.createTextNode(x.name + ': '));
+      if (x.status === 'skip') li.appendChild(document.createTextNode('not compared. ' + x.note));
+      else {
+        li.appendChild(el('span', 'num', formatMoney(x.a) + (x.status === 'diff' ? ' vs ' + formatMoney(x.b) : '')));
+        li.appendChild(document.createTextNode(x.status === 'diff' ? ' (differs by ' + formatMoney(Math.abs(x.a - x.b)) + ')' : ' \u2713'));
+      }
+      return li;
+    }
+    if (diff.length){ var ul = el('ul'); diff.forEach(function(x){ ul.appendChild(item(x)); }); box.appendChild(ul); }
+    var d = el('details'); d.appendChild(el('summary', null, 'Every check'));
+    var all = el('ul'); c.forEach(function(x){ all.appendChild(item(x)); }); d.appendChild(all); box.appendChild(d);
+  }
+
+  /* ---- the pop-up ------------------------------------------------------------ */
+  function metaText(it){
+    return it.role + ' \u00b7 ' + (it.lines.length > 1
+      ? it.lines.map(function(l){ return l.ref + (l.amt === null ? '' : ' ' + formatMoney(l.amt)); }).join(' \u00b7 ')
+      : it.ref + (it.amt === null || it.amt === undefined ? '' : ' \u00b7 ' + formatMoney(it.amt)));
+  }
+  var dlg = $('docDlg');
+  function showDocs(items, startAt){
+    if (!items.length || !dlg || typeof dlg.showModal !== 'function') return;
+    var tabs = $('docDlgTabs'); tabs.textContent = '';
+    function show(i){
+      var it = items[i];
+      $('docDlgTitle').textContent = it.title;
+      $('docDlgMeta').textContent = metaText(it);
+      var im = $('docDlgImg'); im.alt = it.title + ' (' + (state.caseId === 'upload' ? 'page of your PDF' : 'classroom replica') + '). ' + it.ref;
+      setImg(im, it.img, $('docDlgOpen'));
+      Array.prototype.forEach.call(tabs.children, function(b, j){ b.setAttribute('aria-pressed', j === i ? 'true' : 'false'); });
+      $('docDlg').querySelector('.dlg-body').scrollTop = 0;
+    }
+    if (items.length > 1){
+      items.forEach(function(it, i){
+        var b = el('button', 'tbtn', it.short);
+        b.type = 'button'; b.title = it.title;
+        b.addEventListener('click', function(){ show(i); });
+        tabs.appendChild(b);
       });
-      sec.appendChild(toggle);
-
-      var body = el('div', 'sheet-body');
-      body.id = 'body-' + b.id;
-      body.hidden = !open;
-      if (b.note) body.appendChild(el('p', 'sheet-note', b.note));
-
-      var table = el('table', 'sheet-table');
-      var thead = el('thead'), htr = el('tr');
-      [['Ref','c-xl'],['Source','c-src'],['Line item',null],['Amount','c-amt'],['Notes','c-note']]
-        .forEach(function(h){
-          var th = el('th', h[1], h[0]);
-          th.scope = 'col';
-          htr.appendChild(th);
+    }
+    show(startAt || 0);
+    if (!dlg.open) dlg.showModal();
+    try { dlg.scrollIntoView({ block:'center' }); } catch (e) {}
+  }
+  /* ---- reading a PDF ------------------------------------------------------------------------------
+     pdf.js 3.11.174 from cdnjs, fetched only when a file is chosen, and only run if it matches the digests written here:
+     the script by subresource integrity, the worker by hashing it in the page before it becomes the worker.             */
+  var PDFJS = {
+    url: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+    sri: 'sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e',
+    worker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+    workerDigest: 'sha384-SnzOobpRMLXZ52iJvZm/C0fYw0OQemTXzTjIsdsfMcrCtCEe9qgzxTd3RSklO5x2'
+  };
+  var pdfLib = null;
+  function loadPdfJs(){
+    if (pdfLib) return Promise.resolve(pdfLib);
+    if (!window.crypto || !window.crypto.subtle) return Promise.reject(new Error('This browser cannot verify the PDF reader, so it will not run it. Try a current browser over https.'));
+    return new Promise(function(resolve, reject){
+      var sc = document.createElement('script');
+      sc.src = PDFJS.url; sc.integrity = PDFJS.sri; sc.crossOrigin = 'anonymous';
+      sc.onload = function(){ resolve(window.pdfjsLib); };
+      sc.onerror = function(){ reject(new Error('The PDF reader could not be loaded: you may be offline, or something blocked it, or it did not match its pinned digest. Nothing was run.')); };
+      document.head.appendChild(sc);
+    }).then(function(lib){
+      if (!lib) throw new Error('The PDF reader did not start.');
+      return fetch(PDFJS.worker, { mode: 'cors' }).then(function(r){
+        if (!r.ok) throw new Error('The PDF reader\u2019s worker could not be fetched.');
+        return r.arrayBuffer();
+      }).then(function(buf){
+        return crypto.subtle.digest('SHA-384', buf).then(function(h){
+          var bytes = new Uint8Array(h), bin = '';
+          for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+          if ('sha384-' + btoa(bin) !== PDFJS.workerDigest) throw new Error('The PDF reader\u2019s worker did not match its pinned digest, so it was not run.');
+          lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([buf], { type: 'text/javascript' }));
+          pdfLib = lib;
+          return lib;
         });
-      thead.appendChild(htr);
-      table.appendChild(thead);
-
-      var tbody = el('tbody');
-      rows.forEach(function(it){
-        var tr = el('tr', it.role === 'pick' ? 'is-pick' : '');
-        tr.id = 'row-' + it.key;
-        if (it.role === 'item' && parseAmount(state.values[it.key]) !== 0) tr.classList.add('is-filled');
-
-        tr.appendChild(el('td', 'c-xl', String(it.xl)));
-        tr.appendChild(el('td', 'c-src', it.source || ''));
-
-        var name = el('td', it.under ? 'indent' : null);
-        name.appendChild(document.createTextNode(it.label));
-        if (it.hint) name.appendChild(el('span', 'hint', ' (' + it.hint + ')'));
-        tr.appendChild(name);
-
-        var amt = el('td', 'c-amt');
-        if (it.role === 'pick'){
-          var out = el('span', 'amt-out' + (n[it.key] === 0 ? ' zero' : ''), money(n[it.key]));
-          out.id = 'out-' + it.key;
-          amt.appendChild(out);
-        } else {
-          var box = el('div', 'amt-in');
-          var input = document.createElement('input');
-          input.type = 'text';
-          input.inputMode = 'decimal';
-          input.autocomplete = 'off';
-          input.id = 'v-' + it.key;
-          input.placeholder = '0';
-          input.value = state.values[it.key] === undefined ? '' : state.values[it.key];
-          input.setAttribute('aria-label', it.label + ', sheet row ' + it.xl);
-          input.addEventListener('input', function(){
-            state.values[it.key] = input.value;
-            repaint();
-          });
-          box.appendChild(el('span', null, '$'));
-          box.appendChild(input);
-          amt.appendChild(box);
-        }
-        tr.appendChild(amt);
-
-        tr.appendChild(el('td', 'c-note', it.tab ? 'See the ' + it.tab + ' tab' : ''));
-        tbody.appendChild(tr);
       });
-
-      var totTr = el('tr', 'is-total');
-      totTr.appendChild(el('td', 'c-xl', String(b.xl)));
-      totTr.appendChild(el('td', 'c-src', ''));
-      totTr.appendChild(el('td', null, b.title));
-      var totTd = el('td', 'c-amt');
-      var tot = el('span', 'amt-out', money(n[b.id]));
-      tot.id = 'tot-' + b.id;
-      totTd.appendChild(tot);
-      totTr.appendChild(totTd);
-      totTr.appendChild(el('td', 'c-note', ''));
-      tbody.appendChild(totTr);
-
-      table.appendChild(tbody);
-      body.appendChild(table);
-      sec.appendChild(body);
-      mount.appendChild(sec);
     });
   }
 
-  /* ---- Events ------------------------------------------------------------ */
+  var MAX_BYTES = 25 * 1024 * 1024, MAX_PAGES = 150;
+  function status(msg, err){ var u = $('upStatus'); u.textContent = msg; u.className = 'upstatus' + (err ? ' is-err' : ''); }
 
-  $('sampleBtn').addEventListener('click', function(){
-    state.values = formulaSample();
-    render();
+  function readPages(pdf){
+    var pages = [], chain = Promise.resolve();
+    for (var n = 1; n <= pdf.numPages; n++) (function(n){
+      chain = chain.then(function(){ return pdf.getPage(n); }).then(function(page){
+        var vp = page.getViewport({ scale: 1 });
+        return page.getTextContent().then(function(tc){
+          pages.push({ n: n, width: vp.width, height: vp.height, items: tc.items.filter(function(i){ return i.str && String(i.str).trim(); })
+            .map(function(i){ return { s: i.str, x: i.transform[4], y: vp.height - i.transform[5], w: i.width }; }) });
+          status('Reading page ' + n + ' of ' + pdf.numPages + '\u2026');
+        });
+      });
+    })(n);
+    return chain.then(function(){ return pages; });
+  }
+
+  function titleCase(t){ return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
+  function showUpload(pdf, info, name){
+    var def = rdBuildReturn(info);
+    if (!def.rows.length){
+      status('No Form 1040 lines could be read from this PDF. It may be a scan with no selectable text, or a layout this page does not recognise. Nothing was kept.', true);
+      try { pdf.destroy(); } catch (e) {}
+      return;
+    }
+    if (upload) try { upload.pdf.destroy(); } catch (e) {}
+    upload = { pdf: pdf, info: info, def: def, urls: {} };
+    var d = info.deps;
+    CASES.upload = {
+      id: 'upload', label: 'Your return (uploaded)', def: def,
+      eyebrow: 'Your return \u00b7 ' + (info.year ? 'tax year ' + info.year + ' \u00b7 ' : '') + 'read in this browser; nothing was uploaded',
+      filing: {
+        status: info.filing ? titleCase(info.filing) : 'Not found', statusNote: info.filing ? 'Read from the filing-status boxes' : 'No box was marked in the text this page could read',
+        filers: [ { name: 'Names are not read', note: 'They should be redacted' } ],
+        dependents: d ? [ { name: d.ctc + ' child tax credit' + (d.other ? ', ' + d.other + ' other dependent' + (d.other === 1 ? '' : 's') : ''),
+                            note: 'Counted from the marked boxes; dependents\u2019 names are not read' } ] : []
+      },
+      note: 'Line numbers are the ones printed on your return; each line is recognised by its label. The pages shown are your own PDF, drawn here and never saved. ' +
+            'Schedule lines are placed under the Form 1040 line they feed, following the form instructions.',
+      forms: {}
+    };
+    $('case-upload').hidden = false;
+    $('clearUpload').hidden = false;
+    status('Read ' + name + ': ' + def.rows.length + ' lines from ' + info.pages.filter(function(p){ return p.form; }).length + ' recognised pages, ' +
+           def.checks.length + ' cross-checks.');
+    setCase('upload'); render();
+    try { $('board').scrollIntoView({ block: 'start' }); } catch (e) {}
+  }
+
+  var pending = null;     /* an analysed return waiting on the "these are fictional" confirmation */
+  function handleFile(file){
+    if (!file) return;
+    $('upGuard').hidden = true; pending = null;
+    if (file.size > MAX_BYTES){ status('That file is larger than 25 MB. Export just the return pages and try again.', true); return; }
+    status('Starting\u2026');
+    var pdfRef;
+    loadPdfJs().then(function(lib){
+      return file.arrayBuffer().then(function(buf){
+        var head = new Uint8Array(buf.slice(0, 5)), magic = String.fromCharCode.apply(null, head);
+        if (magic !== '%PDF-') throw new Error('That does not look like a PDF.');
+        return lib.getDocument({ data: new Uint8Array(buf) }).promise;
+      });
+    }).then(function(pdf){
+      pdfRef = pdf;
+      if (pdf.numPages > MAX_PAGES) throw new Error('That PDF has more than ' + MAX_PAGES + ' pages. Export just the return.');
+      return readPages(pdf);
+    }).then(function(pages){
+      var texts = pages.reduce(function(t, p){ return t + p.items.length; }, 0);
+      if (texts < 30) throw new Error('This PDF has no selectable text (it is probably a scan). Print the return to PDF from your tax software instead.');
+      var info = rdAnalyze(pages);
+      if (info.ids.total > 0){
+        pending = { pdf: pdfRef, info: info, name: file.name };
+        $('upGuardText').textContent = 'This PDF still contains ' + info.ids.total + ' value' + (info.ids.total === 1 ? '' : 's') +
+          ' that look like identifiers (Social Security or employer numbers, or long account-style numbers). Nothing was kept. ' +
+          'Redact them and choose the file again. If this is a fictional sample or practice return, confirm below.';
+        $('upFictional').checked = false; $('upContinue').disabled = true;
+        $('upGuard').hidden = false;
+        status('Stopped before showing your return.', true);
+        return;
+      }
+      showUpload(pdfRef, info, file.name);
+    }).catch(function(err){
+      status(err && err.message ? err.message : 'That file could not be read.', true);
+      try { if (pdfRef) pdfRef.destroy(); } catch (e) {}
+    });
+    $('fileIn').value = '';
+  }
+  $('fileIn').addEventListener('change', function(){ handleFile(this.files && this.files[0]); });
+  $('upFictional').addEventListener('change', function(){ $('upContinue').disabled = !this.checked; });
+  $('upContinue').addEventListener('click', function(){
+    if (!pending || !$('upFictional').checked) return;
+    var p = pending; pending = null; $('upGuard').hidden = true;
+    showUpload(p.pdf, p.info, p.name);
+  });
+  $('clearUpload').addEventListener('click', function(){
+    if (upload){
+      Object.keys(upload.urls).forEach(function(k){ URL.revokeObjectURL(upload.urls[k]); });
+      try { upload.pdf.destroy(); } catch (e) {}
+      upload = null;
+    }
+    if (pending){ try { pending.pdf.destroy(); } catch (e) {} pending = null; }
+    delete CASES.upload;
+    $('case-upload').hidden = true; $('clearUpload').hidden = true; $('upGuard').hidden = true;
+    status('Your return was removed from this page.');
+    setCase('tp2'); render();
   });
 
-  $('clearBtn').addEventListener('click', function(){
-    state.values = formulaBlank();
-    state.selected = 'grossIncome';
-    state.open.grossIncome = true;
-    state.refocus = 'v-salary';
-    render();
-  });
+  $('docDlgClose').addEventListener('click', function(){ dlg.close(); });
+  dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); });   /* click on the backdrop */
 
-  $('openAll').addEventListener('click', function(){
-    formulaBoxes().forEach(function(b){ if (b.kind === 'group') state.open[b.id] = true; });
-    render();
-  });
+  function setCase(id){
+    state.caseId = id; state.sel = null; state.open = {}; state.viewers = {};
+    var def = CASES[id].def;
+    M = returnModel(id, def); PAGES = returnPages(id, def); docById = {};
+    M.docs.forEach(function(d){ docById[d.id] = d; });
+    PAGES.forEach(function(p){ state.open[p.id] = true; });
+    $('caseEyebrow').textContent = CASES[id].eyebrow;
+    $('caseNote').textContent = CASES[id].note;
+    Object.keys(CASES).forEach(function(k){ $('case-' + k).setAttribute('aria-pressed', k === id ? 'true' : 'false'); });
+    renderChecks();
+  }
 
-  $('closeAll').addEventListener('click', function(){
-    state.open = {};
-    render();
-  });
+  function render(focusPath){
+    renderFiling(); renderTree();
+    if (focusPath){
+      var nodes = document.querySelectorAll('#tree .pick, #tree .tog');
+      /* keep keyboard focus on the control that was used */
+      var want = document.querySelector('#tree .pick[data-path="' + focusPath.replace(/"/g, '') + '"]');
+      if (want && want !== document.activeElement) want.focus();
+    }
+  }
 
+  function openAll(){
+    function walk(path, kids){ state.open[path] = true; kids.forEach(function(k){
+      var p = path + '/' + (k.kind === 'doc' ? 'd:' : '') + k.id + (k.supporting ? ':s' : '');
+      if (k.kind === 'row') walk(p, returnChildren(M, k.id));
+    }); }
+    PAGES.forEach(function(p){ walk(p.id, p.rows.map(function(id){ return { kind:'row', id:id }; })); });
+  }
+  Object.keys(CASES).forEach(function(k){
+    $('case-' + k).addEventListener('click', function(){ setCase(k); render(); });
+  });
+  $('expandBtn').addEventListener('click', function(){ openAll(); render(); });
+  $('collapseBtn').addEventListener('click', function(){ state.open = {}; state.viewers = {}; state.sel = null; render(); });
+  $('popToggle').addEventListener('change', function(){ state.popupMode = this.checked; state.viewers = {}; render(); });
+
+  /* shareable: ?line=l11a opens the page that holds it; ?doc=wl expands everything and selects it */
+  var q = new URLSearchParams(location.search);
+  setCase(CASES[q.get('case')] ? q.get('case') : 'tp2');
+  if (q.get('line') && M.byId[q.get('line')]){ state.sel = { type:'row', id:q.get('line') }; }
+  else if (q.get('doc') && docById[q.get('doc')]){ state.sel = { type:'doc', id:q.get('doc') }; openAll(); }
   render();
+  /* ?show=p1/l7/sd_16 opens every branch down to that node and unfolds its documents (a document leaf is d:<id>) */
+  if (q.get('show')){
+    var segs = q.get('show').split('/'), acc = '';
+    segs.forEach(function(sg, i){ acc = i ? acc + '/' + sg : sg; if (i < segs.length - 1) state.open[acc] = true; });
+    state.viewers[q.get('show')] = 0; render();
+  }
 })();
 </script>
 </body>

@@ -1,549 +1,314 @@
+// verify-return-review.mjs <path to review/1040/index.html>
+//
+// The 1040 preview is a tree from Form 1040 down through its schedules to the documents that feed them. It has
+//   - a built-in sample, Learner 2025 (ACCTG 410 Tax Project #2), built from replica source documents; and
+//   - an option to analyze a redacted PDF of the user's own return, read in the browser by the "reader"
+//     (rdAnalyze / rdBuildReturn / rdCrossChecks) and drawn with the same tree.
+// This checks both, from the shipped HTML:
+//   the sample's amounts, tie-outs, tree shape and pop-up items;
+//   the reader, on synthetic pages laid out like an IRS form: lines recognised by label (2024 and 2025 numbering),
+//     blanks, wrapped labels, inner-column values, negatives, identifiers, cross-checks and an injected mismatch;
+//   the privacy design: pinned digests, no other network call, no storage, nothing posted.
+// The reader was also run against a real 2024 return with the real pdf.js and read every line it covers; that
+// return is a course solution and is not committed, so it is not part of this harness.
 import fs from 'fs';
+import path from 'path';
 
-const src = fs.readFileSync(process.argv[2], 'utf8');
-function extract(name){
-  const start = src.indexOf('function ' + name + '(');
-  if (start < 0) throw new Error('not found: ' + name);
-  let i = src.indexOf('{', start), depth = 0, j = i;
-  for (; j < src.length; j++){
-    if (src[j] === '{') depth++;
-    else if (src[j] === '}' && --depth === 0) { j++; break; }
-  }
-  return src.slice(start, j);
-}
-const names = ['fieldSpec','sampleFigures','blankFigures','parseAmount','formatMoney',
-               'extractFigures','summarize','deriveFindings',
-               /* the subtotal flow map */
-               'flowYears','flowInputs','flowBlank','flowSample','flowCompute','flowHasFigures',
-               'flowAdopt','flowChecks','flowAssumptions','flowPlanning',
-               'returnColumns','returnKindLabels','returnNodes','returnEdges',
-               'returnGraph','returnLayout','returnEdgePath','returnLineage','returnDetail',
-               'returnMapDescription','findingNode'];
-const code = names.map(extract).join('\n');
-const { fieldSpec, sampleFigures, blankFigures, parseAmount, formatMoney,
-        extractFigures, summarize, deriveFindings,
-        flowYears, flowInputs, flowBlank, flowSample, flowCompute, flowHasFigures,
-        flowAdopt, flowChecks, flowAssumptions, flowPlanning,
-        returnColumns, returnKindLabels, returnNodes, returnEdges,
-        returnGraph, returnLayout, returnEdgePath, returnLineage, returnDetail,
-        returnMapDescription, findingNode } =
-  new Function(code + '; return {' + names.join(',') + '};')();
+const file = process.argv[2];
+if (!file) { console.error('usage: node tests/verify-return-review.mjs review/1040/index.html'); process.exit(2); }
+const src = fs.readFileSync(file, 'utf8');
+const a = src.indexOf('function returnDocsTp2');
+const b = src.indexOf('function formatMoney');
+if (a < 0 || b < 0) { console.error('model functions not found in ' + file); process.exit(2); }
+const code = src.slice(a, b);
+const api = new Function(code + `; return { model: returnModel, pages: returnPages, children: returnChildren, popup: returnPopupItems,
+  caseList: returnCaseList, rdNum, rdRows, rdAnalyze, rdBuildReturn, rdCrossChecks, rdIdentifiers, RD_LINES, RD_GRAPH, RD_EQUAL };`)();
+const model = api.model, T = api;
 
-let fail = 0;
-const ok = (cond, label, got, want) => {
+let fail = 0, n = 0;
+function ok(cond, name, got, want) {
+  n++;
   if (!cond) fail++;
-  console.log('  ' + (cond ? 'PASS' : '**FAIL**').padEnd(10) + label.padEnd(44) +
-    (want === undefined ? '' : String(got) + '  expected ' + String(want)));
-};
-
-/* ---------------------------------------------------------------------------
-   The authority for the sample is re-derived here, independently of the page.
-   2024 single-filer rate schedule, Rev. Proc. 2023-34.
-   --------------------------------------------------------------------------- */
-const BRACKETS_2024_SINGLE = [
-  [0,       0.10],
-  [11600,   0.12],
-  [47150,   0.22],
-  [100525,  0.24],
-  [191950,  0.32],
-  [243725,  0.35],
-  [609350,  0.37]
-];
-const STD_DEDUCTION_2024_SINGLE = 14600;
-
-function scheduleTax(taxable){
-  let tax = 0;
-  for (let i = 0; i < BRACKETS_2024_SINGLE.length; i++){
-    const [floor, rate] = BRACKETS_2024_SINGLE[i];
-    if (taxable <= floor) break;
-    const ceil = i + 1 < BRACKETS_2024_SINGLE.length ? BRACKETS_2024_SINGLE[i + 1][0] : Infinity;
-    tax += (Math.min(taxable, ceil) - floor) * rate;
-  }
-  return tax;
+  console.log(`  ${cond ? 'PASS' : 'FAIL'}      ${name.padEnd(70)} ${cond ? '' : `got ${JSON.stringify(got)}  expected ${JSON.stringify(want)}`}`);
 }
+const dir = path.dirname(file);
 
-/* ---- 1. the sample is a real, internally consistent 2024 return ---------- */
-console.log('The sample return, re-derived from the 2024 rate schedule:');
-const sample = sampleFigures();
-const n = k => parseAmount(sample[k]);
-
-ok(n('wages') + n('interest') === n('agi'),
-   'wages + interest = AGI (line 11)', n('wages') + n('interest'), n('agi'));
-ok(n('agi') - n('deduction') === n('taxable'),
-   'AGI - deduction = taxable (line 15)', n('agi') - n('deduction'), n('taxable'));
-ok(n('withholding') + n('credits') - n('tax') === n('refund'),
-   'payments - tax = refund (line 35a)', n('withholding') + n('credits') - n('tax'), n('refund'));
-ok(n('deduction') === STD_DEDUCTION_2024_SINGLE,
-   'deduction = 2024 single standard', n('deduction'), STD_DEDUCTION_2024_SINGLE);
-ok(n('tax') === Math.round(scheduleTax(n('taxable'))),
-   'tax = schedule on taxable income', n('tax'), Math.round(scheduleTax(n('taxable'))));
-ok(n('refund') > 0, 'the sample refunds (drives finding 01)', n('refund'), '> 0');
-
-/* ---- 2. the summary agrees with the figures it was built from ------------ */
-console.log('\nsummarize() against the sample:');
-const s = summarize(sample);
-ok(s.payments === n('withholding') + n('credits'), 'payments = withholding + credits', s.payments, 13040);
-ok(s.settlement === n('refund'), 'settlement = the refund on the return', s.settlement, n('refund'));
-ok(s.owed === 0, 'nothing owed', s.owed, 0);
-ok(Math.abs(s.effectiveRate - n('tax') / n('agi')) < 1e-12,
-   'effective rate = tax / AGI', s.effectiveRate.toFixed(6), (n('tax') / n('agi')).toFixed(6));
-ok(s.effectiveRate < 0.22, 'effective rate below the top bracket reached',
-   (s.effectiveRate * 100).toFixed(1) + '%', '< 22%');
-ok(s.hasFigures === true, 'hasFigures true when amounts are present', s.hasFigures, true);
-
-/* ---- 3. the bars are shares of AGI and never overflow -------------------- */
-console.log('\nBar geometry:');
-ok(s.bars.length === 3, 'three bars', s.bars.length, 3);
-ok(Math.abs(s.bars[0].pct - 100) < 1e-9, 'AGI bar is the full width', s.bars[0].pct, 100);
-ok(Math.abs(s.bars[1].pct - n('taxable') / n('agi') * 100) < 1e-9,
-   'taxable bar = taxable / AGI', s.bars[1].pct.toFixed(4), (n('taxable') / n('agi') * 100).toFixed(4));
-ok(Math.abs(s.bars[2].pct - s.effectiveRate * 100) < 1e-9,
-   'tax bar = the effective rate', s.bars[2].pct.toFixed(4), (s.effectiveRate * 100).toFixed(4));
-ok(s.bars[0].pct >= s.bars[1].pct && s.bars[1].pct >= s.bars[2].pct,
-   'bars narrow monotonically', '100 >= ' + s.bars[1].pct.toFixed(1) + ' >= ' + s.bars[2].pct.toFixed(1), 'true');
-
-/* ---- 4. blank figures produce no NaN and no false claims ----------------- */
-console.log('\nThe empty state:');
-const blank = summarize(blankFigures());
-ok(blank.hasFigures === false, 'hasFigures false when nothing is entered', blank.hasFigures, false);
-ok(blank.effectiveRate === null, 'no effective rate without an AGI', blank.effectiveRate, null);
-ok(blank.bars.every(b => b.pct === 0), 'every bar collapses to zero width', 'all 0', 'all 0');
-ok(Object.values(blank).every(v => typeof v !== 'number' || isFinite(v)),
-   'no NaN or Infinity anywhere in the summary', 'finite', 'finite');
-ok(parseAmount('') === 0 && parseAmount(null) === 0 && parseAmount('abc') === 0,
-   'parseAmount copes with empty and junk', '0/0/0', '0/0/0');
-ok(parseAmount('86,760') === 86760 && parseAmount('$86,760.00') === 86760,
-   'parseAmount strips separators and signs', parseAmount('$86,760.00'), 86760);
-ok(formatMoney(86760) === '$86,760' && formatMoney(0) === '$0' && formatMoney(-1) === '-$1',
-   'formatMoney rounds and signs', formatMoney(-1), '-$1');
-
-/* ---- 5. extraction, against text laid out like the real form ------------- */
-/*  Built from the 2024 Form 1040's own line labels. Lines 2a/2b and the
-    distractor rows are there on purpose: 1b and 1g both say "wages", and
-    "Add lines 19 and 20" holds two bare numbers that must not read as money. */
-const RETURN_TEXT = [
-  'Form 1040 (2024) U.S. Individual Income Tax Return',
-  'For the year Jan. 1-Dec. 31, 2024',
-  '1a Total amount from Form(s) W-2, box 1 1a 86,420',
-  '1b Household employee wages not reported on Form(s) W-2 1b',
-  '1g Wages from Form 8919, line 6 1g',
-  '1z Add lines 1a through 1h 1z 86,420',
-  '2a Tax-exempt interest 2a 1,200 b Taxable interest 2b $340',
-  '9 Add lines 1z, 2b, 3b, 4b, 5b, 6b, 7, and 8. This is your total income 9 86,760',
-  '10 Adjustments to income from Schedule 1, line 26 10 0',
-  '11 Subtract line 10 from line 9. This is your adjusted gross income 11 86,760',
-  '12 Standard deduction or itemized deductions (from Schedule A) 12 14,600',
-  '13 Qualified business income deduction from Form 8995 or Form 8995-A 13 0',
-  '14 Add lines 12 and 13 14 14,600',
-  '15 Subtract line 14 from line 11. If zero or less, enter -0-. This is your taxable income 15 72,160',
-  '19 Child tax credit or credit for other dependents from Schedule 8812 19 0',
-  '20 Amount from Schedule 3, line 8 20 0',
-  '21 Add lines 19 and 20 21 0',
-  '24 Add lines 22 and 23. This is your total tax 24 10,928',
-  '25a Form(s) W-2 25a 13,040',
-  '25d Add lines 25a through 25c 25d 13,040',
-  '33 Add lines 25d, 26, and 32. These are your total payments 33 13,040',
-  '34 If line 33 is more than line 24, subtract line 24 from line 33. This is the amount you overpaid 34 2,112',
-  '35a Amount of line 34 you want refunded to you 35a 2,112'
-].join('\n');
-
-console.log('\nextractFigures() over a 2024 Form 1040 text dump:');
-const got = extractFigures(RETURN_TEXT);
-for (const field of fieldSpec()){
-  const want = parseAmount(sample[field.key]);
-  const mine = parseAmount(got[field.key]);
-  ok(field.key in got && mine === want,
-     'line ' + field.line + ' → ' + field.key, field.key in got ? mine : 'not found', want);
+/* ======================================================================== 1. the sample */
+console.log('\n=== The sample: Learner, 2025 (Tax Project #2) ===');
+const want = { s1_3: 62000, s1_5: 0, s1_10: 62000, s1_15: 4380, s1_26: 4380, s2_4: 8760, s2_21: 8760,
+  l1z: 102000, l8: 62000, l9: 164000, l10: 4380, l11a: 159620, l12e: 31500, l13a: 11524, l15: 116596,
+  l16: 15479, l19: 2200, l22: 13279, l23: 8760, l24: 22039, l25d: 22600, l33: 22600, l34: 561, l35a: 561, f8812_14: 2200 };
+const S = model('tp2');
+const amt = k => S.byId[k].amt;
+console.log('amounts against the return:');
+for (const [k, v] of Object.entries(want)) ok(S.byId[k] && amt(k) === v, `line ${k}`, S.byId[k] && amt(k), v);
+ok(S.rows.length === Object.keys(want).length, 'no line is unchecked', S.rows.length, Object.keys(want).length);
+console.log('the chain closes:');
+for (const [name, pass] of [
+  ['AGI = wages + Schedule 1 income - adjustments', amt('l11a') === amt('l1z') + amt('s1_10') - amt('s1_26')],
+  ['taxable income = AGI - standard deduction - QBI', amt('l15') === amt('l11a') - amt('l12e') - amt('l13a')],
+  ['total tax = tax - credit + other taxes', amt('l24') === amt('l16') - amt('l19') + amt('s2_21')],
+  ['refund = withholding - total tax', amt('l35a') === amt('l25d') - amt('l24')],
+  ['deductible half is half of the SE tax', amt('s1_26') === amt('s1_15') && amt('s1_15') * 2 === amt('s2_4')]]) ok(pass, name, 0, 0);
+console.log('sources and documents:');
+for (const r of S.rows) {
+  if (!r.parts) { ok(typeof r.why === 'string' && r.why.length > 20, `line ${r.id} (no parts) says why`, r.why, 'a reason'); continue; }
+  const sum = r.parts.reduce((t, p) => t + p.sign * (p.row ? amt(p.row) : p.amt), 0);
+  ok(sum === r.amt, `line ${r.id} sources tie`, sum, r.amt);
 }
-ok(Object.keys(got).length === 9, 'all nine lines found', Object.keys(got).length, 9);
-
-console.log('\nExtraction traps:');
-ok(parseAmount(got.wages) !== 1200 && parseAmount(got.interest) === 340,
-   '2b beats 2a on their shared printed row', parseAmount(got.interest), 340);
-ok(parseAmount(got.credits) === 0,
-   '"Add lines 19 and 20" does not read 19 or 20 as money', parseAmount(got.credits), 0);
-ok(parseAmount(got.wages) === 86420,
-   'line 1z beats the "wages" wording on 1b and 1g', parseAmount(got.wages), 86420);
-ok(Object.keys(extractFigures('')).length === 0, 'empty text finds nothing', 0, 0);
-ok(Object.keys(extractFigures('nothing here at all')).length === 0, 'junk text finds nothing', 0, 0);
-ok(Object.keys(extractFigures(null)).length === 0, 'null does not throw', 0, 0);
-
-/* ---- 6. the findings say the right thing across the whole space ---------- */
-console.log('\nderiveFindings() across a sweep of tax against payments:');
-let swept = 0, badCount = 0, badVerdict = 0, badSource = 0, emptyText = 0;
-for (let tax = 0; tax <= 20000; tax += 250)
-  for (let withholding = 0; withholding <= 20000; withholding += 250)
-    for (const credits of [0, 500]){
-      const sum = summarize({ agi:'80000', taxable:'65000', deduction:'14600',
-                              tax:String(tax), withholding:String(withholding),
-                              credits:String(credits), wages:'80000', interest:'0',
-                              refund:String(Math.max(0, withholding + credits - tax)) });
-      const f = deriveFindings(sum);
-      swept++;
-
-      if (f.length !== 3) badCount++;
-
-      // finding 01 must name the direction the money actually goes
-      const settlement = withholding + credits - tax;
-      const title = f[0].title;
-      const right = settlement > 0 ? 'You overpaid during the year'
-                  : settlement < 0 ? 'You underpaid during the year'
-                  : 'Your payments matched your tax';
-      if (title !== right) badVerdict++;
-
-      // every finding always cites a line, and never renders an empty string
-      for (const one of f){
-        if (!/\d/.test(one.source)) badSource++;
-        if (!one.title.trim() || !one.description.trim() || !one.context.trim()) emptyText++;
-      }
-    }
-ok(badCount === 0, 'always exactly three findings', badCount + ' bad', '0 bad');
-ok(badVerdict === 0, 'finding 01 names the right direction', badVerdict + ' wrong', '0 wrong');
-ok(badSource === 0, 'every finding cites a line number', badSource + ' missing', '0 missing');
-ok(emptyText === 0, 'no finding renders empty text', emptyText + ' empty', '0 empty');
-console.log('  swept ' + swept.toLocaleString('en-US') + ' combinations');
-
-/* ---- 7. a balance-due return flips every readout that should flip -------- */
-console.log('\nA return that owes rather than refunds:');
-const due = summarize({ agi:'86760', taxable:'72160', deduction:'14600', tax:'14000',
-                        withholding:'11000', credits:'0', wages:'86420', interest:'340', refund:'0' });
-ok(due.owed === 3000, 'balance due = tax - payments', due.owed, 3000);
-ok(due.settlement === -3000, 'settlement goes negative', due.settlement, -3000);
-ok(deriveFindings(due)[0].title === 'You underpaid during the year',
-   'finding 01 switches to underpaid', deriveFindings(due)[0].title, 'You underpaid during the year');
-ok(due.bars[2].pct > s.bars[2].pct, 'the tax bar grows with the tax',
-   due.bars[2].pct.toFixed(1), '> ' + s.bars[2].pct.toFixed(1));
-
-/* ---- 8. the line map on the page matches the extractor ------------------- */
-console.log('\nThe page agrees with itself:');
-const spec = fieldSpec();
-ok(spec.length === 9, 'nine fields', spec.length, 9);
-const lines = spec.map(f => f.line);
-ok(new Set(lines).size === 9, 'no duplicated line reference', new Set(lines).size, 9);
-for (const f of spec){
-  const shown = src.includes('<td>' + f.line + '</td>');
-  ok(shown, 'line ' + f.line + ' documented in the source panel', shown, true);
+for (const d of S.docs) {
+  ok(S.rows.some(r => r.allDocs.includes(d.id)), `document ${d.id} reaches a line`, 0, '>=1');
+  ok(fs.existsSync(path.join(dir, d.img)), `image ${d.img} exists`, 'missing', 'present');
 }
-
-/* ---- 9. the subtotal flow map ---------------------------------------------
-   The map is the reviewer view's; what sits in the boxes is the skeleton of
-   the "Income Tax Summary" sheet of the ACCTG 410 workbook — its fourteen
-   major subtotals, and none of its detail rows. That file lives outside the
-   repository, so this harness cannot diff against it: the row numbers and the
-   reference letters below are transcribed, which is what makes a drift show up
-   in a diff rather than in someone's memory.
-   ------------------------------------------------------------------------- */
-
-/* Block-scoped: the eight sections above already own `sample`, `blank` and `n`
-   at module scope. */
+for (const r of S.rows.filter(r => r.img)) ok(fs.existsSync(path.join(dir, r.img)), `form image ${r.img} exists`, 'missing', 'present');
+ok(S.byId.l1z.allDocs.includes('wl') && S.byId.l1z.allDocs.includes('wm'), 'wages are fed by both W-2s', 0, 0);
+console.log('the tree (1040 page -> 1040 line -> schedule -> source document):');
+const pages = T.pages('tp2');
+const placed = pages.flatMap(p => p.rows);
+const f1040 = S.rows.filter(r => r.form === '1040').map(r => r.id);
+ok(placed.length === new Set(placed).size && f1040.every(k => placed.includes(k)) && placed.every(k => f1040.includes(k)),
+  'pages 1 and 2 hold every Form 1040 line exactly once', placed.length, f1040.length);
+let nested1040 = 0; const docsSeen = new Set(), schedUnder = new Set();
+const walk = rid => { for (const k of T.children(S, rid)) {
+  if (k.kind === 'doc') docsSeen.add(k.id);
+  else { if (S.byId[k.id].form === '1040') nested1040++; else schedUnder.add(k.id); walk(k.id); } } };
+placed.forEach(walk);
+ok(nested1040 === 0, 'no Form 1040 line nests under another', nested1040, 0);
+ok(S.rows.filter(r => r.form !== '1040').every(r => schedUnder.has(r.id)), 'every schedule line sits under a Form 1040 line', 0, 0);
+ok(S.docs.every(d => docsSeen.has(d.id)), 'every source document appears as a leaf in the tree', [...docsSeen].length, S.docs.length);
+console.log('the pop-up (what a click shows):');
 {
-
-console.log('\nThe map carries the sheet’s subtotals:');
-
-/* Transcribed from the sheet: the row each box came from, and its letter. */
-const SHEET = [
-  ['grossIncome',    8,  null],
-  ['forAgi',        18,  null],
-  ['agi',           22,  'a'],
-  ['fromAgi',       23,  'b'],
-  ['taxable',       30,  'a-b'],
-  ['tentative1',    32,  'c'],
-  ['otherTaxD',     35,  'd'],
-  ['nonrefundable', 39,  'e'],
-  ['tentative2',    44,  'c+d-e'],
-  ['otherTaxF',     45,  'f'],
-  ['totalTax',      49,  'c+d-e+f'],
-  ['refundable',    50,  null],
-  ['prepayments',   54,  null],
-  ['dueOrRefund',   59,  null]
-];
-
-const G = returnGraph(flowSample());
-ok(G.nodes.length === 14, 'fourteen boxes, not fifty-two rows', G.nodes.length, 14);
-
-let badRow = 0, badRef = 0;
-for (const [id, xl, letter] of SHEET){
-  const nd = G.byId[id];
-  if (!nd || nd.xl !== xl) badRow++;
-  else if (letter && nd.ref.indexOf(letter) < 0) badRef++;
-  else if (!letter && nd.ref !== 'Row ' + xl) badRef++;
+  const w2 = T.popup(S, 'row', 'l1z');
+  ok(w2.filter(i => i.role === 'Source document').length === 2 && w2.filter(i => i.role === 'Supporting document').length === 2,
+    'wages: two W-2s as sources, the stock award and 83(b) election as supporting', w2.map(i => i.role), '2 + 2');
+  ok(w2.find(i => i.title.includes('Mark')).amt === 65000, 'the pop-up carries the amount read from the document', 0, 65000);
+  ok(w2.map(i => i.short).every((x, i, all) => all.indexOf(x) === i), 'tabs are labelled distinctly', w2.map(i => i.short), 'unique');
+  const lf = T.popup(S, 'doc', 'wl', { ref: 'Box 1', amt: 37000 });
+  ok(lf.length === 1 && lf[0].amt === 37000 && lf[0].role === 'Source document', 'a document leaf opens its own document', 0, 0);
+  ok(T.popup(S, 'page', 'p1').length === 0, 'a page node opens nothing', 0, 0);
+  const f8812 = T.popup(S, 'row', 'f8812_14');
+  ok(f8812.length === 1 && f8812[0].role === 'Schedule form', 'Schedule 8812 line 14 opens the form replica', f8812.length, 1);
+  const bad = [];
+  for (const r of S.rows) for (const it of T.popup(S, 'row', r.id))
+    if (!it.title || !it.role || !it.ref || !fs.existsSync(path.join(dir, it.img))) bad.push(r.id);
+  ok(bad.length === 0, 'every pop-up item has a title, a role, a reference and an image that exists', bad, 'none');
 }
-ok(badRow === 0, 'every box cites the sheet row it came from', badRow, 0);
-ok(badRef === 0, 'and the nine reference letters match column A', badRef, 0);
-
-const extra = G.nodes.filter(nd => !SHEET.some(r => r[0] === nd.id));
-ok(extra.length === 0, 'and nothing was added that is not on the sheet',
-   extra.map(x => x.id).join(',') || 0, 0);
-
-/* The sheet's own scenario, reduced to its subtotals. */
-const S = flowCompute(flowSample());
-const WANT = { agi:106000, taxable:81000, tentative2:12627, totalTax:12627, dueOrRefund:2627 };
-for (const k of Object.keys(WANT)) ok(S[k] === WANT[k], 'row ' + G.byId[k].xl + ' — ' + k, S[k], WANT[k]);
-
-console.log('\nStructure:');
-ok(G.edges.length === 13, 'thirteen edges', G.edges.length, 13);
-ok(returnColumns().length === 7, 'seven columns', returnColumns().length, 7);
-ok(flowInputs().length === 9, 'nine boxes with nothing upstream', flowInputs().length, 9);
-
-/* "Nothing upstream" means no ARITHMETIC upstream. `tentative1` has the op-0
-   basis edge into it from taxable income and is still a figure you type — the
-   edge draws the dependency without claiming to compute it. */
-const typed = G.nodes
-  .filter(nd => !(G.into[nd.id] || []).some(e => e.op !== 0))
-  .map(nd => nd.id).sort();
-ok(typed.join(',') === flowInputs().slice().sort().join(','),
-   'and those nine are exactly the ones you type', typed.length, 9);
-ok((G.into.tentative1 || []).length === 1,
-   'tentative 1 is typed even though an edge reaches it', 1, 1);
-ok(G.nodes.filter(nd => nd.kind === 'input').length === 9, 'nine boxes styled as input',
-   G.nodes.filter(nd => nd.kind === 'input').length, 9);
-ok(G.nodes.filter(nd => nd.kind === 'calc').length === 4, 'four computed',
-   G.nodes.filter(nd => nd.kind === 'calc').length, 4);
-ok(G.nodes.filter(nd => nd.kind === 'result').length === 1, 'one answer',
-   G.nodes.filter(nd => nd.kind === 'result').length, 1);
-
-const sinks = G.nodes.filter(nd => !(G.outOf[nd.id] || []).length);
-ok(sinks.length === 1 && sinks[0].id === 'dueOrRefund', 'one sink, and it is row 59',
-   sinks.map(x => x.id).join(','), 'dueOrRefund');
-
-let notAdjacent = 0, backwards = 0;
-for (const e of G.edges){
-  const d = G.byId[e.to].col - G.byId[e.from].col;
-  if (d !== 1) notAdjacent++;
-  if (d < 0) backwards++;
-}
-ok(notAdjacent === 0, 'every edge joins neighbouring columns', notAdjacent, 0);
-ok(backwards === 0, 'so none can run right to left', backwards, 0);
-
-const noNote = G.nodes.filter(nd => !nd.note || nd.note.length < 60);
-ok(noNote.length === 0, 'every box explains itself in prose', noNote.length, 0);
-ok(Object.keys(returnKindLabels()).length === 3, 'three roles, all labelled',
-   Object.keys(returnKindLabels()).length, 3);
-
-/* One edge is deliberately not arithmetic. */
-const basis = G.edges.filter(e => e.op === 0);
-ok(basis.length === 1 && basis[0].from === 'taxable' && basis[0].to === 'tentative1',
-   'taxable income is the base for tax, not a term in it',
-   basis.map(e => e.from + '->' + e.to).join(','), 'taxable->tentative1');
-ok(G.sums.length === 5, 'so all five computed boxes are asserted as sums', G.sums.length, 5);
-ok(G.sums.filter(x => x.floored).length === 2, 'two of them carry the sheet’s MAX(0, …)',
-   G.sums.filter(x => x.floored).length, 2);
-
-console.log('\nThe arithmetic, swept:');
-/* 4 x 4 x 4 x 4 x 3 x 3 = 2,304 maps. The ranges are chosen to drive both
-   floors: deductions past AGI, and credits past the tax they offset. */
-let bad = 0, count = 0, hitTaxableFloor = 0, hitTentativeFloor = 0, sawRefund = 0, sawDue = 0;
-for (const gross of [0, 86760, 106000, 512000])
-for (const fa of [0, 7000, 23000, 60000])
-for (const fromA of [0, 14600, 25000, 600000])
-for (const t1 of [0, 13127, 48000, 150000])
-for (const nonref of [0, 500, 200000])
-for (const prepay of [0, 10000, 250000]){
-  const v = { grossIncome:String(gross), forAgi:String(fa), fromAgi:String(fromA),
-              tentative1:String(t1), otherTaxD:'0', nonrefundable:String(nonref),
-              otherTaxF:'0', refundable:'0', prepayments:String(prepay) };
-  const c = flowCompute(v);
-  const g = returnGraph(v);
-  count++;
-  if (c.agi !== c.grossIncome - c.forAgi) bad++;
-  if (c.taxable !== Math.max(0, c.agi - c.fromAgi)) bad++;
-  if (c.taxable < 0) bad++;
-  if (c.tentative2 !== Math.max(0, c.tentative1 + c.otherTaxD - c.nonrefundable)) bad++;
-  if (c.tentative2 < 0) bad++;
-  if (c.totalTax !== c.tentative2 + c.otherTaxF) bad++;
-  if (c.dueOrRefund !== c.totalTax - c.refundable - c.prepayments) bad++;
-  for (const s of g.sums) if (s.expected !== s.actual) bad++;
-  if (c.agi - c.fromAgi < 0) hitTaxableFloor++;
-  if (c.tentative1 + c.otherTaxD - c.nonrefundable < 0) hitTentativeFloor++;
-  if (c.dueOrRefund < 0) sawRefund++;
-  if (c.dueOrRefund > 0) sawDue++;
-}
-ok(bad === 0, count.toLocaleString('en-US') + ' maps: every box equals what flows in', bad + ' broke', 0);
-ok(hitTaxableFloor > 0, 'the sweep pushes deductions past AGI', hitTaxableFloor, '> 0');
-ok(hitTentativeFloor > 0, 'and credits past the tax they offset', hitTentativeFloor, '> 0');
-ok(sawRefund > 0 && sawDue > 0, 'and produces both refunds and balances due',
-   sawRefund + ' / ' + sawDue, 'both > 0');
-
-const empty = flowCompute(flowBlank());
-ok(Object.values(empty).every(x => typeof x === 'number' && isFinite(x)),
-   'an empty map is all finite zeroes', 'finite', 'finite');
-ok(flowHasFigures(flowBlank()) === false, 'and reports itself empty', false, false);
-ok(flowHasFigures(flowSample()) === true, 'the sample does not', true, true);
-
-console.log('\nGeometry:');
-/* The disclosure levels are gone — the map always shows all seven columns —
-   so this is one layout, not a sweep over seven. */
+console.log('filing status and dependents (the header):');
 {
-  const L = returnLayout(flowSample());
-  const pos = Object.fromEntries(L.nodes.map(p => [p.id, p]));
-  let overlap = 0, escaped = 0, dangling = 0;
-  for (let i = 0; i < L.nodes.length; i++){
-    const a = L.nodes[i];
-    if (a.x < 0 || a.y < 0 || a.x + L.nodeW > L.width || a.y + L.nodeH > L.height) escaped++;
-    for (let j = i + 1; j < L.nodes.length; j++){
-      const b = L.nodes[j];
-      if (a.x < b.x + L.nodeW && b.x < a.x + L.nodeW &&
-          a.y < b.y + L.nodeH && b.y < a.y + L.nodeH) overlap++;
-    }
-  }
-  for (const e of G.edges){
-    const a = pos[e.from], b = pos[e.to];
-    if (!a || !b) dangling++;
-    else if (!returnEdgePath(a, b, L.nodeW)) dangling++;
-  }
-  ok(L.nodes.length === 14, 'all fourteen boxes are placed', L.nodes.length, 14);
-  ok(L.cols.length === 7, 'and all seven columns', L.cols.length, 7);
-  ok(overlap === 0, 'no two boxes overlap', overlap, 0);
-  ok(escaped === 0, 'no box leaves the canvas', escaped, 0);
-  ok(dangling === 0, 'every edge joins two placed boxes', dangling, 0);
-  ok(returnLayout(flowSample()).cols.map(c => c.count).reduce((a, b) => a + b, 0) === 14,
-     'the column counts add up to the box count', 14, 14);
+  const CL = T.caseList();
+  const f = CL.tp2.filing;
+  ok(/married filing jointly/i.test(f.status), 'filing status is shown', f.status, 'Married filing jointly');
+  ok(f.filers.length === 2 && f.filers.every(p => p.name && /\d/.test(p.name)), 'both spouses are named with their ages', f.filers.length, 2);
+  ok(f.dependents.length === 1 && f.dependents[0].name && f.dependents[0].note, 'the dependent is described', f.dependents.length, 1);
+  ok(amt('l19') === f.dependents.length * 2200, 'the child tax credit equals one qualifying child', amt('l19'), 2200);
 }
-
-console.log('\nTracing:');
-const lin = returnLineage(G, 'dueOrRefund');
-ok(Object.keys(lin.up).length === 13, 'everything upstream of row 59 is reachable',
-   Object.keys(lin.up).length, 13);
-ok(Object.keys(returnLineage(G, 'dueOrRefund').down).length === 0, 'and nothing is downstream', 0, 0);
-ok(Object.keys(returnLineage(G, 'grossIncome').down).length === 6,
-   'gross income reaches the answer through six boxes',
-   Object.keys(returnLineage(G, 'grossIncome').down).length, 6);
-const det = returnDetail(flowSample(), G, 'tentative2');
-ok(det && det.from.length === 3 && det.to.length === 1,
-   'tentative 2 shows its three inputs and where it goes',
-   det.from.length + ' in / ' + det.to.length + ' out', '3 in / 1 out');
-ok(returnDetail(flowSample(), G, 'grossIncome').editable === true,
-   'an input box is editable from the panel', true, true);
-ok(returnDetail(flowSample(), G, 'agi').editable === false, 'a computed one is not', false, false);
-ok(returnDetail(flowSample(), G, 'nope') === null, 'an unknown id yields no detail', null, null);
-const desc = returnMapDescription(flowSample(), G, 'agi');
-ok(desc.includes('Comes from') && desc.includes('Lands on'),
-   'the spoken description traces both ways', true, true);
-
-console.log('\nA filed return is compared, never merged in:');
-const figs = sampleFigures();
-const adopted = flowAdopt(figs);
-ok(flowInputs().every(k => adopted[k] !== undefined),
-   'adopting a return fills all nine boxes', true, true);
-
-/* The rearrangement of the sheet's own arithmetic that makes this possible. */
-ok(adopted.grossIncome === '86760', 'gross income comes from line 11', adopted.grossIncome, '86760');
-ok(adopted.fromAgi === '14600', 'from AGI deductions = line 11 - line 15', adopted.fromAgi, '14600');
-ok(adopted.tentative1 === '10928', 'tentative 1 = line 24 + line 21', adopted.tentative1, '10928');
-ok(adopted.prepayments === '13040', 'prepayments = line 24 + line 35a', adopted.prepayments, '13040');
-
-const checks = flowChecks(adopted, figs);
-ok(checks.length === 8, 'eight figures are compared', checks.length, 8);
-const off = checks.filter(c => !c.agrees);
-ok(off.length === 0, 'and on this return every one agrees',
-   off.map(c => c.key + ' ' + c.delta).join(', ') || 0, 0);
-ok(checks.filter(c => c.key === 'dueOrRefund')[0].stated === -2112,
-   'a refund on line 35a reads as a negative balance',
-   checks.filter(c => c.key === 'dueOrRefund')[0].stated, -2112);
-ok(flowChecks(adopted, null).length === 0,
-   'with no return loaded there is nothing to compare', 0, 0);
-
-/* Every compared box must exist, or a click in the panel goes nowhere. */
-ok(checks.every(c => G.byId[c.key]), 'every comparison names a box that exists', true, true);
-
-/* The Figures tab is gone, so the review notes carry the amount boxes for the
-   read lines. Every comparison has to name which lines those are. */
-const specKeys = new Set(fieldSpec().map(f => f.key));
-ok(checks.every(c => Array.isArray(c.fields) && c.fields.length),
-   'every comparison names the read lines behind it', true, true);
-ok(checks.every(c => c.fields.every(k => specKeys.has(k))),
-   'and each is a real fieldSpec() key', true, true);
-const covered = new Set(checks.flatMap(c => c.fields));
-ok(covered.size === 9, 'all nine read lines stay correctable', covered.size, 9);
-ok(checks.filter(c => c.fields.length === 2).length === 1,
-   'gross income is the one comparison standing on two lines',
-   checks.filter(c => c.fields.length === 2).length, 1);
-
-/* The four boxes a 1040 cannot fill are assumed zero, and say so. */
-const assumed = flowAssumptions();
-ok(assumed.length === 4, 'four boxes are assumed zero', assumed.length, 4);
-ok(assumed.every(a => G.byId[a.key]), 'each names a real box', true, true);
-ok(assumed.every(a => parseAmount(adopted[a.key]) === 0), 'and each is in fact zero after adopting', true, true);
-ok(assumed.every(a => a.text && a.text.length > 30), 'each states why', true, true);
-
-const assumedKeys = assumed.map(a => a.key).sort().join(',');
-ok(assumedKeys === 'forAgi,otherTaxD,otherTaxF,refundable',
-   'and they are the four a 1040 face cannot reach', assumedKeys,
-   'forAgi,otherTaxD,otherTaxF,refundable');
-
-console.log('\nPlanning observations:');
-/* The planning block reads the map, not the return, so it works with nothing
-   loaded. Two of its five come straight off the sheet's MAX(0, …) floors —
-   the places an amount stops being worth anything — which is the same thing
-   the FLOOR 0 pills mark on the canvas. */
 {
-  ok(flowPlanning(flowBlank()).length === 0, 'an empty map suggests nothing',
-     flowPlanning(flowBlank()).length, 0);
-
-  const base = flowSample();
-  const onSample = flowPlanning(base);
-  ok(onSample.length > 0, 'the sample raises at least one', onSample.length, '> 0');
-  ok(onSample.every(o => o.id && o.title && o.text && o.context),
-     'every observation is complete', true, true);
-  ok(onSample.every(o => returnGraph(base).byId[o.node]),
-     'and each points at a box that exists', true, true);
-  ok(onSample.every(o => o.severity === 'hot' || o.severity === 'warm'),
-     'each carries a known severity', true, true);
-
-  /* deductions past AGI -> row 30's floor bites */
-  const overDed = Object.assign({}, base, { fromAgi: '9999999' });
-  const od = flowPlanning(overDed).filter(o => o.id === 'deductions-lost');
-  ok(od.length === 1, 'deductions past AGI are named', od.length, 1);
-  ok(flowCompute(overDed).taxable === 0, 'and taxable income floors at zero',
-     flowCompute(overDed).taxable, 0);
-
-  /* credits past the liability -> row 44's floor bites */
-  const overCr = Object.assign({}, base, { nonrefundable: '9999999' });
-  const oc = flowPlanning(overCr).filter(o => o.id === 'credits-lost');
-  ok(oc.length === 1, 'credits past the liability are named', oc.length, 1);
-  ok(flowCompute(overCr).tentative2 === 0, 'and tentative 2 floors at zero',
-     flowCompute(overCr).tentative2, 0);
-  ok(oc[0].node === 'nonrefundable', 'pointing at row 39', oc[0].node, 'nonrefundable');
-
-  /* self-employment tax sits outside that floor */
-  const seTax = Object.assign({}, base, { otherTaxF: '9000' });
-  ok(flowPlanning(seTax).some(o => o.id === 'outside-floor'),
-     'taxes outside the floor are named when credits exist', true, true);
-  ok(!flowPlanning(Object.assign({}, seTax, { nonrefundable: '0' }))
-        .some(o => o.id === 'outside-floor'),
-     'and not when there are no credits to strand', true, true);
-
-  /* the settlement, both ways */
-  ok(flowPlanning(base).some(o => o.id === 'underpaid'),
-     'a balance due is named', true, true);
-  const refund = Object.assign({}, base, { prepayments: '90000' });
-  ok(flowPlanning(refund).some(o => o.id === 'overpaid'), 'so is an overpayment', true, true);
-  ok(!flowPlanning(refund).some(o => o.id === 'underpaid'),
-     'and never both at once', true, true);
-
-  const noCred = Object.assign({}, base, { nonrefundable: '0', refundable: '0' });
-  ok(flowPlanning(noCred).some(o => o.id === 'no-credits'),
-     'an empty credit row is named', true, true);
-  ok(!flowPlanning(base).some(o => o.id === 'no-credits'),
-     'but not when a credit is present', true, true);
-
-  /* Nothing here may assert eligibility — the whole page turns on that. */
-  const all = [].concat(onSample, flowPlanning(overDed), flowPlanning(overCr),
-                        flowPlanning(seTax), flowPlanning(refund), flowPlanning(noCred));
-  const claims = all.filter(o => /you qualify|you are eligible|you should claim/i.test(o.text + ' ' + o.context));
-  ok(claims.length === 0, 'none of them asserts eligibility for anything', claims.length, 0);
-  const ids = all.map(o => o.id);
-  ok(new Set(ids).size <= 6, 'six rules at most', new Set(ids).size, '<= 6');
+  const tall = [];
+  for (const d of S.docs) { const h = fs.readFileSync(path.join(dir, d.img)).readUInt32BE(20); if (h > 1500 || h < 300) tall.push(d.id + ' ' + h); }
+  ok(tall.length === 0, 'every sample image is between 300 and 1500 px tall (the W-2s are about 1470)', tall, 'none');
 }
 
-console.log('\nThe year switch:');
-const years = flowYears();
-ok(years.length === 2, 'two years', years.length, 2);
-ok(years.filter(y => y.year === 2024)[0].extract === true, '2024 can read a return', true, true);
-ok(years.filter(y => y.year === 2025)[0].extract === false,
-   '2025 cannot — the form was renumbered', false, false);
-
+/* ======================================================================== 2. the reader, on synthetic pages */
+console.log('\n=== The reader ===');
+const clone = o => JSON.parse(JSON.stringify(o));
+/* a page laid out like an IRS form: a left line number, a label, dot leaders, the printed box, and the amount to its right */
+function pageOf(nPage, rows, extra = [], y0 = 450) {
+  const items = clone(extra);
+  let y = y0;
+  for (const r of rows) {
+    y += 14;
+    const yy = r.y !== undefined ? r.y : y;
+    if (r.left) items.push({ s: r.left, x: 42, y: yy, w: 8 });
+    items.push({ s: r.label, x: 65, y: yy, w: 200 });
+    for (let x = 300; x <= 460; x += 12) items.push({ s: '.', x, y: yy, w: 3 });
+    const by = r.boxDy ? yy + r.boxDy : yy;
+    if (r.box) items.push({ s: r.box, x: r.boxX || 489, y: by, w: 10 });
+    if (r.val !== undefined && r.val !== null) items.push({ s: String(r.val), x: r.valX || 541, y: by, w: 40 });
+  }
+  return { n: nPage, width: 612, height: 792, items };
+}
+const t = (s, x, y) => ({ s, x, y, w: 50 });
+function fixture(over = {}) {
+  const v = Object.assign({ wages: 102000, sch1income: 62000, totalincome: 164000, adjustments: 4380, agi: 159620, deduction: 31500, qbi: 11524,
+    totaldeductions: 43024, taxable: 116596, tax: 15479, ctc: 2200, credits: 2200, taxafter: 13279, othertaxes: 8760, totaltax: 22039,
+    withholding: 22600, payments: 22600, overpaid: 561, refund: 561, s1add: 62000, s1adj: 4380, s2total: 8760, s2se: 8760, schcnet: 62000,
+    sehalf: 4380, setax: 8760, f8995: 11524, f8812: 2200 }, over);
+  const p1 = pageOf(1, [
+    { left: 'z', label: 'Add lines 1a through 1h', box: '1z', val: v.wages },
+    { left: '7', label: 'Capital gain or (loss). Attach Schedule D if required. If not required, check here', box: '7' },
+    { left: '8', label: 'Additional income from Schedule 1, line 10', box: '8', val: v.sch1income },
+    { left: '9', label: 'Add lines 1z, 2b, 3b, 4b, 5b, 6b, 7, and 8. This is your total income', box: '9', val: v.totalincome },
+    { left: '10', label: 'Adjustments to income from Schedule 1, line 26', box: '10', val: v.adjustments },
+    { left: '11a', label: 'Subtract line 10 from line 9. This is your adjusted gross income', box: '11a', val: v.agi },
+    { left: '12e', label: 'Standard deduction or itemized deductions (from Schedule A)', box: '12e', val: v.deduction },
+    { left: '13a', label: 'Qualified business income deduction from Form 8995 or Form 8995-A', box: '13a', val: v.qbi },
+    { left: '14', label: 'Add lines 12e, 13a, and 13b', box: '14', val: v.totaldeductions },
+    { left: '15', label: 'Subtract line 14 from line 11. If zero or less, enter -0-. This is your taxable income', box: '15', val: v.taxable }
+  ], [t('Form 1040 U.S. Individual Income Tax Return 2025', 98, 54), t('Filing Status', 36, 208), t('x', 103, 219), t('Married filing jointly (even if only one had income)', 115, 219),
+      t('Single', 115, 208), t('Income', 36, 436), t('Child tax credit', 433, 374), t('Credit for other dependents', 499, 374), t('X', 454, 387)]);
+  const p2 = pageOf(2, [
+    { left: '16', label: 'Tax (see instructions). Check if any from Form(s): 1 8814 2 4972 3', box: '16', val: v.tax },
+    { left: '19', label: 'Child tax credit or credit for other dependents from Schedule 8812', box: '19', val: v.ctc },
+    { left: '21', label: 'Add lines 19 and 20', box: '21', val: v.credits },
+    { left: '22', label: 'Subtract line 21 from line 18. If zero or less, enter -0-', box: '22', val: v.taxafter },
+    { left: '23', label: 'Other taxes, including self-employment tax, from Schedule 2, line 21', box: '23', val: v.othertaxes },
+    { left: '24', label: 'Add lines 22 and 23. This is your total tax', box: '24', val: v.totaltax },
+    { left: '25d', label: 'Add lines 25a through 25c', box: '25d', val: v.withholding },
+    { left: '33', label: 'Add lines 25d, 26, and 32. These are your total payments', box: '33', val: v.payments },
+    { left: '34', label: 'If line 33 is more than line 24, subtract line 24 from line 33. This is the amount you overpaid', box: '34', val: v.overpaid },
+    { left: '35a', label: 'Amount of line 34 you want refunded to you.', box: '35a', val: v.refund },
+    { left: '37', label: 'Subtract line 33 from line 24. This is the amount you owe.', box: '37' }
+  ], [t('Form 1040 (2025)', 36, 30), t('Page', 552, 30), t('2', 570, 30), t('Refund', 36, 300), t('Sign Here', 36, 600)], 100);
+  const s1 = pageOf(3, [
+    { left: '3', label: 'Business income or (loss). Attach Schedule C', box: '3', val: v.schcnet },
+    { left: '10', label: 'Combine lines 1 through 7 and 9. This is your additional income. Enter here and on Form 1040, 1040-SR, or 1040-NR, line 8', box: '10', val: v.s1add, boxDy: 11 }
+  ], [t('SCHEDULE 1 (Form 1040) Additional Income and Adjustments to Income', 36, 44)], 100);
+  const s1b = pageOf(4, [
+    { left: '15', label: 'Deductible part of self-employment tax. Attach Schedule SE', box: '15', val: v.sehalf },
+    { left: '26', label: 'Add lines 11 through 23 and 25. These are your adjustments to income. Enter here and on Form 1040, 1040-SR, or 1040-NR, line 10', box: '26', val: v.s1adj, boxDy: 11 }
+  ], [t('Schedule 1 (Form 1040) 2025', 36, 44), t('Page', 552, 44), t('2', 570, 44), t('Part II Adjustments to Income', 36, 70)], 100);
+  const s2 = pageOf(5, [
+    { left: '4', label: 'Self-employment tax. Attach Schedule SE', box: '4', val: v.s2se },
+    { left: '21', label: 'Add lines 4, 7 through 16, 18, and 19. These are your total other taxes. Enter here and on Form 1040, line 23', box: '21', val: v.s2total, boxDy: 11 }
+  ], [t('SCHEDULE 2 (Form 1040) Additional Taxes', 36, 44)], 100);
+  const sc = pageOf(6, [
+    { left: '31', label: 'Net profit or (loss). Subtract line 30 from line 29.', box: '31', val: v.schcnet, boxDy: 22 }
+  ], [t('SCHEDULE C (Form 1040) Profit or Loss From Business (Sole Proprietorship)', 36, 44)], 100);
+  const se = pageOf(7, [
+    { left: '2', label: 'Net profit or (loss) from Schedule C, line 31, and Schedule K-1', box: '2', val: v.schcnet },
+    { left: '12', label: 'Self-employment tax. Add lines 10 and 11. Enter here and on Schedule 2 (Form 1040), line 4', box: '12', val: v.setax },
+    { left: '13', label: 'Deduction for one-half of self-employment tax.', box: '13', boxX: 395, boxDy: 24, val: v.sehalf, valX: 458 }
+  ], [t('SCHEDULE SE (Form 1040) Self-Employment Tax', 36, 44)], 100);
+  const f95 = pageOf(8, [
+    { left: '15', label: 'Qualified business income deduction. Enter the smaller of line 10 or line 14. Also enter this amount on the applicable line of your return', box: '15', val: v.f8995 }
+  ], [t('Form 8995 Qualified Business Income Deduction Simplified Computation', 36, 44)], 100);
+  const f88 = pageOf(9, [
+    { left: '14', label: 'Enter the smaller of line 12 or line 13. This is your child tax credit and credit for other dependents', box: '14', val: v.f8812 }
+  ], [t('SCHEDULE 8812 (Form 1040) Credits for Qualifying Children and Other Dependents', 36, 44)], 100);
+  const odd = { n: 10, width: 612, height: 792, items: [t('Wisconsin Department of Revenue', 36, 44), t('Schedule WD Capital Gains and Losses', 36, 60)] };
+  return [p1, p2, s1, s1b, s2, sc, se, f95, f88, odd];
 }
 
-console.log('\n' + (fail ? '**' + fail + ' FAILED**' : 'All checks passed.'));
+{
+  const info = T.rdAnalyze(clone(fixture()));
+  const cls = Object.fromEntries(info.pages.map(p => [p.n, p.form]));
+  ok(JSON.stringify(Object.values(cls)) === JSON.stringify(['f1040p1', 'f1040p2', 'sch1', 'sch1', 'sch2', 'schC', 'schSE', 'f8995', 'f8812', null]),
+    'every page is classified, and a state form is never taken for a federal one', Object.values(cls), 'f1040p1, f1040p2, sch1, sch1, sch2, schC, schSE, f8995, f8812, null');
+  const L = (fk, k) => info.forms[fk].lines[k];
+  ok(info.year === 2025, 'the tax year is read from the running head', info.year, 2025);
+  ok(L('f1040p1', 'agi').amt === 159620 && L('f1040p1', 'agi').ln === '11a', '2025 numbering: AGI is line 11a', L('f1040p1', 'agi'), { ln: '11a', amt: 159620 });
+  ok(L('f1040p1', 'deduction').ln === '12e' && L('f1040p1', 'qbi').ln === '13a', '2025 numbering: the deduction is 12e and the QBI deduction 13a', 0, 0);
+  ok(L('f1040p1', 'capgain').amt === null, 'a blank line is read as blank, not as zero', L('f1040p1', 'capgain'), null);
+  ok(L('f1040p1', 'wages').amt === 102000 && L('f1040p1', 'wages').ln === '1z', 'a sub-line (1z) is read by its label and its box', L('f1040p1', 'wages'), 102000);
+  ok(L('sch1', 'additional').amt === 62000, 'a wrapped label: the amount is on the box row one line down', L('sch1', 'additional'), 62000);
+  ok(L('sch1', 'adjtotal').amt === 4380 && L('sch1', 'setax').amt === 4380, 'schedule 1 part II is read from its second page', 0, 0);
+  ok(L('schC', 'net').amt === 62000, 'a label far above its box (Schedule C line 31)', L('schC', 'net'), 62000);
+  ok(L('schSE', 'half').amt === 4380 && L('schSE', 'half').ln === '13', 'a value in the inner column, two rows below its label (SE line 13)', L('schSE', 'half'), 4380);
+  ok(L('f1040p2', 'owed').amt === null && L('f1040p2', 'refund').amt === 561, 'refund read, amount owed blank', 0, 0);
+  ok(info.filing === 'married filing jointly', 'filing status is read from the marked box', info.filing, 'married filing jointly');
+  ok(info.deps && info.deps.ctc === 1 && info.deps.other === 0, 'dependents are counted from the marked boxes', info.deps, { ctc: 1, other: 0 });
+  ok(info.ids.total === 0, 'a redacted return carries no identifier-like values', info.ids, 0);
+}
+
+console.log('sub-lines and missing boxes:');
+{
+  /* Form 4797 line 18b: a lone letter at the margin, the box "18b" one row down; and a label whose own box is missing */
+  const p = pageOf(1, [
+    { left: '18', label: 'For all except individual returns, enter the amount from line 17 on the appropriate line of your return and skip lines' },
+    { left: 'b', label: 'Redetermine the gain or (loss) on line 17 excluding the loss, if any, on line 18a. Enter here and on Schedule 1', box: '18b', boxDy: 9, val: 16000 },
+    { left: '9', label: 'Subtract line 8 from line 7. If zero or less, enter -0-. If line 9 is zero, enter the gain', val: 179000, boxDy: 12 },
+    { left: '10', label: 'Combine lines 10 through 16', box: '10', val: 555 }
+  ], [t('Form 4797 Sales of Business Property', 36, 44)], 100);
+  const info = T.rdAnalyze(clone([p]));
+  const f = info.forms.f4797 && info.forms.f4797.lines;
+  ok(f && f.toSch1 && f.toSch1.amt === 16000 && f.toSch1.ln === '18b', 'a lone-letter sub-line (the "b" of 18b) finds its box', f && f.toSch1, { ln: '18b', amt: 16000 });
+  ok(f && f.ltcg && f.ltcg.amt === null, 'a label with no box of its own is blank, never a neighbouring line\'s amount', f && f.ltcg, null);
+}
+
+console.log('numbers and identifiers:');
+{
+  const R = T.rdNum;
+  ok(R('229000') === 229000 && R('1,234') === 1234 && R('$1,234.50') === 1234.5, 'plain, comma and dollar amounts', 0, 0);
+  ok(R('(5,000)') === -5000 && R('-5000') === -5000 && R('5000)') === -5000, 'negatives in parentheses or with a minus', 0, 0);
+  ok(R('-0-') === 0 && R('abc') === null && R('11a') === null && R('') === null, '"-0-" is zero; words and line numbers are not amounts', 0, 0);
+  const I = T.rdIdentifiers;
+  ok(I('SSN 123-45-6789').ssn === 1 && I('EIN 12-3456789').ein === 1 && I('acct 987654321').nineDigit === 1, 'SSN, EIN and nine-digit numbers are found', 0, 0);
+  ok(I('XXX-XX-6789 and 307545 and 1,234,567 and 229000.00').total === 0, 'masked identifiers and ordinary amounts are not flagged', I('XXX-XX-6789 and 307545 and 1,234,567'), 0);
+  ok(I('routing 123456789012').account === 1, 'a long account-style number is found', 0, 0);
+}
+
+console.log('building the return and cross-checking it:');
+{
+  const info = T.rdAnalyze(clone(fixture()));
+  const def = T.rdBuildReturn(info);
+  const checks = def.checks;
+  ok(checks.length >= 12 && checks.every(c => c.status !== 'diff'), 'a consistent return: every check ties', checks.filter(c => c.status === 'diff').map(c => c.name), 'none');
+  ok(checks.some(c => /Form 1040 line 8 equals Sch\. 1 line 10/.test(c.name)) && checks.some(c => /line 11a is total income less adjustments/.test(c.name)),
+    'the checks are named by the lines the form printed', checks.map(c => c.name).slice(0, 3), '...');
+  const M = model('upload', def);
+  const ids = def.rows.map(r => r.id);
+  ok(def.pages.map(p => p.id).join() === 'p1,p2,other', 'two Form 1040 pages and the pages that were not read', def.pages.map(p => p.id), 'p1,p2,other');
+  const p1rows = def.pages[0].rows;
+  ok(p1rows.includes('r_f1040p1_sch1income') && !p1rows.includes('r_f1040p1_capgain'), 'a blank line with nothing under it is left out of the tree', p1rows, '...');
+  const kids = T.children(M, 'r_f1040p1_sch1income').map(k => k.id);
+  ok(kids.includes('r_sch1_additional'), 'Schedule 1 line 10 sits under Form 1040 line 8', kids, 'r_sch1_additional');
+  const deep = T.children(M, 'r_sch1_additional').map(k => k.id);
+  ok(deep.includes('r_sch1_business') && T.children(M, 'r_sch1_business').map(k => k.id).includes('r_schC_net'), 'Schedule C line 31 sits under Schedule 1 line 3', deep, '...');
+  const nested = []; (function walk(id, depth) { for (const k of T.children(M, id)) { if (M.byId[k.id].form === '1040') nested.push(k.id); if (depth < 8) walk(k.id, depth + 1); } })('r_f1040p1_sch1income', 0);
+  ok(nested.length === 0, 'no Form 1040 line nests under another', nested, 'none');
+  const it = T.popup(M, 'row', 'r_f1040p1_agi');
+  ok(it.length === 1 && it[0].role === 'Your return' && it[0].img === 'pdf:1' && it[0].amt === 159620, 'a line opens its own page of the uploaded PDF', it, 'pdf:1');
+  const other = def.pages.find(p => p.id === 'other').docs;
+  ok(other.includes('pg10') && def.docs.find(d => d.id === 'pg10').note === 'Page of your PDF', 'an unrecognised page is listed so it can still be looked at', other, 'pg10');
+  ok(T.popup(M, 'doc', 'pg10', { read: true })[0].role === 'Your return', 'an unread page opens as a page of the return', 0, 0);
+  ok(M.rows.every(r => !r.parts && !r.given), 'uploaded rows hold what was read, not computed parts', 0, 0);
+  ok(M.byId.r_f1040p1_agi.amt === 159620 && M.byId.r_f1040p1_capgain === undefined, 'amounts come straight from the page', 0, 0);
+}
+{
+  const bad = T.rdAnalyze(clone(fixture({ s1add: 63000 })));
+  const def = T.rdBuildReturn(bad);
+  const diffs = def.checks.filter(c => c.status === 'diff');
+  ok(diffs.length === 1 && /line 8 equals Sch\. 1 line 10/.test(diffs[0].name) && diffs[0].a === 62000 && diffs[0].b === 63000,
+    'an injected mismatch (Schedule 1 says 63,000) is the only difference found', diffs.map(d => d.name + ' ' + d.a + '/' + d.b), 'one');
+  const flagged = def.rows.filter(r => r.flags).map(r => r.id).sort();
+  ok(flagged.join() === 'r_f1040p1_sch1income,r_sch1_additional', 'both lines of the mismatch are flagged in the tree', flagged, 'two rows');
+  const bad2 = T.rdBuildReturn(T.rdAnalyze(clone(fixture({ agi: 160000 }))));
+  ok(bad2.checks.some(c => c.status === 'diff' && /total income less adjustments/.test(c.name)), 'wrong arithmetic on Form 1040 is found', 0, 0);
+  const tol = T.rdBuildReturn(T.rdAnalyze(clone(fixture({ agi: 159621 }))));
+  ok(!tol.checks.some(c => c.status === 'diff' && /total income less adjustments/.test(c.name)), 'a $1 rounding difference is tolerated', 0, 0);
+}
+{
+  const missing = T.rdBuildReturn(T.rdAnalyze(clone(fixture().filter(p => p.n !== 3 && p.n !== 4))));
+  ok(!missing.checks.some(c => /Sch\. 1/.test(c.name)), 'a missing schedule is not compared (and not called a difference)', 0, 0);
+  const twice = fixture(); twice.push(Object.assign(clone(twice[5]), { n: 11 }));
+  const dup = T.rdBuildReturn(T.rdAnalyze(clone(twice)));
+  ok(dup.checks.some(c => c.status === 'skip' && /more than one/.test(c.note)), 'two Schedule Cs: the single-line comparison is skipped, with a reason', 0, 0);
+  const none = T.rdBuildReturn(T.rdAnalyze([{ n: 1, width: 612, height: 792, items: [t('Nothing to see here', 50, 50)] }]));
+  ok(none.rows.length === 0, 'a PDF with no Form 1040 yields no rows (the page says so)', none.rows.length, 0);
+}
+
+/* ======================================================================== 3. the page and its privacy design */
+console.log('\n=== The page ===');
+const sha = { sri: 'sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e', worker: 'sha384-SnzOobpRMLXZ52iJvZm/C0fYw0OQemTXzTjIsdsfMcrCtCEe9qgzxTd3RSklO5x2' };
+ok(src.includes(sha.sri) && src.includes(sha.worker), 'pdf.js and its worker are pinned to their digests', 0, 0);
+ok(src.includes('cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js') && src.includes('3.11.174/pdf.worker.min.js'), 'both come from the one pinned version', 0, 0);
+ok(/sc\.integrity = PDFJS\.sri/.test(src) && /crypto\.subtle\.digest\('SHA-384'/.test(src) && /workerDigest/.test(src), 'the script is loaded with integrity and the worker is hashed before use', 0, 0);
+ok((src.match(/\bfetch\(/g) || []).length === 1, 'the only fetch() is the pinned worker', (src.match(/\bfetch\(/g) || []).length, 1);
+ok(!/XMLHttpRequest|sendBeacon|WebSocket|EventSource|navigator\.share/.test(src.replace(/\/\*[\s\S]*?\*\//g, '')), 'no other way to send data off the page', 0, 0);
+ok(!/localStorage|sessionStorage|indexedDB|document\.cookie|caches\./.test(src.replace(/\/\*[\s\S]*?\*\//g, '')), 'nothing is stored: no local or session storage, IndexedDB, cookies or cache', 0, 0);
+ok(!/<form[\s>]/.test(src.replace(/\/\*[\s\S]*?\*\//g, '')) && !/action\s*=/.test(src), 'no form can post anything', 0, 0);
+ok(/MAX_BYTES = 25 \* 1024 \* 1024/.test(src) && /'%PDF-'/.test(src), 'a file size limit and a PDF signature check', 0, 0);
+ok(/info\.ids\.total > 0/.test(src) && /id="upFictional"/.test(src) && /id="upContinue"/.test(src), 'a return with identifier-like values is stopped until it is confirmed fictional', 0, 0);
+ok(/URL\.revokeObjectURL/.test(src) && /pdf\.destroy\(\)/.test(src) && /id="clearUpload"/.test(src), 'a user can remove their return, which frees the pages', 0, 0);
+ok(/id="fileIn"[^>]*accept="application\/pdf/.test(src), 'the file input accepts PDFs', 0, 0);
+ok(!/LearnerThree|Project #3|tp3/.test(src), 'the course solution return is not on the page', 'found', 'absent');
+ok(!/excel|workbook|toolbox|\.xlsx/i.test(src.replace(/\/\*[\s\S]*?\*\//g, '')), 'no reference to a spreadsheet', 'found', 'none');
+ok(/<a class="skip-link"/.test(src) && /aria-label="Primary"/.test(src), 'keeps the skip link and the primary nav', 0, 0);
+ok(/id="case-tp2"/.test(src) && /id="case-upload"[^>]*hidden/.test(src), 'the sample is offered, and the uploaded return only once there is one', 0, 0);
+ok(/popupMode:false/.test(src) && /function viewer\(spec, items\)/.test(src) && !/id="popToggle" checked/.test(src),
+  'documents unfold in place by default; the pop-up is the opt-in alternative', 0, 0);
+ok(/<dialog class="docdlg" id="docDlg"/.test(src) && /id="popToggle"/.test(src), 'the dialog and the pop-up switch are on the page', 0, 0);
+ok(/id="filing"/.test(src) && !/id="trace"|id="stats"|renderTrace|renderStats/.test(src), 'the filing block is there; the trace panel and summary figures are gone', 0, 0);
+
+console.log(`\n${fail ? fail + ' of ' + n + ' checks FAILED' : 'All checks passed (' + n + ').'}`);
 process.exit(fail ? 1 : 0);
