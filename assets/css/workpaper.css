@@ -1,0 +1,157 @@
+/* ==========================================================================
+   Workpaper kit: the pieces a tax professional expects around a calculator.
+   Shared by the interactive tools; see docs/workpaper-kit.md.
+
+     .wp-result    sticky result bar: verdict chip, one-line why, key figures
+     .wp-actions   Copy workpaper / Print / Copy link
+     .wp-insights  "What would change this" statements
+     .wp-table     the computation, line by line, each line with its authority
+     .wp-memo      plain-text workpaper (copied or printed)
+     .wp-msgs      validation messages
+     .wp-num       typed-number field that mirrors a slider
+
+   It reads the page's own tool tokens (--tool-surface, --page, --tool-ink,
+   --ink-soft, --ink-muted, --gridline, --border, --tool-accent) and defines
+   its own status colours, so no page needs to add anything.
+   ========================================================================== */
+
+:root{
+  --wp-ok:#2c6e49;   --wp-ok-bg:#e3f1e8;
+  --wp-warn:#8a5a0b; --wp-warn-bg:#fbf0dc;
+  --wp-bad:#a33a2e;  --wp-bad-bg:#f9e6e3;
+  --wp-info:#1f5f8b; --wp-info-bg:#e5eef6;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    --wp-ok:#7cc89a;   --wp-ok-bg:#183326;
+    --wp-warn:#e8b864; --wp-warn-bg:#33270f;
+    --wp-bad:#ef8e82;  --wp-bad-bg:#3a1d19;
+    --wp-info:#7db4dc; --wp-info-bg:#1b3043;
+  }
+}
+:root[data-theme="dark"]{
+  --wp-ok:#7cc89a;   --wp-ok-bg:#183326;
+  --wp-warn:#e8b864; --wp-warn-bg:#33270f;
+  --wp-bad:#ef8e82;  --wp-bad-bg:#3a1d19;
+  --wp-info:#7db4dc; --wp-info-bg:#1b3043;
+}
+
+/* ---- action buttons ---- */
+.wp-actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.wp-btn{
+  font:inherit; font-size:12.5px; padding:7px 12px; cursor:pointer;
+  color:var(--tool-ink); background:var(--tool-surface);
+  border:1px solid var(--border); border-radius:6px;
+}
+.wp-btn:hover{ border-color:var(--tool-accent); color:var(--tool-accent); }
+.wp-btn:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+.wp-btn.quiet{ background:transparent; color:var(--ink-soft); }
+.wp-btn[hidden]{ display:none; }
+.wp-status{ font-size:12px; color:var(--wp-ok); min-width:96px; }
+.wp-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; }
+.wp-head > :first-child{ flex:1 1 560px; min-width:0; }
+
+/* ---- sticky result bar ---- */
+.wp-result{
+  position:sticky; top:0; z-index:20;
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto; gap:20px; align-items:center;
+  background:var(--tool-surface); border:1px solid var(--border); border-radius:10px;
+  padding:14px 18px; margin:0 0 22px; box-shadow:0 6px 18px -12px rgba(0,0,0,.35);
+}
+.wp-verdict{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.wp-chip{
+  align-self:flex-start; font:600 12px "IBM Plex Sans",sans-serif; letter-spacing:.02em;
+  padding:4px 10px; border-radius:999px; border:1px solid transparent;
+}
+.wp-chip.ok{   background:var(--wp-ok-bg);   color:var(--wp-ok);   border-color:var(--wp-ok); }
+.wp-chip.warn{ background:var(--wp-warn-bg); color:var(--wp-warn); border-color:var(--wp-warn); }
+.wp-chip.bad{  background:var(--wp-bad-bg);  color:var(--wp-bad);  border-color:var(--wp-bad); }
+.wp-chip.info{ background:var(--wp-info-bg); color:var(--wp-info); border-color:var(--wp-info); }
+.wp-why{
+  margin:0; font-size:12.5px; line-height:1.45; color:var(--ink-soft);
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+}
+.wp-figs{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:16px; }
+.wp-fig .label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-muted); margin-bottom:2px; }
+.wp-fig .val{ font:600 24px/1.15 "IBM Plex Sans",sans-serif; font-variant-numeric:tabular-nums; color:var(--tool-ink); }
+.wp-fig .val.accent{ color:var(--tool-accent); }
+.wp-fig .val.small{ font-size:15px; font-weight:600; line-height:1.3; }
+.wp-fig .delta{ font-size:11.5px; color:var(--ink-muted); margin-top:3px; line-height:1.35; }
+.wp-pin{ display:flex; flex-direction:column; gap:6px; }
+@media (max-width:980px){
+  .wp-result{ position:static; grid-template-columns:1fr; gap:12px; }
+  .wp-pin{ flex-direction:row; }
+}
+@media (max-width:520px){ .wp-fig .val{ font-size:20px; } .wp-figs{ gap:10px; } }
+
+/* ---- typed number beside a slider ---- */
+.wp-num{ position:relative; margin:2px 0 4px; }
+.wp-num input{
+  width:100%; font:500 15px "IBM Plex Mono",ui-monospace,monospace; text-align:right;
+  color:var(--tool-ink); background:var(--page); border:1px solid var(--border);
+  border-radius:6px; padding:6px 9px 6px 22px; font-variant-numeric:tabular-nums;
+}
+.wp-num input:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:1px; }
+.wp-num .pre{ position:absolute; left:9px; top:50%; transform:translateY(-50%); font:500 14px "IBM Plex Mono",ui-monospace,monospace; color:var(--ink-muted); pointer-events:none; }
+.wp-num.pct input{ padding-left:9px; padding-right:22px; }
+.wp-num.pct .pre{ left:auto; right:9px; }
+
+.rail-top{ display:flex; gap:10px; align-items:flex-end; margin-bottom:16px; }
+.rail-top .sel{ flex:1; font-size:12px; color:var(--ink-soft); }
+.rail-top .sel span{ display:block; margin-bottom:3px; }
+.rail-top select{ width:100%; font:inherit; font-size:13px; padding:7px 8px; color:var(--tool-ink); background:var(--page); border:1px solid var(--border); border-radius:6px; }
+
+/* ---- validation messages ---- */
+.wp-msgs{ list-style:none; margin:10px 0 0; padding:0; font-size:12px; line-height:1.4; }
+.wp-msgs li{ margin:0 0 6px; padding-left:16px; position:relative; }
+.wp-msgs li::before{ position:absolute; left:0; font-weight:700; }
+.wp-msgs .err{ color:var(--wp-bad); }  .wp-msgs .err::before{ content:"✕"; }
+.wp-msgs .warn{ color:var(--wp-warn); } .wp-msgs .warn::before{ content:"!"; }
+
+/* ---- what would change this ---- */
+.wp-insights{ list-style:none; margin:10px 0 0; padding:0; display:grid; gap:8px; }
+.wp-insights li{ display:grid; grid-template-columns:22px 1fr; gap:10px; align-items:start; font-size:13.5px; line-height:1.5; color:var(--tool-ink); }
+.wp-insights i{
+  font:700 12px "IBM Plex Mono",ui-monospace,monospace; font-style:normal;
+  width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-top:1px;
+}
+.wp-insights .ok i{ background:var(--wp-ok-bg); color:var(--wp-ok); }
+.wp-insights .bad i{ background:var(--wp-bad-bg); color:var(--wp-bad); }
+.wp-insights .warn i{ background:var(--wp-warn-bg); color:var(--wp-warn); }
+.wp-insights .info i{ background:var(--wp-info-bg); color:var(--wp-info); }
+
+/* ---- the computation, line by line ---- */
+.wp-table-wrap{ overflow-x:auto; }
+.wp-table{ width:100%; border-collapse:collapse; font-size:13px; min-width:520px; }
+.wp-table caption{ text-align:left; font-size:12px; color:var(--ink-muted); padding:0 0 8px; }
+.wp-table th, .wp-table td{ text-align:left; padding:7px 10px; border-top:1px solid var(--gridline); vertical-align:baseline; }
+.wp-table thead th{ font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-muted); border-top:0; font-weight:600; }
+.wp-table td.n{ text-align:right; font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--tool-ink); }
+.wp-table td.c{ font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11.5px; color:var(--ink-muted); white-space:nowrap; }
+.wp-table tr.sub td{ color:var(--ink-muted); }
+.wp-table tr.key td{ font-weight:600; color:var(--tool-ink); }
+.wp-table tr.key td.n{ color:var(--tool-accent); }
+.wp-table tr.bind td:first-child::after{ content:" — the limit"; font-weight:600; color:var(--wp-warn); }
+.wp-table tr.bind td{ background:color-mix(in srgb, var(--wp-warn-bg) 55%, transparent); }
+
+/* ---- workpaper ---- */
+.wp-memo{
+  margin:0; padding:16px 18px; background:var(--page); border:1px solid var(--gridline); border-radius:8px;
+  font:12.5px/1.55 "IBM Plex Mono",ui-monospace,monospace; color:var(--tool-ink);
+  white-space:pre-wrap; overflow-x:auto;
+}
+.wp-memo:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+
+/* ---- print: the workpaper only ---- */
+@media print{
+  .topbar, .site-footer, .skip-link, .wp-head, details.sources, .wp-result, .layout, .footnote, .foot, .tooltip{ display:none !important; }
+  body, .app{ background:#fff !important; }
+  .app{ padding:0 !important; }
+  .panel.wp-workpaper{ border:0 !important; padding:0 !important; margin:0 !important; background:#fff !important; }
+  .panel.wp-workpaper .lede{ display:none; }
+  .wp-memo{ background:#fff; color:#000; border:0; padding:0; font-size:11pt; white-space:pre-wrap; }
+}
+
+.wp-table .subline{ font-size:11px; font-weight:400; color:var(--ink-muted); font-family:"IBM Plex Sans",sans-serif; white-space:normal; line-height:1.35; }
+.wp-table td{ min-width:0; }
+.wp-table td:first-child{ min-width:210px; }

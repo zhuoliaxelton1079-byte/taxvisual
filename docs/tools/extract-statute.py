@@ -35,6 +35,7 @@ class Node(object):
         self.num = ''
         self.heading = ''
         self.text = []
+        self.tail = []   # continuation text that follows the sub-provisions
         self.kids = []
 
 
@@ -51,6 +52,7 @@ class UscParser(HTMLParser):
         self.in_text_div = False
         self.text_div_depth = 0
         self.tagdepth = 0
+        self.cap_depth = 0   # depth of the element that opened the current capture
 
     def _classes(self, attrs):
         return (dict(attrs).get('class') or '').split()
@@ -77,15 +79,17 @@ class UscParser(HTMLParser):
                 self.stack.append(n)
                 self.depth.append(self.tagdepth)
                 return
+            if 'continuation' in cls:
+                self._flush(); self.capture = 'tail'; self.cap_depth = self.tagdepth; return
             if 'content' in cls:
-                self._flush(); self.capture = 'text'; return
+                self._flush(); self.capture = 'text'; self.cap_depth = self.tagdepth; return
         if tag == 'span':
             if 'num' in cls:
-                self._flush(); self.capture = 'num'; return
+                self._flush(); self.capture = 'num'; self.cap_depth = self.tagdepth; return
             if 'heading' in cls:
-                self._flush(); self.capture = 'heading'; return
+                self._flush(); self.capture = 'heading'; self.cap_depth = self.tagdepth; return
             if 'chapeau' in cls:
-                self._flush(); self.capture = 'text'; return
+                self._flush(); self.capture = 'text'; self.cap_depth = self.tagdepth; return
 
     def handle_endtag(self, tag):
         if tag == 'br':
@@ -98,7 +102,9 @@ class UscParser(HTMLParser):
                 self._flush()
                 self.stack.pop()
                 self.depth.pop()
-            elif self.capture and tag in ('div', 'span'):
+            elif self.capture and self.tagdepth == self.cap_depth:
+                # only the element that opened the capture closes it; an inline
+                # <span class="date"> or <a> inside the text must not end it
                 self._flush()
         self.tagdepth -= 1
 
@@ -125,6 +131,8 @@ class UscParser(HTMLParser):
                 node.num = s
             elif self.capture == 'heading':
                 node.heading = s
+            elif self.capture == 'tail':
+                node.tail.append(s)
             else:
                 node.text.append(s)
         self.capture = None
@@ -201,6 +209,9 @@ def render(node, out, level=0):
             out.append('%s  <p>%s</p>' % (pad, ' '.join(head)))
         if kid.kids:
             render(kid, out, level + 1)
+        tail = ' '.join(kid.tail).strip()
+        if tail:
+            out.append('%s  <p><span class="lv-t">%s</span></p>' % (pad, html.escape(tail)))
         out.append('%s</div>' % pad)
 
 
