@@ -1,0 +1,1582 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home-Sale Exclusion (§121) | TaxVisual</title>
+<meta name="description" content="Decision tree and simulation of the §121 home-sale gain exclusion, including the reduced exclusion.">
+<link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<link rel="stylesheet" href="../../assets/css/components.css">
+<style>
+  /* Prototype: tree + chart in one page. Tool-scoped tokens; tree colours are --t-*. */
+  :root{
+    color-scheme: light;
+    --tool-surface:#fcfcfb; --page:#f9f9f7; --tool-ink:#0b0b0b;
+    --ink-soft:#52514e; --ink-muted:#75736e; --gridline:#e1e0d9; --baseline:#c3c2b7;
+    --border:rgba(11,11,11,0.10); --tool-accent:#2a78d6; --fill-strong:#2a78d6;
+    --step-3:#5a84b5; --step-4:#86b6ef; --neutral:#8a8a8a;
+    --t-bg:#f5f7f9; --t-panel:#ffffff; --t-ink:#18232e; --t-muted:#5a6876; --t-line:#d6dde4;
+    --t-accent:#1f5f8b; --t-accent-bg:#e5eef6;
+    --t-ok:#2c6e49; --t-ok-bg:#e3f1e8; --t-warn:#8a5a0b; --t-warn-bg:#fbf0dc; --t-warn-line:#e2c48b;
+    --t-bad:#a33a2e; --t-bad-bg:#f9e6e3;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --tool-surface:#1a1a19; --page:#0d0d0d; --tool-ink:#ffffff;
+      --ink-soft:#c3c2b7; --ink-muted:#898781; --gridline:#2c2c2a; --baseline:#383835;
+      --border:rgba(255,255,255,0.10); --tool-accent:#3987e5; --fill-strong:#3987e5;
+      --step-3:#8dacd1; --step-4:#cce1fa; --neutral:#808080;
+      --t-bg:#0f151b; --t-panel:#17202a; --t-ink:#e4ebf1; --t-muted:#9aa8b5; --t-line:#2b3744;
+      --t-accent:#7db4dc; --t-accent-bg:#1b3043;
+      --t-ok:#7cc89a; --t-ok-bg:#183326; --t-warn:#e8b864; --t-warn-bg:#33270f; --t-warn-line:#6b5222;
+      --t-bad:#ef8e82; --t-bad-bg:#3a1d19;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --tool-surface:#1a1a19; --page:#0d0d0d; --tool-ink:#ffffff;
+    --ink-soft:#c3c2b7; --ink-muted:#898781; --gridline:#2c2c2a; --baseline:#383835;
+    --border:rgba(255,255,255,0.10); --tool-accent:#3987e5; --fill-strong:#3987e5;
+    --step-3:#8dacd1; --step-4:#cce1fa; --neutral:#808080;
+    --t-bg:#0f151b; --t-panel:#17202a; --t-ink:#e4ebf1; --t-muted:#9aa8b5; --t-line:#2b3744;
+    --t-accent:#7db4dc; --t-accent-bg:#1b3043;
+    --t-ok:#7cc89a; --t-ok-bg:#183326; --t-warn:#e8b864; --t-warn-bg:#33270f; --t-warn-line:#6b5222;
+    --t-bad:#ef8e82; --t-bad-bg:#3a1d19;
+  }
+
+  * { box-sizing: border-box; }
+  body{ margin:0; background: var(--page); }
+  .app{ background:var(--page); color:var(--tool-ink); font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; padding:28px 16px 40px; }
+  .wrap{ max-width:1100px; margin:0 auto; }
+  .proto{ background:var(--t-warn-bg); color:var(--t-warn); border:1px solid var(--t-warn-line); border-radius:8px; padding:8px 12px; font-size:12.5px; margin:0 0 18px; }
+  .masthead{ display:flex; flex-direction:column; gap:8px; padding-bottom:20px; margin-bottom:24px; border-bottom:1px solid var(--border); }
+  .kicker{ font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-muted); }
+  .app h1{ font-family:"IBM Plex Serif",Georgia,serif; font-weight:600; font-size:clamp(24px,3.4vw,32px); margin:2px 0 0; text-wrap:balance; color:var(--tool-ink); }
+  .standfirst{ font-size:15px; color:var(--ink-soft); margin:0; line-height:1.55; max-width:70ch; }
+
+  .layout{ display:grid; grid-template-columns:300px minmax(0,1fr); gap:28px; align-items:start; }
+  @media (max-width:860px){ .layout{ grid-template-columns:minmax(0,1fr); } }
+  .rail{ background:var(--tool-surface); border:1px solid var(--border); border-radius:10px; padding:20px; position:sticky; top:16px; }
+  @media (max-width:860px){ .rail{ position:static; } }
+  .rail h2{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-muted); margin:0 0 12px; font-weight:600; font-family:inherit; }
+  .seg{ display:flex; gap:4px; margin-bottom:16px; }
+  .seg button{ flex:1; font:inherit; font-size:12.5px; padding:8px 4px; background:transparent; color:var(--ink-soft); border:1px solid var(--border); border-radius:6px; cursor:pointer; }
+  .seg button[aria-pressed="true"]{ background:var(--tool-accent); color:#fff; border-color:var(--tool-accent); }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:2px; }
+  .field .amount{ font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:15px; font-weight:500; font-variant-numeric:tabular-nums; }
+  .field input[type="number"]{ width:100%; font:500 15px "IBM Plex Mono",ui-monospace,monospace; color:var(--tool-ink); background:var(--page); border:1px solid var(--border); border-radius:6px; padding:7px 9px; }
+  .field input[type="range"]{ width:100%; margin:4px 0 0; accent-color:var(--tool-accent); }
+  .check{ display:flex; gap:8px; align-items:flex-start; font-size:12.5px; color:var(--ink-soft); line-height:1.4; margin-bottom:12px; }
+  .check input{ margin-top:2px; accent-color:var(--tool-accent); }
+  .check[hidden]{ display:none; }
+  .presets{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+  .presets button, .toolbar button{ font:inherit; font-size:12px; padding:5px 10px; color:var(--ink-soft); background:transparent; border:1px solid var(--border); border-radius:6px; cursor:pointer; }
+  .presets button:hover, .toolbar button:hover{ border-color:var(--tool-accent); color:var(--tool-accent); }
+  .err{ color:var(--t-bad); font-size:12px; margin:0 0 10px; }
+  .stats{ border-top:1px solid var(--border); margin-top:18px; padding-top:16px; display:grid; gap:14px; }
+  .stat .label{ font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-muted); margin-bottom:2px; }
+  .stat .value{ font-size:26px; font-weight:600; line-height:1.1; }
+  .stat .value.accent{ color:var(--tool-accent); }
+  .stat .value.small{ font-size:14px; font-weight:500; line-height:1.4; }
+  .stat .sub{ font-size:11.5px; color:var(--ink-muted); margin-top:3px; line-height:1.4; }
+
+  .panel{ background:var(--tool-surface); border:1px solid var(--border); border-radius:10px; padding:20px 20px 18px; margin-bottom:22px; }
+  .panel h3{ font-family:"IBM Plex Serif",Georgia,serif; font-size:18px; font-weight:600; margin:0 0 4px; color:var(--tool-ink); }
+  .panel .lede{ font-size:13px; color:var(--ink-soft); margin:0 0 14px; line-height:1.5; max-width:66ch; }
+  .chart-scroll{ overflow-x:auto; overflow-y:hidden; }
+  .chart-scroll:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .chart-shell{ min-width:600px; }
+  .chart-shell svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .axis-text{ font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; fill:var(--ink-muted); }
+  .lbl{ font-family:"IBM Plex Sans",sans-serif; font-size:11.5px; font-weight:600; fill:var(--ink-soft); }
+  .lbl.strong{ fill:var(--tool-ink); }
+  .grid-line{ stroke:var(--gridline); stroke-width:1; }
+  .base-line{ stroke:var(--baseline); stroke-width:1; }
+  .ln{ fill:none; stroke-linejoin:round; stroke-linecap:round; transition:opacity 120ms; }
+  .ln-cap{ stroke:var(--ink-muted); stroke-width:1.5; }
+  .ln-exc{ stroke:var(--fill-strong); stroke-width:3; }
+  .ln-gain{ stroke:var(--step-3); stroke-width:1.5; }
+  .ln.bind{ stroke-width:3.5; }
+  .ln-cap.bind{ stroke:var(--tool-ink); }
+  .mk{ fill:var(--tool-ink); stroke:var(--tool-surface); stroke-width:2; }
+  .mk-guide{ stroke:var(--tool-ink); stroke-width:1; }
+  svg[data-hl-active] [data-hl]{ opacity:.22; }
+  svg[data-hl-active="B"] [data-hl="B"], svg[data-hl-active="C"] [data-hl="C"], svg[data-hl-active="D"] [data-hl="D"]{ opacity:1; }
+  .chart-note{ font-size:12px; color:var(--ink-muted); margin:10px 0 0; }
+  .bar{ display:flex; gap:2px; height:22px; margin-top:6px; }
+  .bar span{ min-width:0; border-radius:3px; }
+  .legend{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px 22px; margin-top:12px; }
+  .legend-item{ display:flex; gap:7px; align-items:flex-start; font-size:12px; color:var(--ink-soft); }
+  .legend-swatch{ width:11px; height:11px; border-radius:3px; flex:none; margin-top:3px; }
+  .legend-item b{ display:block; color:var(--tool-ink); font-family:"IBM Plex Mono",ui-monospace,monospace; font-weight:500; font-size:13px; }
+
+  .toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 12px; }
+  .key{ display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--t-muted); margin-left:auto; }
+  .key span::before{ content:""; display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:-1px; background:var(--c); }
+  .path-note{ font-size:12.5px; color:var(--ink-soft); margin:0 0 12px; }
+
+  /* ---- tree (ported from the standalone page; scoped and renamed) ---- */
+  .tree,.tree ul{ list-style:none; margin:0; padding:0; }
+  .tree ul{ margin-left:8px; padding-left:14px; border-left:1px solid var(--t-line); }
+  .tree li{ position:relative; margin:8px 0; transition:opacity 150ms; }
+  .tree ul>li::before{ content:""; position:absolute; left:-14px; top:20px; width:10px; border-top:1px solid var(--t-line); }
+  .tree li.dim{ opacity:.42; }
+  .tree li.dim li.dim{ opacity:1; }
+  details.node{ background:var(--t-panel); border:1px solid var(--t-line); border-radius:10px; }
+  details.node>summary{ list-style:none; cursor:pointer; display:flex; gap:12px; align-items:flex-start; padding:12px 14px; }
+  details.node>summary::-webkit-details-marker{ display:none; }
+  details.node>summary:focus-visible, .toolbar button:focus-visible, .presets button:focus-visible, .seg button:focus-visible, input:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .badge{ flex:none; min-width:28px; height:28px; padding:0 6px; border-radius:14px; display:flex; align-items:center; justify-content:center; font:600 13px "IBM Plex Mono",ui-monospace,monospace; background:var(--t-accent-bg); color:var(--t-accent); }
+  details.node.on>summary .badge{ background:var(--t-accent); color:var(--t-panel); }
+  details.node.on{ border-color:var(--t-accent); }
+  details.node.side>summary .badge{ background:var(--t-warn-bg); color:var(--t-warn); }
+  details.node.side.on>summary .badge{ background:var(--t-warn); color:var(--t-panel); }
+  details.node.side{ border-color:var(--t-warn-line); }
+  details.node.side.on{ border-color:var(--t-warn); }
+  .qtext{ flex:1; min-width:0; }
+  .qtext strong{ display:block; font-weight:600; line-height:1.4; color:var(--t-ink); }
+  .cite{ font:400 12px "IBM Plex Mono",ui-monospace,monospace; color:var(--t-accent); }
+  .chev{ flex:none; width:18px; height:18px; margin-top:5px; color:var(--t-muted); transition:transform .15s; }
+  details[open]>summary .chev{ transform:rotate(180deg); }
+  .body{ padding:0 14px 14px 54px; color:var(--t-muted); font-size:14px; }
+  .body p{ margin:0 0 8px; max-width:68ch; }
+  .body b{ color:var(--t-ink); font-weight:600; }
+  .law{ margin:0 0 12px; padding:12px 14px; background:var(--t-bg); border:1px solid var(--t-line); border-radius:8px; font:400 14.5px/1.65 "IBM Plex Serif",Georgia,serif; color:var(--t-ink); }
+  .law .src{ display:block; font:500 12px "IBM Plex Mono",ui-monospace,monospace; color:var(--t-accent); text-decoration:none; margin-bottom:6px; }
+  .law .src:hover{ text-decoration:underline; }
+  .law ol{ margin:6px 0 0; padding-left:26px; }
+  .law b{ font-weight:600; }
+  .plain{ font-size:14px; color:var(--t-muted); margin:0; }
+  .plain span{ display:block; font:500 11px "IBM Plex Mono",ui-monospace,monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--t-ok); margin-bottom:2px; }
+  .node.side .law{ border-color:var(--t-warn-line); }
+  .leaf{ display:flex; gap:10px; align-items:baseline; padding:8px 12px; border-radius:8px; font-size:14px; border:1px solid transparent; }
+  .leaf .ans{ flex:none; font:600 12px "IBM Plex Mono",ui-monospace,monospace; text-transform:uppercase; letter-spacing:.04em; padding:2px 7px; border-radius:4px; }
+  .leaf.ok{ background:var(--t-ok-bg); color:var(--t-ok); } .leaf.ok .ans{ background:var(--t-panel); color:var(--t-ok); }
+  .leaf.bad{ background:var(--t-bad-bg); color:var(--t-bad); } .leaf.bad .ans{ background:var(--t-panel); color:var(--t-bad); }
+  .leaf.warn{ background:var(--t-warn-bg); color:var(--t-warn); } .leaf.warn .ans{ background:var(--t-panel); color:var(--t-warn); }
+  .leaf.next{ background:transparent; border-color:var(--t-line); color:var(--t-muted); } .leaf.next .ans{ background:var(--t-accent-bg); color:var(--t-accent); }
+  .leaf a{ color:inherit; font-weight:600; text-underline-offset:3px; }
+  .leaf.taken{ box-shadow:0 0 0 2px currentColor; }
+  .leaf.final::after{ content:"your result"; margin-left:auto; flex:none; font:600 10.5px "IBM Plex Mono",ui-monospace,monospace; letter-spacing:.06em; text-transform:uppercase; }
+  .branch-head{ font:600 13px "IBM Plex Mono",ui-monospace,monospace; color:var(--t-warn); text-transform:uppercase; letter-spacing:.05em; margin:26px 0 4px; transition:opacity 150ms; }
+  .branch-sub{ color:var(--t-muted); font-size:14px; margin:0 0 10px; transition:opacity 150ms; }
+  .branch-head.dim,.branch-sub.dim{ opacity:.42; }
+  .law .q{ margin:6px 0 0; }
+  .law .q-1{ margin-left:18px; } .law .q-2{ margin-left:36px; } .law .q-3{ margin-left:54px; }
+  .law .q-n{ font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:13px; color:var(--t-accent); }
+  details.sources{ padding:0; overflow:hidden; }
+  details.sources > summary{ list-style:none; cursor:pointer; padding:16px 20px; display:flex; align-items:baseline; gap:11px; flex-wrap:wrap; font-family:"IBM Plex Serif",Georgia,serif; font-size:17px; font-weight:600; color:var(--tool-ink); }
+  details.sources > summary::-webkit-details-marker{ display:none; }
+  details.sources > summary::before{ content:''; width:7px; height:7px; flex:none; align-self:center; border-right:2px solid var(--tool-accent); border-bottom:2px solid var(--tool-accent); transform:rotate(-45deg); transition:transform 160ms ease; }
+  details.sources[open] > summary::before{ transform:rotate(45deg); }
+  details.sources > summary:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
+  .summary-hint{ font-family:"IBM Plex Sans",sans-serif; font-size:12.5px; font-weight:400; color:var(--ink-muted); }
+  .sources-body{ padding:0 20px 20px; }
+  .sources-body p{ font-size:13px; color:var(--ink-soft); line-height:1.6; max-width:70ch; margin:0 0 14px; }
+  .sources-body a{ color:var(--tool-accent); }
+  .statute{ max-height:430px; overflow-y:auto; border:1px solid var(--gridline); border-radius:8px; padding:16px 18px; background:var(--page); font-size:13px; line-height:1.62; color:var(--ink-soft); }
+  .statute:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .statute .lv{ margin-left:16px; }
+  .statute > .lv{ margin-left:0; margin-top:14px; }
+  .statute .lv > p{ margin:0 0 7px; max-width:none; font-size:13px; line-height:1.62; }
+  .statute .lv-n{ font-family:"IBM Plex Mono",ui-monospace,monospace; font-weight:500; color:var(--tool-ink); }
+  .statute .lv-h{ font-weight:600; color:var(--tool-ink); }
+  .statute-head{ font-family:"IBM Plex Sans",sans-serif; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-muted); margin:22px 0 10px; padding-top:16px; border-top:1px solid var(--gridline); }
+  .statute-head:first-child{ margin-top:0; padding-top:0; border-top:none; }
+  .foot{ margin-top:22px; font-size:12px; color:var(--ink-muted); border-top:1px solid var(--border); padding-top:14px; max-width:80ch; }
+  @media (max-width:480px){ .body{ padding-left:14px; } .tree ul{ margin-left:3px; padding-left:9px; } .tree ul>li::before{ left:-9px; width:7px; } }
+  @media (prefers-reduced-motion:reduce){ .app *{ transition:none !important; } }
+
+  /* ============ v2: professional workpaper layout ============ */
+  .wrap{ max-width:1180px; }
+  .masthead{ flex-direction:row; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; }
+  .mast-text{ display:flex; flex-direction:column; gap:8px; flex:1 1 560px; min-width:0; }
+  .actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .actions button, .pin button, .quiet{ font:inherit; font-size:12.5px; padding:7px 12px; color:var(--tool-ink); background:var(--tool-surface); border:1px solid var(--border); border-radius:6px; cursor:pointer; }
+  .actions button:hover, .pin button:hover, .quiet:hover{ border-color:var(--tool-accent); color:var(--tool-accent); }
+  .actions button:focus-visible, .pin button:focus-visible, .quiet:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .quiet{ background:transparent; color:var(--ink-soft); }
+  .quiet.small{ font-size:12px; padding:4px 8px; margin-top:6px; }
+  .act-status{ font-size:12px; color:var(--t-ok); min-width:96px; }
+
+  /* sticky result bar */
+  .result{ position:sticky; top:0; z-index:20; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1.6fr) auto; gap:20px; align-items:center;
+    background:var(--tool-surface); border:1px solid var(--border); border-radius:10px; padding:14px 18px; margin:0 0 22px;
+    box-shadow:0 6px 18px -12px rgba(0,0,0,.35); }
+  .verdict{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .chip{ align-self:flex-start; font:600 12px "IBM Plex Sans",sans-serif; letter-spacing:.02em; padding:4px 10px; border-radius:999px; border:1px solid transparent; }
+  .chip.ok{ background:var(--t-ok-bg); color:var(--t-ok); border-color:var(--t-ok); }
+  .chip.warn{ background:var(--t-warn-bg); color:var(--t-warn); border-color:var(--t-warn); }
+  .chip.bad{ background:var(--t-bad-bg); color:var(--t-bad); border-color:var(--t-bad); }
+  .chip.info{ background:var(--t-accent-bg); color:var(--t-accent); border-color:var(--t-accent); }
+  .why{ margin:0; font-size:12.5px; line-height:1.45; color:var(--ink-soft); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .figs{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+  .fig .label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-muted); margin-bottom:2px; }
+  .fig .val{ font:600 26px/1.1 "IBM Plex Sans",sans-serif; font-variant-numeric:tabular-nums; }
+  .fig .val.accent{ color:var(--tool-accent); }
+  .fig .delta{ font-size:11.5px; color:var(--ink-muted); margin-top:3px; line-height:1.35; }
+  .pin{ display:flex; flex-direction:column; gap:6px; }
+  .pin button[hidden]{ display:none; }
+  @media (max-width:980px){ .result{ position:static; grid-template-columns:1fr; gap:12px; } .pin{ flex-direction:row; } }
+  @media (max-width:520px){ .fig .val{ font-size:21px; } .figs{ gap:10px; } }
+
+  /* rail */
+  .rail{ padding:16px 18px 18px; max-height:calc(100vh - 120px); overflow-y:auto; top:96px; }
+  @media (max-width:980px){ .rail{ max-height:none; top:auto; } }
+  .rail-top{ display:flex; gap:10px; align-items:flex-end; margin-bottom:14px; }
+  .sel{ flex:1; font-size:12px; color:var(--ink-soft); }
+  .sel span{ display:block; margin-bottom:3px; }
+  .sel select{ width:100%; font:inherit; font-size:13px; padding:7px 8px; color:var(--tool-ink); background:var(--page); border:1px solid var(--border); border-radius:6px; }
+  fieldset{ border:0; border-top:1px solid var(--border); margin:0; padding:12px 0 2px; min-width:0; }
+  legend{ padding:0 0 8px; font-size:10.5px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-muted); }
+  .seg{ margin-bottom:12px; }
+  .seg button{ font-size:12px; padding:7px 3px; line-height:1.2; }
+  .field{ margin-bottom:12px; }
+  .field > label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:3px; }
+  .field .opt{ color:var(--ink-muted); }
+  .field input[type="date"], .field input[type="text"]{ width:100%; font:500 13.5px "IBM Plex Mono",ui-monospace,monospace; color:var(--tool-ink); background:var(--page); border:1px solid var(--border); border-radius:6px; padding:7px 9px; min-width:0; }
+  .field.money{ position:relative; }
+  .field.money input{ padding-left:22px; text-align:right; }
+  .field.money .pre{ position:absolute; left:9px; bottom:8px; font:500 13.5px "IBM Plex Mono",ui-monospace,monospace; color:var(--ink-muted); }
+  .range{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:6px; align-items:center; margin-bottom:6px; }
+  .range[hidden]{ display:none; }
+  .range span{ font-size:11.5px; color:var(--ink-muted); }
+  .range input[type="date"]{ font-size:12.5px; padding:7px 6px; }
+  .field input:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:1px; }
+  .msgs{ list-style:none; margin:10px 0 0; padding:0; font-size:12px; line-height:1.4; }
+  .msgs li{ margin:0 0 6px; padding-left:16px; position:relative; }
+  .msgs li::before{ position:absolute; left:0; font-weight:700; }
+  .msgs .err{ color:var(--t-bad); } .msgs .err::before{ content:"✕"; }
+  .msgs .warn{ color:var(--t-warn); } .msgs .warn::before{ content:"!"; }
+
+  /* insights */
+  .insights{ list-style:none; margin:10px 0 0; padding:0; display:grid; gap:8px; }
+  .insights li{ display:grid; grid-template-columns:22px 1fr; gap:10px; align-items:start; font-size:13.5px; line-height:1.5; color:var(--tool-ink); }
+  .insights i{ font:700 12px "IBM Plex Mono",ui-monospace,monospace; font-style:normal; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .insights .ok i{ background:var(--t-ok-bg); color:var(--t-ok); }
+  .insights .bad i{ background:var(--t-bad-bg); color:var(--t-bad); }
+  .insights .warn i{ background:var(--t-warn-bg); color:var(--t-warn); }
+  .insights .info i{ background:var(--t-accent-bg); color:var(--t-accent); }
+
+  /* timeline */
+  .tl-track{ fill:var(--gridline); opacity:.55; }
+  .tl-own{ fill:var(--step-3); }
+  .tl-use{ fill:var(--fill-strong); }
+  .tl-nq{ fill:var(--neutral); }
+  .tl-look{ stroke:var(--ink-muted); stroke-width:1; opacity:.8; }
+  .tl-sale{ stroke:var(--tool-ink); stroke-width:1.5; }
+  .tl-prior{ fill:var(--tool-ink); }
+
+  /* evidence chips inside tree steps */
+  .ev{ display:inline-flex; align-items:center; gap:7px; margin-top:6px; padding:2px 9px 2px 3px; border-radius:999px; font-size:12px; line-height:1.4; border:1px solid var(--t-line); color:var(--t-muted); background:var(--t-bg); }
+  .ev i{ font:700 11px "IBM Plex Mono",ui-monospace,monospace; font-style:normal; width:18px; height:18px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:var(--t-line); color:var(--t-panel); flex:none; }
+  .ev-pass{ color:var(--t-ok); border-color:var(--t-ok); } .ev-pass i{ background:var(--t-ok); }
+  .ev-fail{ color:var(--t-bad); border-color:var(--t-bad); } .ev-fail i{ background:var(--t-bad); }
+  .ev-warn{ color:var(--t-warn); border-color:var(--t-warn); } .ev-warn i{ background:var(--t-warn); }
+  .ev-info{ color:var(--t-accent); border-color:var(--t-accent); } .ev-info i{ background:var(--t-accent); }
+  .ev-skip{ color:var(--t-muted); }
+  .qtext .cite{ display:block; }
+
+  /* workpaper */
+  .memo{ margin:0; padding:16px 18px; background:var(--page); border:1px solid var(--gridline); border-radius:8px; font:12.5px/1.55 "IBM Plex Mono",ui-monospace,monospace; color:var(--tool-ink); white-space:pre-wrap; overflow-x:auto; }
+  .memo:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+
+  /* print: the workpaper only */
+  @media print{
+    .topbar, .site-footer, .skip-link, .masthead, details.sources, .result, .layout, .foot{ display:none !important; }
+    body, .app{ background:#fff !important; }
+    .app{ padding:0 !important; }
+    .panel.workpaper{ border:0; padding:0; margin:0; }
+    .panel.workpaper .lede{ display:none; }
+    .memo{ background:#fff; color:#000; border:0; padding:0; font-size:11pt; white-space:pre-wrap; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../../index.html" aria-label="TaxVisual home">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="20" width="20" height="1.3" rx=".65"/><path d="M2 20V14.7Q2 13.2 3.5 13.2H5.5Q7 13.2 7 14.7V20Z"/><path d="M9.5 20V10.1Q9.5 8.6 11 8.6H13Q14.5 8.6 14.5 10.1V20Z"/><rect x="17" y="9.3" width="5" height="10.7"/><path d="M17 8.7V5Q17 3.5 18.5 3.5H20.5Q22 3.5 22 5V8.7Z" fill-opacity=".45"/></svg>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../learn/index.html">Learn</a></li>
+          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../dashboard/index.html">Dashboard</a></li>
+          <li><a href="../../consulting/index.html">Consulting</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="app" id="main">
+  <div class="wrap">
+    <header class="masthead">
+      <div class="mast-text">
+        <div class="kicker">IRC §121 · Decision tree + simulation</div>
+        <h1>Can the gain on this home sale be excluded?</h1>
+        <p class="standfirst">Enter the dates and the gain. The tests run in statutory order, each shows the evidence it used, and the result updates as you type. Up to $250,000 ($500,000 joint) is excluded if the home was owned and lived in for 730 days of the last five years and no other §121 sale fell in the last two. Fail a test for a job, health or unforeseen reason and the cap is prorated.</p>
+      </div>
+      <div class="actions" role="group" aria-label="Share and export">
+        <button type="button" id="act-memo">Copy workpaper</button>
+        <button type="button" id="act-print">Print</button>
+        <button type="button" id="act-link">Copy link</button>
+        <span class="act-status" id="act-status" role="status"></span>
+      </div>
+    </header>
+
+    <details class="panel sources">
+      <summary>The source rules <span class="summary-hint">26 U.S.C. &sect;121 and Treas. Reg. &sect;&sect;1.121-1, 1.121-3, full text &mdash; optional</span></summary>
+      <div class="sources-body">
+        <p class="src-meta"><strong>Exclusion of gain from the sale of a principal residence.</strong> Reproduced unedited from the U.S. Code and the Code of Federal Regulations as published by the Legal Information Institute, retrieved 8 October 2026. This is a static copy: verify it against the official text (govinfo.gov, ecfr.gov) before relying on it, and check for amendments after the retrieval date.
+          <a href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">&sect;121 at source</a></p>
+        <div class="statute" tabindex="0" role="region" aria-label="Full text of 26 U.S.C. section 121 and Treasury Regulations sections 1.121-1 and 1.121-3">
+<p class="statute-head">26 U.S.C. &sect;121 &mdash; Exclusion of gain from sale of principal residence</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(a)</span> <span class="lv-h">Exclusion</span> <span class="lv-t">Gross income shall not include gain from the sale or exchange of property if, during the 5-year period ending on the date of the sale or exchange, such property has been owned and used by the taxpayer as the taxpayer’s principal residence for periods aggregating 2 years or more.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-h">Limitations</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">In general</span> <span class="lv-t">The amount of gain excluded from gross income under subsection (a) with respect to any sale or exchange shall not exceed $250,000.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Special rules for joint returns</span> <span class="lv-t">In the case of a husband and wife who make a joint return for the taxable year of the sale or exchange of the property—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">$500,000 Limitation for certain joint returns</span> <span class="lv-t">Paragraph (1) shall be applied by substituting “$500,000” for “$250,000” if—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">either spouse meets the ownership requirements of subsection (a) with respect to such property;</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">both spouses meet the use requirements of subsection (a) with respect to such property; and</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-t">neither spouse is ineligible for the benefits of subsection (a) with respect to such property by reason of paragraph (3).</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Other joint returns</span> <span class="lv-t">If such spouses do not meet the requirements of subparagraph (A), the limitation under paragraph (1) shall be the sum of the limitations under paragraph (1) to which each spouse would be entitled if such spouses had not been married. For purposes of the preceding sentence, each spouse shall be treated as owning the property during the period that either spouse owned the property.</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(3)</span> <span class="lv-h">Application to only 1 sale or exchange every 2 years</span> <span class="lv-t">Subsection (a) shall not apply to any sale or exchange by the taxpayer if, during the 2-year period ending on the date of such sale or exchange, there was any other sale or exchange by the taxpayer to which subsection (a) applied.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(4)</span> <span class="lv-h">Special rule for certain sales by surviving spouses</span> <span class="lv-t">In the case of a sale or exchange of property by an unmarried individual whose spouse is deceased on the date of such sale, paragraph (1) shall be applied by substituting “$500,000” for “$250,000” if such sale occurs not later than 2 years after the date of death of such spouse and the requirements of paragraph (2)(A) were met immediately before such date of death.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(5)</span> <span class="lv-h">Exclusion of gain allocated to nonqualified use</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">Subsection (a) shall not apply to so much of the gain from the sale or exchange of property as is allocated to periods of nonqualified use.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Gain allocated to periods of nonqualified use</span> <span class="lv-t">For purposes of subparagraph (A), gain shall be allocated to periods of nonqualified use based on the ratio which—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">the aggregate periods of nonqualified use during the period such property was owned by the taxpayer, bears to</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">the period such property was owned by the taxpayer.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-h">Period of nonqualified use</span> <span class="lv-t">For purposes of this paragraph—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-h">In general</span> <span class="lv-t">The term “period of nonqualified use” means any period (other than the portion of any period preceding January 1, 2009) during which the property is not used as the principal residence of the taxpayer or the taxpayer’s spouse or former spouse.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-h">Exceptions</span> <span class="lv-t">The term “period of nonqualified use” does not include—</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">any portion of the 5-year period described in subsection (a) which is after the last date that such property is used as the principal residence of the taxpayer or the taxpayer’s spouse,</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">any period (not to exceed an aggregate period of 10 years) during which the taxpayer or the taxpayer’s spouse is serving on qualified official extended duty (as defined in subsection (d)(9)(C)) described in clause (i), (ii), or (iii) of subsection (d)(9)(A), and</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(III)</span> <span class="lv-t">any other period of temporary absence (not to exceed an aggregate period of 2 years) due to change of employment, health conditions, or such other unforeseen circumstances as may be specified by the Secretary.</span></p>
+                  </div>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(D)</span> <span class="lv-h">Coordination with recognition of gain attributable to depreciation</span> <span class="lv-t">For purposes of this paragraph—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">subparagraph (A) shall be applied after the application of subsection (d)(6), and</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">subparagraph (B) shall be applied without regard to any gain to which subsection (d)(6) applies.</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-h">Exclusion for taxpayers failing to meet certain requirements</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">In general</span> <span class="lv-t">In the case of a sale or exchange to which this subsection applies, the ownership and use requirements of subsection (a), and subsection (b)(3), shall not apply; but the dollar limitation under paragraph (1) or (2) of subsection (b), whichever is applicable, shall be equal to—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">the amount which bears the same ratio to such limitation (determined without regard to this paragraph) as</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">the shorter of—</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">the aggregate periods, during the 5-year period ending on the date of such sale or exchange, such property has been owned and used by the taxpayer as the taxpayer’s principal residence; or</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">the period after the date of the most recent prior sale or exchange by the taxpayer to which subsection (a) applied and before the date of such sale or exchange, bears to</span></p>
+                  </div>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">2 years.</span></p>
+                </div>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Sales and exchanges to which subsection applies</span> <span class="lv-t">This subsection shall apply to any sale or exchange if—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">subsection (a) would not (but for this subsection) apply to such sale or exchange by reason of—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">a failure to meet the ownership and use requirements of subsection (a), or</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">subsection (b)(3), and</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">such sale or exchange is by reason of a change in place of employment, health, or, to the extent provided in regulations, unforeseen circumstances.</span></p>
+              </div>
+            </div>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(d)</span> <span class="lv-h">Special rules</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">Joint returns</span> <span class="lv-t">If a husband and wife make a joint return for the taxable year of the sale or exchange of the property, subsections (a) and (c) shall apply if either spouse meets the ownership and use requirements of subsection (a) with respect to such property.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Property of deceased spouse</span> <span class="lv-t">For purposes of this section, in the case of an unmarried individual whose spouse is deceased on the date of the sale or exchange of property, the period such unmarried individual owned and used such property shall include the period such deceased spouse owned and used such property before death.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(3)</span> <span class="lv-h">Property owned by spouse or former spouse</span> <span class="lv-t">For purposes of this section—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">Property transferred to individual from spouse or former spouse</span> <span class="lv-t">In the case of an individual holding property transferred to such individual in a transaction described in section 1041(a), the period such individual owns such property shall include the period the transferor owned the property.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Property used by former spouse pursuant to divorce decree, etc.</span> <span class="lv-t">Solely for purposes of this section, an individual shall be treated as using property as such individual’s principal residence during any period of ownership while such individual’s spouse or former spouse is granted use of the property under a divorce or separation instrument.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-h">Divorce or separation instrument</span> <span class="lv-t">For purposes of this paragraph, the term “divorce or separation instrument” means—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">a decree of divorce or separate maintenance or a written instrument incident to such a decree,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">a written separation agreement, or</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-t">a decree (not described in clause (i)) requiring a spouse to make payments for the support or maintenance of the other spouse.</span></p>
+                </div>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(4)</span> <span class="lv-h">Tenant-stockholder in cooperative housing corporation</span> <span class="lv-t">For purposes of this section, if the taxpayer holds stock as a tenant-stockholder (as defined in section 216) in a cooperative housing corporation (as defined in such section), then—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">the holding requirements of subsection (a) shall be applied to the holding of such stock, and</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">the use requirements of subsection (a) shall be applied to the house or apartment which the taxpayer was entitled to occupy as such stockholder.</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(5)</span> <span class="lv-h">Involuntary conversions</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">For purposes of this section, the destruction, theft, seizure, requisition, or condemnation of property shall be treated as the sale of such property.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Application of section 1033</span> <span class="lv-t">In applying section 1033 (relating to involuntary conversions), the amount realized from the sale or exchange of property shall be treated as being the amount determined without regard to this section, reduced by the amount of gain not included in gross income pursuant to this section.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-h">Property acquired after involuntary conversion</span> <span class="lv-t">If the basis of the property sold or exchanged is determined (in whole or in part) under section 1033(b) (relating to basis of property acquired through involuntary conversion), then the holding and use by the taxpayer of the converted property shall be treated as holding and use by the taxpayer of the property sold or exchanged.</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(6)</span> <span class="lv-h">Recognition of gain attributable to depreciation</span> <span class="lv-t">Subsection (a) shall not apply to so much of the gain from the sale of any property as does not exceed the portion of the depreciation adjustments (as defined in section 1250(b)(3)) attributable to periods after May 6, 1997, in respect of such property.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(7)</span> <span class="lv-h">Determination of use during periods of out-of-residence care</span> <span class="lv-t">In the case of a taxpayer who—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">becomes physically or mentally incapable of self-care, and</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">owns property and uses such property as the taxpayer’s principal residence during the 5-year period described in subsection (a) for periods aggregating at least 1 year,</span></p>
+              </div>
+              <p><span class="lv-t">then the taxpayer shall be treated as using such property as the taxpayer’s principal residence during any time during such 5-year period in which the taxpayer owns the property and resides in any facility (including a nursing home) licensed by a State or political subdivision to care for an individual in the taxpayer’s condition.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(8)</span> <span class="lv-h">Sales of remainder interests</span> <span class="lv-t">For purposes of this section—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">At the election of the taxpayer, this section shall not fail to apply to the sale or exchange of an interest in a principal residence by reason of such interest being a remainder interest in such residence, but this section shall not apply to any other interest in such residence which is sold or exchanged separately.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Exception for sales to related parties</span> <span class="lv-t">Subparagraph (A) shall not apply to any sale to, or exchange with, any person who bears a relationship to the taxpayer which is described in section 267(b) or 707(b).</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(9)</span> <span class="lv-h">Uniformed services, Foreign Service, and intelligence community</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">At the election of an individual with respect to a property, the running of the 5-year period described in subsections (a) and (c)(1)(B) and paragraph (7) of this subsection with respect to such property shall be suspended during any period that such individual or such individual’s spouse is serving on qualified official extended duty—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">as a member of the uniformed services,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">as a member of the Foreign Service of the United States, or</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-t">as an employee of the intelligence community.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Maximum period of suspension</span> <span class="lv-t">The 5-year period described in subsection (a) shall not be extended more than 10 years by reason of subparagraph (A).</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-h">Qualified official extended duty</span> <span class="lv-t">For purposes of this paragraph—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-h">In general</span> <span class="lv-t">The term “qualified official extended duty” means any extended duty while serving at a duty station which is at least 50 miles from such property or while residing under Government orders in Government quarters.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-h">Uniformed services</span> <span class="lv-t">The term “uniformed services” has the meaning given such term by section 101(a)(5) of title 10, United States Code, as in effect on the date of the enactment of this paragraph.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-h">Foreign Service of the United States</span> <span class="lv-t">The term “member of the Foreign Service of the United States” has the meaning given the term “member of the Service” by paragraph (1), (2), (3), (4), or (5) of section 103 of the Foreign Service Act of 1980, as in effect on the date of the enactment of this paragraph.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iv)</span> <span class="lv-h">Employee of intelligence community</span> <span class="lv-t">The term “employee of the intelligence community” means an employee (as defined by section 2105 of title 5, United States Code) of—</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">the Office of the Director of National Intelligence,</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">the Central Intelligence Agency,</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(III)</span> <span class="lv-t">the National Security Agency,</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(IV)</span> <span class="lv-t">the Defense Intelligence Agency,</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(V)</span> <span class="lv-t">the National Geospatial-Intelligence Agency,</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(VI)</span> <span class="lv-t">the National Reconnaissance Office,</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(VII)</span> <span class="lv-t">any other office within the Department of Defense for the collection of specialized national intelligence through reconnaissance programs,</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(VIII)</span> <span class="lv-t">any of the intelligence elements of the Army, the Navy, the Air Force, the Marine Corps, the Federal Bureau of Investigation, the Department of Treasury, the Department of Energy, and the Coast Guard,</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(IX)</span> <span class="lv-t">the Bureau of Intelligence and Research of the Department of State, or</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(X)</span> <span class="lv-t">any of the elements of the Department of Homeland Security concerned with the analyses of foreign intelligence information.</span></p>
+                  </div>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(v)</span> <span class="lv-h">Extended duty</span> <span class="lv-t">The term “extended duty” means any period of active duty pursuant to a call or order to such duty for a period in excess of 90 days or for an indefinite period.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(D)</span> <span class="lv-h">Special rules relating to election</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-h">Election limited to 1 property at a time</span> <span class="lv-t">An election under subparagraph (A) with respect to any property may not be made if such an election is in effect with respect to any other property.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-h">Revocation of election</span> <span class="lv-t">An election under subparagraph (A) may be revoked at any time.</span></p>
+                </div>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(10)</span> <span class="lv-h">Property acquired in like-kind exchange</span> <span class="lv-t">If a taxpayer acquires property in an exchange with respect to which gain is not recognized (in whole or in part) to the taxpayer under subsection (a) or (b) of section 1031, subsection (a) shall not apply to the sale or exchange of such property by such taxpayer (or by any person whose basis in such property is determined, in whole or in part, by reference to the basis in the hands of such taxpayer) during the 5-year period beginning with the date of such acquisition.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">[(11)</span> <span class="lv-h">Repealed. Pub. L. 111–312, title III, § 301(a), Dec. 17, 2010, 124 Stat. 3300]</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(12)</span> <span class="lv-h">Peace Corps</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">At the election of an individual with respect to a property, the running of the 5-year period described in subsections (a) and (c)(1)(B) and paragraph (7) of this subsection with respect to such property shall be suspended during any period that such individual or such individual’s spouse is serving outside the United States—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">on qualified official extended duty (as defined in paragraph (9)(C)) as an employee of the Peace Corps, or</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">as an enrolled volunteer or volunteer leader under section 5 or 6 (as the case may be) of the Peace Corps Act (22 U.S.C. 2504, 2505).</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Applicable rules</span> <span class="lv-t">For purposes of subparagraph (A), rules similar to the rules of subparagraphs (B) and (D) of paragraph (9) shall apply.</span></p>
+              </div>
+            </div>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(e)</span> <span class="lv-h">Denial of exclusion for expatriates</span> <span class="lv-t">This section shall not apply to any sale or exchange by an individual if the treatment provided by section 877(a)(1) applies to such individual.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(f)</span> <span class="lv-h">Election to have section not apply</span> <span class="lv-t">This section shall not apply to any sale or exchange with respect to which the taxpayer elects not to have this section apply.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(g)</span> <span class="lv-h">Residences acquired in rollovers under section 1034</span> <span class="lv-t">For purposes of this section, in the case of property the acquisition of which by the taxpayer resulted under section 1034 [1] (as in effect on the day before the date of the enactment of this section) in the nonrecognition of any part of the gain realized on the sale or exchange of another residence, in determining the period for which the taxpayer has owned and used such property as the taxpayer’s principal residence, there shall be included the aggregate periods for which such other residence (and each prior residence taken into account under section 1223(6) [1] in determining the holding period of such property) had been so owned and used.</span></p>
+          </div><p class="statute-head">26 C.F.R. &sect;1.121-1 &mdash; Exclusion of gain from sale or exchange of a principal residence</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(a)</span> <span class="lv-t">In general. Section 121 provides that, under certain circumstances, gross income does not include gain realized on the sale or exchange of property that was owned and used by a taxpayer as the taxpayer&#x27;s principal residence. Subject to the other provisions of section 121, a taxpayer may exclude gain only if, during the 5-year period ending on the date of the sale or exchange, the taxpayer owned and used the property as the taxpayer&#x27;s principal residence for periods aggregating 2 years or more.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-t">Residence—(1) In general. Whether property is used by the taxpayer as the taxpayer&#x27;s residence depends upon all the facts and circumstances. A property used by the taxpayer as the taxpayer&#x27;s residence may include a houseboat, a house trailer, or the house or apartment that the taxpayer is entitled to occupy as a tenant-stockholder in a cooperative housing corporation (as those terms are defined in section 216(b)(1) and (2)). Property used by the taxpayer as the taxpayer&#x27;s residence does not include personal property that is not a fixture under local law.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">Principal residence. In the case of a taxpayer using more than one property as a residence, whether property is used by the taxpayer as the taxpayer&#x27;s principal residence depends upon all the facts and circumstances. If a taxpayer alternates between 2 properties, using each as a residence for successive periods of time, the property that the taxpayer uses a majority of the time during the year ordinarily will be considered the taxpayer&#x27;s principal residence. In addition to the taxpayer&#x27;s use of the property, relevant factors in determining a taxpayer&#x27;s principal residence, include, but are not limited to—</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(i)</span> <span class="lv-t">The taxpayer&#x27;s place of employment;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">The principal place of abode of the taxpayer&#x27;s family members;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(iii)</span> <span class="lv-t">The address listed on the taxpayer&#x27;s federal and state tax returns, driver&#x27;s license, automobile registration, and voter registration card;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(iv)</span> <span class="lv-t">The taxpayer&#x27;s mailing address for bills and correspondence;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(v)</span> <span class="lv-t">The location of the taxpayer&#x27;s banks; and</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(vi)</span> <span class="lv-t">The location of religious organizations and recreational clubs with which the taxpayer is affiliated.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(3)</span> <span class="lv-t">Vacant land—(i) In general. The sale or exchange of vacant land is not a sale or exchange of the taxpayer&#x27;s principal residence unless—</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(A) The vacant land is adjacent to land containing the dwelling unit of the taxpayer&#x27;s principal residence;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(B) The taxpayer owned and used the vacant land as part of the taxpayer&#x27;s principal residence;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(C) The taxpayer sells or exchanges the dwelling unit in a sale or exchange that meets the requirements of section 121 within 2 years before or 2 years after the date of the sale or exchange of the vacant land; and</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(D) The requirements of section 121 have otherwise been met with respect to the vacant land.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">Limitations—(A) Maximum limitation amount. For purposes of section 121(b)(1) and (2) (relating to the maximum limitation amount of the section 121 exclusion), the sale or exchange of the dwelling unit and the vacant land are treated as one sale or exchange. Therefore, only one maximum limitation amount of $250,000 ($500,000 for certain joint returns) applies to the combined sales or exchanges of vacant land and the dwelling unit. In applying the maximum limitation amount to sales or exchanges that occur in different taxable years, gain from the sale or exchange of the dwelling unit, up to the maximum limitation amount under section 121(b)(1) or (2), is excluded first and each spouse is treated as excluding one-half of the gain from a sale or exchange to which section 121(b)(2)(A) and § 1.121-2(a)(3)(i) (relating to the limitation for certain joint returns) apply.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(B) Sale or exchange of more than one principal residence in 2-year period. If a dwelling unit and vacant land are sold or exchanged in separate transactions that qualify for the section 121 exclusion under this paragraph (b)(3), each of the transactions is disregarded in applying section 121(b)(3) (restricting the application of section 121 to only 1 sale or exchange every 2 years) to the other transactions but is taken into account as a sale or exchange of a principal residence on the date of the transaction in applying section 121(b)(3) to that transaction and the sale or exchange of any other principal residence.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(C) Sale or exchange of vacant land before dwelling unit. If the sale or exchange of the dwelling unit occurs in a later taxable year than the sale or exchange of the vacant land and after the date prescribed by law (including extensions) for the filing of the return for the taxable year of the sale or exchange of the vacant land, any gain from the sale or exchange of the vacant land must be treated as taxable on the taxpayer&#x27;s return for the taxable year of the sale or exchange of the vacant land. If the taxpayer has reported gain from the sale or exchange of the vacant land as taxable, after satisfying the requirements of this paragraph (b)(3) the taxpayer may claim the section 121 exclusion with regard to the sale or exchange of the vacant land (for any period for which the period of limitation under section 6511 has not expired) by filing an amended return.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(4)</span> <span class="lv-t">Examples. The provisions of this paragraph (b) are illustrated by the following examples:</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-t">Ownership and use requirements—(1) In general. The requirements of ownership and use for periods aggregating 2 years or more may be satisfied by establishing ownership and use for 24 full months or for 730 days (365 × 2). The requirements of ownership and use may be satisfied during nonconcurrent periods if both the ownership and use tests are met during the 5-year period ending on the date of the sale or exchange.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">Use.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(i)</span> <span class="lv-t">In establishing whether a taxpayer has satisfied the 2-year use requirement, occupancy of the residence is required. However, short temporary absences, such as for vacation or other seasonal absence (although accompanied with rental of the residence), are counted as periods of use.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">Determination of use during periods of out-of-residence care. If a taxpayer has become physically or mentally incapable of self-care and the taxpayer sells or exchanges property that the taxpayer owned and used as the taxpayer&#x27;s principal residence for periods aggregating at least 1 year during the 5-year period preceding the sale or exchange, the taxpayer is treated as using the property as the taxpayer&#x27;s principal residence for any period of time during the 5-year period in which the taxpayer owns the property and resides in any facility (including a nursing home) licensed by a State or political subdivision to care for an individual in the taxpayer&#x27;s condition.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(3)</span> <span class="lv-t">Ownership—(i) Trusts. If a residence is owned by a trust, for the period that a taxpayer is treated under sections 671 through 679 (relating to the treatment of grantors and others as substantial owners) as the owner of the trust or the portion of the trust that includes the residence, the taxpayer will be treated as owning the residence for purposes of satisfying the 2-year ownership requirement of section 121, and the sale or exchange by the trust will be treated as if made by the taxpayer.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">Certain single owner entities. If a residence is owned by an eligible entity (within the meaning of § 301.7701-3(a) of this chapter) that has a single owner and is disregarded for federal tax purposes as an entity separate from its owner under § 301.7701-3 of this chapter, the owner will be treated as owning the residence for purposes of satisfying the 2-year ownership requirement of section 121, and the sale or exchange by the entity will be treated as if made by the owner.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(4)</span> <span class="lv-t">Examples. The provisions of this paragraph (c) are illustrated by the following examples. The examples assume that § 1.121-3 (relating to the reduced maximum exclusion) does not apply to the sale of the property. The examples are as follows:</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(d)</span> <span class="lv-t">Depreciation taken after May 6, 1997—(1) In general. The section 121 exclusion does not apply to so much of the gain from the sale or exchange of property as does not exceed the portion of the depreciation adjustments (as defined in section 1250(b)(3)) attributable to the property for periods after May 6, 1997. Depreciation adjustments allocable to any portion of the property to which the section 121 exclusion does not apply under paragraph (e) of this section are not taken into account for this purpose.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">Example. The provisions of this paragraph (d) are illustrated by the following example:</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(e)</span> <span class="lv-t">Property used in part as a principal residence—(1) Allocation required. Section 121 will not apply to the gain allocable to any portion (separate from the dwelling unit) of property sold or exchanged with respect to which a taxpayer does not satisfy the use requirement. Thus, if a portion of the property was used for residential purposes and a portion of the property (separate from the dwelling unit) was used for non-residential purposes, only the gain allocable to the residential portion is excludable under section 121. No allocation is required if both the residential and non-residential portions of the property are within the same dwelling unit. However, section 121 does not apply to the gain allocable to the residential portion of the property to the extent provided by paragraph (d) of this section.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">Dwelling unit. For purposes of this paragraph (e), the term dwelling unit has the same meaning as in section 280A(f)(1), but does not include appurtenant structures or other property.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(3)</span> <span class="lv-t">Method of allocation. For purposes of determining the amount of gain allocable to the residential and non-residential portions of the property, the taxpayer must allocate the basis and the amount realized between the residential and the non-residential portions of the property using the same method of allocation that the taxpayer used to determine depreciation adjustments (as defined in section 1250(b)(3)), if applicable.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(4)</span> <span class="lv-t">Examples. The provisions of this paragraph (e) are illustrated by the following examples:</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">Because the stable and the 28 acres used in the business are separate from the dwelling unit, the allocation rules under this paragraph (e) apply and A must allocate the basis and amount realized between the portion of the property that he used as his principal residence and the portion of the property that he used for non-residential purposes. A determines that $14,000 of the gain is allocable to the non-residential-use portion of the property and that $10,000 of the gain is allocable to the portion of the property used as his residence. A must recognize the $14,000 of gain allocable to the non-residential-use portion of the property ($9,000 of which is unrecaptured section 1250 gain within the meaning of section 1(h), and $5,000 of which is adjusted net capital gain). A may exclude $10,000 of the gain from the sale of the property.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">Because the portion of the property used in the antiques business is separate from the dwelling unit, the allocation rules under this paragraph (e) apply. B must allocate basis and amount realized between the portion of the property that she used as her principal residence and the portion of the property that she used for non-residential purposes. B determines that $4,000 of the gain is allocable to the non-residential portion of the property and that $17,000 of the gain is allocable to the portion of the property that she used as her principal residence.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(iii)</span> <span class="lv-t">B must recognize the $4,000 of gain allocable to the non-residential portion of the property (all of which is unrecaptured section 1250 gain within the meaning of section 1(h)). In addition, the section 121 exclusion does not apply to the gain allocable to the residential portion of the property to the extent of the depreciation adjustments attributable to the residential portion of the property for periods after May 6, 1997 ($3,000). Therefore, B may exclude $14,000 of the gain from the sale of the property.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">Because the basement apartment and the upper floors of the townhouse are separate dwelling units, C must allocate the gain between the portion of the property that he used as his principal residence and the portion of the property that he used for non-residential purposes under paragraph (e) of this section. After allocating the basis and the amount realized between the residential and non-residential portions of the property, C determines that $6,000 of the gain is allocable to the non-residential portion of the property and that $12,000 of the gain is allocable to the portion of the property used as his residence. C must recognize the $6,000 of gain allocable to the non-residential portion of the property ($2,000 of which is unrecaptured section 1250 gain within the meaning of section 1(h), and $4,000 of which is adjusted net capital gain). C may exclude $12,000 of the gain from the sale of the property.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(f)</span> <span class="lv-t">Effective date. This section is applicable for sales and exchanges on or after Decmeber 24, 2002. For rules on electing to apply the provisions of this section retroactively, see § 1.121-4(j).</span></p>
+          </div><p class="statute-head">26 C.F.R. &sect;1.121-3 &mdash; Reduced maximum exclusion for taxpayers failing to meet certain requirements</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(a)</span> <span class="lv-t">In general. In lieu of the limitation under section 121(b) and § 1.121-2, a reduced maximum exclusion limitation may be available for a taxpayer who sells or exchanges property used as the taxpayer&#x27;s principal residence but fails to satisfy the ownership and use requirements described in § 1.121-1(a) and (c) or the 2-year limitation described in § 1.121-2(b).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-t">Primary reason for sale or exchange. In order for a taxpayer to claim a reduced maximum exclusion under section 121(c), the sale or exchange must be by reason of a change in place of employment, health, or unforeseen circumstances. If a safe harbor described in this section applies, a sale or exchange is deemed to be by reason of a change in place of employment, health, or unforeseen circumstances. If a safe harbor described in this section does not apply, a sale or exchange is by reason of a change in place of employment, health, or unforeseen circumstances only if the primary reason for the sale or exchange is a change in place of employment (within the meaning of paragraph (c) of this section), health (within the meaning of paragraph (d) of this section), or unforeseen circumstances (within the meaning of paragraph (e) of this section). Whether the requirements of this section are satisfied depends upon all the facts and circumstances. Factors that may be relevant in determining the taxpayer&#x27;s primary reason for the sale or exchange include (but are not limited to) the extent to which—</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(1)</span> <span class="lv-t">The sale or exchange and the circumstances giving rise to the sale or exchange are proximate in time;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">The suitability of the property as the taxpayer&#x27;s principal residence materially changes;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(3)</span> <span class="lv-t">The taxpayer&#x27;s financial ability to maintain the property is materially impaired;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(4)</span> <span class="lv-t">The taxpayer uses the property as the taxpayer&#x27;s residence during the period of the taxpayer&#x27;s ownership of the property;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(5)</span> <span class="lv-t">The circumstances giving rise to the sale or exchange are not reasonably foreseeable when the taxpayer begins using the property as the taxpayer&#x27;s principal residence; and</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(6)</span> <span class="lv-t">The circumstances giving rise to the sale or exchange occur during the period of the taxpayer&#x27;s ownership and use of the property as the taxpayer&#x27;s principal residence.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-t">Sale or exchange by reason of a change in place of employment—(1) In general. A sale or exchange is by reason of a change in place of employment if, in the case of a qualified individual described in paragraph (f) of this section, the primary reason for the sale or exchange is a change in the location of the individual&#x27;s employment.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">Distance safe harbor. A sale or exchange is deemed to be by reason of a change in place of employment (within the meaning of paragraph (c)(1) of this section) if—</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(i)</span> <span class="lv-t">The change in place of employment occurs during the period of the taxpayer&#x27;s ownership and use of the property as the taxpayer&#x27;s principal residence; and</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">The qualified individual&#x27;s new place of employment is at least 50 miles farther from the residence sold or exchanged than was the former place of employment, or, if there was no former place of employment, the distance between the qualified individual&#x27;s new place of employment and the residence sold or exchanged is at least 50 miles.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(3)</span> <span class="lv-t">Employment. For purposes of this paragraph (c), employment includes the commencement of employment with a new employer, the continuation of employment with the same employer, and the commencement or continuation of self-employment.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(4)</span> <span class="lv-t">Examples. The following examples illustrate the rules of this paragraph (c):</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(d)</span> <span class="lv-t">Sale or exchange by reason of health—(1) In general. A sale or exchange is by reason of health if the primary reason for the sale or exchange is to obtain, provide, or facilitate the diagnosis, cure, mitigation, or treatment of disease, illness, or injury of a qualified individual described in paragraph (f) of this section, or to obtain or provide medical or personal care for a qualified individual suffering from a disease, illness, or injury. A sale or exchange that is merely beneficial to the general health or well-being of an individual is not a sale or exchange by reason of health.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">Physician&#x27;s recommendation safe harbor. A sale or exchange is deemed to be by reason of health if a physician (as defined in section 213(d)(4)) recommends a change of residence for reasons of health (as defined in paragraph (d)(1) of this section).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(3)</span> <span class="lv-t">Examples. The following examples illustrate the rules of this paragraph (d):</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(e)</span> <span class="lv-t">Sale or exchange by reason of unforeseen circumstances—(1) In general. A sale or exchange is by reason of unforeseen circumstances if the primary reason for the sale or exchange is the occurrence of an event that the taxpayer could not reasonably have anticipated before purchasing and occupying the residence. A sale or exchange by reason of unforeseen circumstances (other than a sale or exchange deemed to be by reason of unforeseen circumstances under paragraph (e)(2) or (3) of this section) does not qualify for the reduced maximum exclusion if the primary reason for the sale or exchange is a preference for a different residence or an improvement in financial circumstances.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">Specific event safe harbors. A sale or exchange is deemed to be by reason of unforeseen circumstances (within the meaning of paragraph (e)(1) of this section) if any of the events specified in paragraphs (e)(2)(i) through (iii) of this section occur during the period of the taxpayer&#x27;s ownership and use of the residence as the taxpayer&#x27;s principal residence:</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(i)</span> <span class="lv-t">The involuntary conversion of the residence.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">Natural or man-made disasters or acts of war or terrorism resulting in a casualty to the residence (without regard to deductibility under section 165(h)).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(iii)</span> <span class="lv-t">In the case of a qualified individual described in paragraph (f) of this section—</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(A) Death;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(B) The cessation of employment as a result of which the qualified individual is eligible for unemployment compensation (as defined in section 85(b));</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(C) A change in employment or self-employment status that results in the taxpayer&#x27;s inability to pay housing costs and reasonable basic living expenses for the taxpayer&#x27;s household (including amounts for food, clothing, medical expenses, taxes, transportation, court-ordered payments, and expenses reasonably necessary to the production of income, but not for the maintenance of an affluent or luxurious standard of living);</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(D) Divorce or legal separation under a decree of divorce or separate maintenance; or</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(E) Multiple births resulting from the same pregnancy.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(3)</span> <span class="lv-t">Designation of additional events as unforeseen circumstances. The Commissioner may designate other events or situations as unforeseen circumstances in published guidance of general applicability and may issue rulings addressed to specific taxpayers identifying other events or situations as unforeseen circumstances with regard to those taxpayers (see § 601.601(d)(2) of this chapter).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(4)</span> <span class="lv-t">Examples. The following examples illustrate the rules of this paragraph (e):</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(f)</span> <span class="lv-t">Qualified individual. For purposes of this section, qualified individual means—</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(1)</span> <span class="lv-t">The taxpayer;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">The taxpayer&#x27;s spouse;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(3)</span> <span class="lv-t">A co-owner of the residence;</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(4)</span> <span class="lv-t">A person whose principal place of abode is in the same household as the taxpayer; or</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(5)</span> <span class="lv-t">For purposes of paragraph (d) of this section, a person bearing a relationship specified in sections 152(a)(1) through 152(a)(8) (without regard to qualification as a dependent) to a qualified individual described in paragraphs (f)(1) through (4) of this section, or a descendant of the taxpayer&#x27;s grandparent.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(g)</span> <span class="lv-t">Computation of reduced maximum exclusion.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(1)</span> <span class="lv-t">The reduced maximum exclusion is computed by multiplying the maximum dollar limitation of $250,000 ($500,000 for certain joint filers) by a fraction. The numerator of the fraction is the shortest of the period of time that the taxpayer owned the property during the 5-year period ending on the date of the sale or exchange; the period of time that the taxpayer used the property as the taxpayer&#x27;s principal residence during the 5-year period ending on the date of the sale or exchange; or the period of time between the date of a prior sale or exchange of property for which the taxpayer excluded gain under section 121 and the date of the current sale or exchange. The numerator of the fraction may be expressed in days or months. The denominator of the fraction is 730 days or 24 months (depending on the measure of time used in the numerator).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">Examples. The following examples illustrate the rules of this paragraph (g):</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">Because H and W have not each used the house as their principal residence for at least 2 years during the 5-year period preceding its sale, the maximum dollar limitation amount that may be claimed by H and W will not be $500,000, but the sum of each spouse&#x27;s limitation amount determined on a separate basis as if they had not been married. (See § 1.121-2(a)(3)(ii).)</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(iii)</span> <span class="lv-t">H is eligible to exclude up to $250,000 of gain because he meets the requirements of section 121. W is not eligible to exclude the maximum dollar limitation amount. Instead, because the sale of the house is due to a change in place of employment, W is eligible to claim a reduced maximum exclusion of up to $125,000 of the gain (365/730 × $250,000). Therefore, H and W are eligible to exclude up to $375,000 of gain ($250,000 + $125,000) from the sale of the house.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(h)</span> <span class="lv-t">Effective dates. Paragraphs (a) and (g) of this section are applicable for sales and exchanges on or after December 24, 2002. Paragraphs (b) through (f) of this section are applicable for sales and exchanges on or after August 13, 2004.</span></p>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <section class="result" id="result" aria-label="Result">
+      <div class="verdict">
+        <span class="chip" id="v-chip">—</span>
+        <p class="why" id="v-why"></p>
+      </div>
+      <div class="figs" aria-live="polite">
+        <div class="fig"><div class="label">Excluded</div><div class="val accent" id="r-exc">—</div><div class="delta" id="r-exc-d"></div></div>
+        <div class="fig"><div class="label">Taxable</div><div class="val" id="r-tax">—</div><div class="delta" id="r-tax-d"></div></div>
+        <div class="fig"><div class="label">Exclusion cap</div><div class="val" id="r-cap">—</div><div class="delta" id="r-cap-d"></div></div>
+      </div>
+      <div class="pin"><button type="button" id="pin">Pin as baseline</button><button type="button" id="unpin" hidden>Clear baseline</button></div>
+    </section>
+
+    <div class="layout">
+      <aside class="rail" aria-label="Sale facts">
+        <div class="rail-top">
+          <label class="sel"><span>Load an example</span>
+            <select id="example">
+              <option value="">Choose…</option>
+              <option value="full">Qualifies in full</option>
+              <option value="job">Job move, joint (12 months)</option>
+              <option value="health">Health, single (15 months)</option>
+              <option value="repeat">Second sale within 2 years</option>
+              <option value="rental">Rented first, then lived in</option>
+            </select></label>
+          <button type="button" id="reset" class="quiet">Reset</button>
+        </div>
+
+        <fieldset>
+          <legend>Filing status</legend>
+          <div class="seg" role="group" aria-label="Filing status">
+            <button type="button" id="st-single" aria-pressed="true">Single / MFS</button>
+            <button type="button" id="st-surv" aria-pressed="false" title="Unmarried; spouse died within 2 years of the sale">Surviving spouse</button>
+            <button type="button" id="st-mfj" aria-pressed="false">Married joint</button>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>The sale</legend>
+          <div class="field"><label for="sale">Date of sale</label><input id="sale" type="date"></div>
+          <div class="field money"><label for="gain">Realized gain</label><span class="pre">$</span><input id="gain" type="text" inputmode="decimal" autocomplete="off"></div>
+          <div class="field money"><label for="dep">Depreciation taken after 5/6/1997</label><span class="pre">$</span><input id="dep" type="text" inputmode="decimal" autocomplete="off"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Ownership and use</legend>
+          <div class="field"><label for="acq">Date acquired</label><input id="acq" type="date"></div>
+          <div class="field"><label>Lived there as main home</label>
+            <div class="range"><input id="u1a" type="date" aria-label="Main home from"><span>to</span><input id="u1b" type="date" aria-label="Main home to"></div>
+            <div class="range" id="u2row" hidden><input id="u2a" type="date" aria-label="Second period from"><span>to</span><input id="u2b" type="date" aria-label="Second period to"></div>
+            <button type="button" class="quiet small" id="addperiod">+ Add a second period</button>
+          </div>
+          <div class="field"><label>Not a main home (rented, vacant)</label>
+            <div class="range"><input id="nqa" type="date" aria-label="Not a main home from"><span>to</span><input id="nqb" type="date" aria-label="Not a main home to"></div>
+          </div>
+          <div class="field"><label for="last">Date of last §121 sale <span class="opt">(if any)</span></label><input id="last" type="date"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Facts to confirm</legend>
+          <label class="check"><input type="checkbox" id="principal"> <span>The home was the principal residence (Step 1)</span></label>
+          <label class="check"><input type="checkbox" id="reason"> <span>If a test fails: the sale was by reason of a job change, health, or an unforeseen event (Step A)</span></label>
+          <label class="check" id="both-wrap" hidden><input type="checkbox" id="both"> <span>Both spouses used the home and neither used the exclusion in the last 2 years (Step 6)</span></label>
+        </fieldset>
+        <ul class="msgs" id="msgs" aria-live="polite"></ul>
+      </aside>
+
+      <div class="main">
+        <section class="panel" aria-labelledby="ins-h">
+          <h3 id="ins-h">What would change this</h3>
+          <ul class="insights" id="insights"></ul>
+        </section>
+
+        <section class="panel" aria-labelledby="tl-h">
+          <h3 id="tl-h">The five-year window</h3>
+          <p class="lede">Ownership and use are measured over the five years ending on the sale. Each needs 730 days; they do not have to overlap.</p>
+          <div class="chart-scroll" tabindex="0" role="region" aria-label="Timeline of ownership and use (scrolls sideways on narrow screens)">
+            <div class="chart-shell"><svg id="timeline" viewBox="0 0 640 170" role="img" aria-labelledby="tl-desc"><desc id="tl-desc"></desc></svg></div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="chart-h">
+          <h3 id="chart-h">What the exclusion is worth</h3>
+          <p class="lede" id="chart-lede"></p>
+          <div class="chart-scroll" tabindex="0" role="region" aria-label="Exclusion by shortest qualifying period (scrolls sideways on narrow screens)">
+            <div class="chart-shell"><svg id="chart" viewBox="0 0 640 320" role="img" aria-labelledby="chart-desc"><desc id="chart-desc"></desc></svg></div>
+          </div>
+          <p class="chart-note" id="chart-note"></p>
+          <div class="bar" id="bar" aria-hidden="true"></div>
+          <div class="legend" id="legend"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="tree-h">
+          <h3 id="tree-h">The tests, in statutory order</h3>
+          <p class="lede">Each step shows what your facts say. The path you take is inked and steps you never reach are dimmed. Open a step for the controlling text; hover or focus Steps B, C and D to see them on the chart.</p>
+          <div class="toolbar">
+            <button id="expand" type="button">Expand all</button>
+            <button id="collapse" type="button">Collapse all</button>
+            <div class="key"><span style="--c:var(--t-ok)">Exclusion</span><span style="--c:var(--t-warn)">Reduced</span><span style="--c:var(--t-bad)">Taxable</span></div>
+          </div>
+          <p class="path-note" id="path-note"></p>
+<ul class="tree"><li><details class="node"><summary><span class="badge">1</span><span class="qtext"><strong>Was the property used as the taxpayer’s principal residence?</strong><span class="cite">§121(a); Treas. Reg. §1.121-1(b)(2)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/cfr/text/26/1.121-1" target="_blank" rel="noopener">Treas. Reg. §1.121-1(b)(2)</a><div class="q q-0"><span class="q-n">(2)</span> Principal residence. In the case of a taxpayer using more than one property as a residence, whether property is used by the taxpayer as the taxpayer's principal residence depends upon all the facts and circumstances. If a taxpayer alternates between 2 properties, using each as a residence for successive periods of time, the property that the taxpayer uses a majority of the time during the year ordinarily will be considered the taxpayer's principal residence. In addition to the taxpayer's use of the property, relevant factors in determining a taxpayer's principal residence, include, but are not limited to—</div><div class="q q-1"><span class="q-n">(i)</span> The taxpayer's place of employment;</div><div class="q q-1"><span class="q-n">(ii)</span> The principal place of abode of the taxpayer's family members;</div><div class="q q-1"><span class="q-n">(iii)</span> The address listed on the taxpayer's federal and state tax returns, driver's license, automobile registration, and voter registration card;</div><div class="q q-1"><span class="q-n">(iv)</span> The taxpayer's mailing address for bills and correspondence;</div><div class="q q-1"><span class="q-n">(v)</span> The location of the taxpayer's banks; and</div><div class="q q-1"><span class="q-n">(vi)</span> The location of religious organizations and recreational clubs with which the taxpayer is affiliated.</div></blockquote><p class="plain"><span>Plain English</span>Only the home you mainly live in qualifies. If you have two, it’s usually the one you live in most of the year.</p></div></details><ul><li><div class="leaf bad"><span class="ans">No</span><span>No §121 exclusion.</span></div></li><li><div class="leaf next"><span class="ans">Yes</span><span>Continue to Step 2</span></div><ul><li><details class="node"><summary><span class="badge">2</span><span class="qtext"><strong>Owned for periods aggregating 2 years or more during the 5-year period?</strong><span class="cite">§121(a); §121(d)(3)(A), (d)(9), (d)(10)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(a)</a><div class="q q-0"><span class="q-n">(a)</span> <b>Exclusion</b> Gross income shall not include gain from the sale or exchange of property if, during the 5-year period ending on the date of the sale or exchange, such property has been owned and used by the taxpayer as the taxpayer’s principal residence for periods aggregating 2 years or more.</div></blockquote><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/cfr/text/26/1.121-1" target="_blank" rel="noopener">Treas. Reg. §1.121-1(c)(1)</a><div class="q q-0"><span class="q-n">(c)</span> Ownership and use requirements—(1) In general. The requirements of ownership and use for periods aggregating 2 years or more may be satisfied by establishing ownership and use for 24 full months or for 730 days (365 × 2). The requirements of ownership and use may be satisfied during nonconcurrent periods if both the ownership and use tests are met during the 5-year period ending on the date of the sale or exchange.</div></blockquote><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(d)(10)</a><div class="q q-0"><span class="q-n">(10)</span> <b>Property acquired in like-kind exchange</b> If a taxpayer acquires property in an exchange with respect to which gain is not recognized (in whole or in part) to the taxpayer under subsection (a) or (b) of section 1031, subsection (a) shall not apply to the sale or exchange of such property by such taxpayer (or by any person whose basis in such property is determined, in whole or in part, by reference to the basis in the hands of such taxpayer) during the 5-year period beginning with the date of such acquisition.</div></blockquote><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(d)(9)(A)–(B)</a><div class="q q-0"><span class="q-n">(A)</span> <b>In general</b> At the election of an individual with respect to a property, the running of the 5-year period described in subsections (a) and (c)(1)(B) and paragraph (7) of this subsection with respect to such property shall be suspended during any period that such individual or such individual’s spouse is serving on qualified official extended duty—<div class="q q-1"><span class="q-n">(i)</span> as a member of the uniformed services,</div><div class="q q-1"><span class="q-n">(ii)</span> as a member of the Foreign Service of the United States, or</div><div class="q q-1"><span class="q-n">(iii)</span> as an employee of the intelligence community.</div></div><div class="q q-0"><span class="q-n">(B)</span> <b>Maximum period of suspension</b> The 5-year period described in subsection (a) shall not be extended more than 10 years by reason of subparagraph (A).</div></blockquote><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(d)(3)(A)</a><div class="q q-0"><span class="q-n">(A)</span> <b>Property transferred to individual from spouse or former spouse</b> In the case of an individual holding property transferred to such individual in a transaction described in section 1041(a), the period such individual owns such property shall include the period the transferor owned the property.</div></blockquote><p class="plain"><span>Plain English</span>You need 2 years of ownership, about 730 days, in the 5 years before the sale. The days don’t have to be consecutive. A home acquired in a §1031 exchange also has to be held 5 years. Military, Foreign Service, and intelligence personnel can elect to pause the 5-year clock, for up to 10 years.</p></div></details><ul><li><div class="leaf warn"><span class="ans">No</span><span>Go to <a href="#reduced" data-jump>Reduced exclusion</a></span></div></li><li><div class="leaf next"><span class="ans">Yes</span><span>Continue to Step 3</span></div><ul><li><details class="node"><summary><span class="badge">3</span><span class="qtext"><strong>Used as the principal residence for periods aggregating 2 years or more?</strong><span class="cite">§121(a); Treas. Reg. §1.121-1(c)(2); §121(d)(3)(B), (d)(7)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/cfr/text/26/1.121-1" target="_blank" rel="noopener">Treas. Reg. §1.121-1(c)(2)</a><div class="q q-0"><span class="q-n">(2)</span> Use.</div><div class="q q-1"><span class="q-n">(i)</span> In establishing whether a taxpayer has satisfied the 2-year use requirement, occupancy of the residence is required. However, short temporary absences, such as for vacation or other seasonal absence (although accompanied with rental of the residence), are counted as periods of use.</div><div class="q q-1"><span class="q-n">(ii)</span> Determination of use during periods of out-of-residence care. If a taxpayer has become physically or mentally incapable of self-care and the taxpayer sells or exchanges property that the taxpayer owned and used as the taxpayer's principal residence for periods aggregating at least 1 year during the 5-year period preceding the sale or exchange, the taxpayer is treated as using the property as the taxpayer's principal residence for any period of time during the 5-year period in which the taxpayer owns the property and resides in any facility (including a nursing home) licensed by a State or political subdivision to care for an individual in the taxpayer's condition.</div></blockquote><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(d)(7)</a><div class="q q-0"><span class="q-n">(7)</span> <b>Determination of use during periods of out-of-residence care</b> In the case of a taxpayer who—<div class="q q-1"><span class="q-n">(A)</span> becomes physically or mentally incapable of self-care, and</div><div class="q q-1"><span class="q-n">(B)</span> owns property and uses such property as the taxpayer’s principal residence during the 5-year period described in subsection (a) for periods aggregating at least 1 year,</div><div class="q q-0">then the taxpayer shall be treated as using such property as the taxpayer’s principal residence during any time during such 5-year period in which the taxpayer owns the property and resides in any facility (including a nursing home) licensed by a State or political subdivision to care for an individual in the taxpayer’s condition.</div></div></blockquote><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(d)(3)(B)</a><div class="q q-0"><span class="q-n">(B)</span> <b>Property used by former spouse pursuant to divorce decree, etc.</b> Solely for purposes of this section, an individual shall be treated as using property as such individual’s principal residence during any period of ownership while such individual’s spouse or former spouse is granted use of the property under a divorce or separation instrument.</div></blockquote><p class="plain"><span>Plain English</span>You also need 2 years of living there as your main home in the same 5 years, but those years don’t have to overlap with the ownership years. Time in a licensed care facility counts if you lived there at least 1 year first. Time your ex-spouse lives there under a divorce decree counts as yours.</p></div></details><ul><li><div class="leaf warn"><span class="ans">No</span><span>Go to <a href="#reduced" data-jump>Reduced exclusion</a></span></div></li><li><div class="leaf next"><span class="ans">Yes</span><span>Continue to Step 4</span></div><ul><li><details class="node"><summary><span class="badge">4</span><span class="qtext"><strong>Was there any other sale to which §121(a) applied during the 2-year period?</strong><span class="cite">§121(b)(3)(A)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(b)(3)</a><div class="q q-0"><span class="q-n">(3)</span> <b>Application to only 1 sale or exchange every 2 years</b> Subsection (a) shall not apply to any sale or exchange by the taxpayer if, during the 2-year period ending on the date of such sale or exchange, there was any other sale or exchange by the taxpayer to which subsection (a) applied.</div></blockquote><p class="plain"><span>Plain English</span>You can use the exclusion only once every 2 years, counted from sale date to sale date.</p></div></details><ul><li><div class="leaf warn"><span class="ans">Yes</span><span>Go to <a href="#reduced" data-jump>Reduced exclusion</a></span></div></li><li><div class="leaf next"><span class="ans">No</span><span>Continue to Step 5</span></div><ul><li><details class="node"><summary><span class="badge">5</span><span class="qtext"><strong>Is this a joint return of a husband and wife?</strong><span class="cite">§121(b)(1); §121(b)(4)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(b)(1)</a><div class="q q-0"><span class="q-n">(1)</span> <b>In general</b> The amount of gain excluded from gross income under subsection (a) with respect to any sale or exchange shall not exceed $250,000.</div></blockquote><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(b)(4)</a><div class="q q-0"><span class="q-n">(4)</span> <b>Special rule for certain sales by surviving spouses</b> In the case of a sale or exchange of property by an unmarried individual whose spouse is deceased on the date of such sale, paragraph (1) shall be applied by substituting “$500,000” for “$250,000” if such sale occurs not later than 2 years after the date of death of such spouse and the requirements of paragraph (2)(A) were met immediately before such date of death.</div></blockquote><p class="plain"><span>Plain English</span>Single filers are capped at $250,000. An unmarried surviving spouse keeps the $500,000 cap for 2 years after the death.</p></div></details><ul><li><div class="leaf ok"><span class="ans">No</span><span>Exclude up to <b>$250,000</b> <span class="cite">§121(b)(1)</span> ($500,000 for an unmarried surviving spouse, <span class="cite">§121(b)(4)</span>). Then see <a href="#adjust" data-jump>Always check</a>.</span></div></li><li><div class="leaf next"><span class="ans">Yes</span><span>Continue to Step 6</span></div><ul><li><details class="node"><summary><span class="badge">6</span><span class="qtext"><strong>Does the couple meet all three requirements of §121(b)(2)(A)?</strong><span class="cite">§121(b)(2)(A)–(B)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(b)(2)</a><div class="q q-0"><span class="q-n">(2)</span> <b>Special rules for joint returns</b> In the case of a husband and wife who make a joint return for the taxable year of the sale or exchange of the property—<div class="q q-1"><span class="q-n">(A)</span> <b>$500,000 Limitation for certain joint returns</b> Paragraph (1) shall be applied by substituting “$500,000” for “$250,000” if—<div class="q q-2"><span class="q-n">(i)</span> either spouse meets the ownership requirements of subsection (a) with respect to such property;</div><div class="q q-2"><span class="q-n">(ii)</span> both spouses meet the use requirements of subsection (a) with respect to such property; and</div><div class="q q-2"><span class="q-n">(iii)</span> neither spouse is ineligible for the benefits of subsection (a) with respect to such property by reason of paragraph (3).</div></div><div class="q q-1"><span class="q-n">(B)</span> <b>Other joint returns</b> If such spouses do not meet the requirements of subparagraph (A), the limitation under paragraph (1) shall be the sum of the limitations under paragraph (1) to which each spouse would be entitled if such spouses had not been married. For purposes of the preceding sentence, each spouse shall be treated as owning the property during the period that either spouse owned the property.</div></div></blockquote><p class="plain"><span>Plain English</span>Joint filers get $500,000 if at least one spouse owned it, both lived there, and neither used the exclusion in the last 2 years. If not, each spouse gets up to $250,000 on their own, and the two are added together.</p></div></details><ul><li><div class="leaf ok"><span class="ans">Yes</span><span>Exclude up to <b>$500,000</b> <span class="cite">§121(b)(2)(A)</span>. Then see <a href="#adjust" data-jump>Always check</a>.</span></div></li><li><div class="leaf warn"><span class="ans">No</span><span>Sum of each spouse’s separate limit <span class="cite">§121(b)(2)(B)</span>.</span></div></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul><p class="branch-head" id="reduced">Side branch · Reduced exclusion</p><p class="branch-sub">Reached from Step 2, 3, or 4. Governed by <span class="cite">§121(c)</span> and <span class="cite">Treas. Reg. §1.121-3</span>.</p><ul class="tree"><li><details class="node side"><summary><span class="badge">A</span><span class="qtext"><strong>Is the sale “by reason of a change in place of employment, health, or … unforeseen circumstances”?</strong><span class="cite">§121(c)(2); Treas. Reg. §1.121-3(c)–(e)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(c)(2)</a><div class="q q-0"><span class="q-n">(2)</span> <b>Sales and exchanges to which subsection applies</b> This subsection shall apply to any sale or exchange if—<div class="q q-1"><span class="q-n">(A)</span> subsection (a) would not (but for this subsection) apply to such sale or exchange by reason of—<div class="q q-2"><span class="q-n">(i)</span> a failure to meet the ownership and use requirements of subsection (a), or</div><div class="q q-2"><span class="q-n">(ii)</span> subsection (b)(3), and</div></div><div class="q q-1"><span class="q-n">(B)</span> such sale or exchange is by reason of a change in place of employment, health, or, to the extent provided in regulations, unforeseen circumstances.</div></div></blockquote><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/cfr/text/26/1.121-3" target="_blank" rel="noopener">Treas. Reg. §1.121-3(c)(2) · Employment safe harbor</a><div class="q q-0"><span class="q-n">(2)</span> Distance safe harbor. A sale or exchange is deemed to be by reason of a change in place of employment (within the meaning of paragraph (c)(1) of this section) if—</div><div class="q q-1"><span class="q-n">(i)</span> The change in place of employment occurs during the period of the taxpayer's ownership and use of the property as the taxpayer's principal residence; and</div><div class="q q-1"><span class="q-n">(ii)</span> The qualified individual's new place of employment is at least 50 miles farther from the residence sold or exchanged than was the former place of employment, or, if there was no former place of employment, the distance between the qualified individual's new place of employment and the residence sold or exchanged is at least 50 miles.</div></blockquote><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/cfr/text/26/1.121-3" target="_blank" rel="noopener">Treas. Reg. §1.121-3(d)(1)–(2) · Health</a><div class="q q-0"><span class="q-n">(d)</span> Sale or exchange by reason of health—(1) In general. A sale or exchange is by reason of health if the primary reason for the sale or exchange is to obtain, provide, or facilitate the diagnosis, cure, mitigation, or treatment of disease, illness, or injury of a qualified individual described in paragraph (f) of this section, or to obtain or provide medical or personal care for a qualified individual suffering from a disease, illness, or injury. A sale or exchange that is merely beneficial to the general health or well-being of an individual is not a sale or exchange by reason of health.</div><div class="q q-0"><span class="q-n">(2)</span> Physician's recommendation safe harbor. A sale or exchange is deemed to be by reason of health if a physician (as defined in section 213(d)(4)) recommends a change of residence for reasons of health (as defined in paragraph (d)(1) of this section).</div></blockquote><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/cfr/text/26/1.121-3" target="_blank" rel="noopener">Treas. Reg. §1.121-3(e)(1)–(2) · Unforeseen circumstances</a><div class="q q-0"><span class="q-n">(e)</span> Sale or exchange by reason of unforeseen circumstances—(1) In general. A sale or exchange is by reason of unforeseen circumstances if the primary reason for the sale or exchange is the occurrence of an event that the taxpayer could not reasonably have anticipated before purchasing and occupying the residence. A sale or exchange by reason of unforeseen circumstances (other than a sale or exchange deemed to be by reason of unforeseen circumstances under paragraph (e)(2) or (3) of this section) does not qualify for the reduced maximum exclusion if the primary reason for the sale or exchange is a preference for a different residence or an improvement in financial circumstances.</div><div class="q q-0"><span class="q-n">(2)</span> Specific event safe harbors. A sale or exchange is deemed to be by reason of unforeseen circumstances (within the meaning of paragraph (e)(1) of this section) if any of the events specified in paragraphs (e)(2)(i) through (iii) of this section occur during the period of the taxpayer's ownership and use of the residence as the taxpayer's principal residence:</div><div class="q q-1"><span class="q-n">(i)</span> The involuntary conversion of the residence.</div><div class="q q-1"><span class="q-n">(ii)</span> Natural or man-made disasters or acts of war or terrorism resulting in a casualty to the residence (without regard to deductibility under section 165(h)).</div><div class="q q-1"><span class="q-n">(iii)</span> In the case of a qualified individual described in paragraph (f) of this section—</div><div class="q q-0"> (A) Death;</div><div class="q q-0"> (B) The cessation of employment as a result of which the qualified individual is eligible for unemployment compensation (as defined in section 85(b));</div><div class="q q-0"> (C) A change in employment or self-employment status that results in the taxpayer's inability to pay housing costs and reasonable basic living expenses for the taxpayer's household (including amounts for food, clothing, medical expenses, taxes, transportation, court-ordered payments, and expenses reasonably necessary to the production of income, but not for the maintenance of an affluent or luxurious standard of living);</div><div class="q q-0"> (D) Divorce or legal separation under a decree of divorce or separate maintenance; or</div><div class="q q-0"> (E) Multiple births resulting from the same pregnancy.</div></blockquote><p class="plain"><span>Plain English</span>The main reason for selling must be a job move (the 50-mile test is a safe harbor), a health reason (a doctor’s recommendation is a safe harbor), or an unforeseen event from the regulation’s list. Wanting a different house or having more money doesn’t count.</p></div></details><ul><li><div class="leaf bad"><span class="ans">No</span><span>No exclusion. The entire gain is taxable.</span></div></li><li><div class="leaf next"><span class="ans">Yes</span><span>Continue to Step B</span></div><ul><li><details class="node side"><summary><span class="badge">B</span><span class="qtext"><strong>Determine “the shorter of” the qualifying periods</strong><span class="cite">§121(c)(1)(B); Treas. Reg. §1.121-3(g)(1)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(c)(1)</a><div class="q q-0"><span class="q-n">(1)</span> <b>In general</b> In the case of a sale or exchange to which this subsection applies, the ownership and use requirements of subsection (a), and subsection (b)(3), shall not apply; but the dollar limitation under paragraph (1) or (2) of subsection (b), whichever is applicable, shall be equal to—<div class="q q-1"><span class="q-n">(A)</span> the amount which bears the same ratio to such limitation (determined without regard to this paragraph) as</div><div class="q q-1"><span class="q-n">(B)</span><div class="q q-2"><span class="q-n">(i)</span> the shorter of—<div class="q q-3"><span class="q-n">(I)</span> the aggregate periods, during the 5-year period ending on the date of such sale or exchange, such property has been owned and used by the taxpayer as the taxpayer’s principal residence; or</div><div class="q q-3"><span class="q-n">(II)</span> the period after the date of the most recent prior sale or exchange by the taxpayer to which subsection (a) applied and before the date of such sale or exchange, bears to</div></div><div class="q q-2"><span class="q-n">(ii)</span> 2 years.</div></div></div></blockquote><p class="plain"><span>Plain English</span>Take the shortest of how long you owned it, how long you lived there, and how long since your last §121 sale.</p></div></details><ul><li><div class="leaf next"><span class="ans">Then</span><span>Continue to Step C</span></div><ul><li><details class="node side"><summary><span class="badge">C</span><span class="qtext"><strong>Compute the reduced maximum exclusion</strong><span class="cite">Treas. Reg. §1.121-3(g)(1)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/cfr/text/26/1.121-3" target="_blank" rel="noopener">Treas. Reg. §1.121-3(g)(1)</a><div class="q q-0"><span class="q-n">(1)</span> The reduced maximum exclusion is computed by multiplying the maximum dollar limitation of $250,000 ($500,000 for certain joint filers) by a fraction. The numerator of the fraction is the shortest of the period of time that the taxpayer owned the property during the 5-year period ending on the date of the sale or exchange; the period of time that the taxpayer used the property as the taxpayer's principal residence during the 5-year period ending on the date of the sale or exchange; or the period of time between the date of a prior sale or exchange of property for which the taxpayer excluded gain under section 121 and the date of the current sale or exchange. The numerator of the fraction may be expressed in days or months. The denominator of the fraction is 730 days or 24 months (depending on the measure of time used in the numerator).</div></blockquote><p class="plain"><span>Plain English</span>Reduced cap = $250,000 or $500,000 × shortest period ÷ 24 months. This prorates the cap, not the gain. For example, 12 months for a single filer gives $250,000 × 12 ÷ 24 = $125,000.</p></div></details><ul><li><div class="leaf next"><span class="ans">Then</span><span>Continue to Step D</span></div><ul><li><details class="node side"><summary><span class="badge">D</span><span class="qtext"><strong>Exclude gain up to the reduced limitation</strong><span class="cite">§121(c)(1); §121(d)(6)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><p class="plain"><span>Plain English</span>Exclude the smaller of your gain or the reduced cap. Anything above the cap is taxable. Depreciation and nonqualified use still apply; see <a href="#adjust" data-jump>Always check</a>.</p></div></details><ul><li><div class="leaf ok"><span class="ans">Gain ≤ cap</span><span>All gain excluded</span></div></li><li><div class="leaf warn"><span class="ans">Gain &gt; cap</span><span>Excess is taxable</span></div></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul><p class="branch-head" id="adjust" style="color:var(--t-bad)">Always check · Even when you qualify</p><ul class="tree"><li><details class="node"><summary><span class="badge" style="background:var(--t-bad-bg);color:var(--t-bad)">!</span><span class="qtext"><strong>Recognition of gain attributable to depreciation</strong><span class="cite">§121(d)(6)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(d)(6)</a><div class="q q-0"><span class="q-n">(6)</span> <b>Recognition of gain attributable to depreciation</b> Subsection (a) shall not apply to so much of the gain from the sale of any property as does not exceed the portion of the depreciation adjustments (as defined in section 1250(b)(3)) attributable to periods after May 6, 1997, in respect of such property.</div></blockquote><p class="plain"><span>Plain English</span>Depreciation claimed after May 6, 1997, for a home office or rental use is taxable as unrecaptured §1250 gain, at up to 25%.</p></div></details></li><li><details class="node"><summary><span class="badge" style="background:var(--t-bad-bg);color:var(--t-bad)">!</span><span class="qtext"><strong>Exclusion of gain allocated to nonqualified use</strong><span class="cite">§121(b)(5)</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="body"><blockquote class="law"><a class="src" href="https://www.law.cornell.edu/uscode/text/26/121" target="_blank" rel="noopener">26 U.S.C. §121(b)(5)</a><div class="q q-0"><span class="q-n">(5)</span> <b>Exclusion of gain allocated to nonqualified use</b><div class="q q-1"><span class="q-n">(A)</span> <b>In general</b> Subsection (a) shall not apply to so much of the gain from the sale or exchange of property as is allocated to periods of nonqualified use.</div><div class="q q-1"><span class="q-n">(B)</span> <b>Gain allocated to periods of nonqualified use</b> For purposes of subparagraph (A), gain shall be allocated to periods of nonqualified use based on the ratio which—<div class="q q-2"><span class="q-n">(i)</span> the aggregate periods of nonqualified use during the period such property was owned by the taxpayer, bears to</div><div class="q q-2"><span class="q-n">(ii)</span> the period such property was owned by the taxpayer.</div></div><div class="q q-1"><span class="q-n">(C)</span> <b>Period of nonqualified use</b> For purposes of this paragraph—<div class="q q-2"><span class="q-n">(i)</span> <b>In general</b> The term “period of nonqualified use” means any period (other than the portion of any period preceding January 1, 2009) during which the property is not used as the principal residence of the taxpayer or the taxpayer’s spouse or former spouse.</div><div class="q q-2"><span class="q-n">(ii)</span> <b>Exceptions</b> The term “period of nonqualified use” does not include—<div class="q q-3"><span class="q-n">(I)</span> any portion of the 5-year period described in subsection (a) which is after the last date that such property is used as the principal residence of the taxpayer or the taxpayer’s spouse,</div><div class="q q-3"><span class="q-n">(II)</span> any period (not to exceed an aggregate period of 10 years) during which the taxpayer or the taxpayer’s spouse is serving on qualified official extended duty (as defined in subsection (d)(9)(C)) described in clause (i), (ii), or (iii) of subsection (d)(9)(A), and</div><div class="q q-3"><span class="q-n">(III)</span> any other period of temporary absence (not to exceed an aggregate period of 2 years) due to change of employment, health conditions, or such other unforeseen circumstances as may be specified by the Secretary.</div></div></div><div class="q q-1"><span class="q-n">(D)</span> <b>Coordination with recognition of gain attributable to depreciation</b> For purposes of this paragraph—<div class="q q-2"><span class="q-n">(i)</span> subparagraph (A) shall be applied after the application of subsection (d)(6), and</div><div class="q q-2"><span class="q-n">(ii)</span> subparagraph (B) shall be applied without regard to any gain to which subsection (d)(6) applies.</div></div></div></blockquote><p class="plain"><span>Plain English</span>Gain allocated to time after 2008 when the home wasn’t anyone’s principal residence, such as a rental before you moved in, is taxable: (gain − depreciation) × nonqualified time ÷ total time owned. Time after you move out, within the 5-year window, doesn’t count against you.</p></div></details></li></ul>
+        </section>
+      </div>
+    </div>
+
+    <section class="panel workpaper" id="workpaper" aria-labelledby="wp-h">
+      <h3 id="wp-h">Workpaper</h3>
+      <p class="lede">A plain-text record of the facts, tests, authority and computation. Copy it into your file or print it.</p>
+      <pre class="memo" id="memo" tabindex="0"></pre>
+    </section>
+
+    <p class="foot">General information, not tax advice. Counting convention: a period from A to B counts B − A days; the regulation permits 24 full months or 730 days. Not modelled: spouses whose ownership or use periods differ (each spouse's separate limit, §121(b)(2)(B)), the military, Foreign Service and temporary-absence exceptions to nonqualified use, and the elections and special rules in §121(d)–(g).</p>
+  </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav aria-label="Footer">
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h2>Learn</h2>
+            <ul>
+              <li><a href="../../learn/index.html">Learn</a></li>
+              <li><a href="../../learn/textbook/index.html">Visualized tax guide</a></li>
+              <li><a href="../../learn/guides/index.html">Concept guides</a></li>
+              <li><a href="../../learn/glossary/index.html">Glossary</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Tools</h2>
+            <ul>
+              <li><a href="../../tools/index.html">All tools</a></li>
+              <li><a href="../../review/1040/index.html">1040 preview</a></li>
+              <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+              <li><a href="../../review/index.html">Return review</a></li>
+              <li><a href="../../review/how-it-works/index.html">How it works</a></li>
+              <li><a href="../../review/privacy/index.html">Privacy</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Dashboard</h2>
+            <ul>
+              <li><a href="../../dashboard/index.html">Dashboard</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Consulting</h2>
+            <ul>
+              <li><a href="../../consulting/index.html">Consulting</a></li>
+              <li><a href="../../consulting/planning/index.html">One-on-one tax planning</a></li>
+              <li><a href="../../training/team/index.html">Team training</a></li>
+              <li><a href="../../training/workshops/index.html">Public workshops</a></li>
+              <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>About</h2>
+            <ul>
+              <li><a href="../../about/index.html">About TaxVisual</a></li>
+              <li><a href="../../about/team/index.html">Our team</a></li>
+              <li><a href="../../methodology/index.html">Methodology</a></li>
+              <li><a href="../../sitemap/index.html">Site map</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Connect</h2>
+            <ul>
+              <li><a href="../../contact/index.html">Contact</a></li>
+              <li><a href="../../updates/index.html">Updates</a></li>
+              <li><a href="../../community/index.html">Community</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual publishes educational tax policy simulations for classrooms, policy workshops, and self-study. Not tax advice.</p>
+        <p class="footer-note"><a href="../../contact/index.html">Get email updates</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  /* ======================================================================
+     DATES. Days are counted as (end − start); the regulation permits 24
+     full months or 730 days (Reg. 1.121-1(c)(1)). Dates are UTC midnight.
+     ====================================================================== */
+  function parseD(s) {
+    var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+    return p ? Date.UTC(+p[1], +p[2] - 1, +p[3]) : null;
+  }
+  function fmtD(t) { return new Date(t).toISOString().slice(0, 10); }
+  function addYears(t, n) {
+    var d = new Date(t), y = d.getUTCFullYear() + n, m = d.getUTCMonth(), r = Date.UTC(y, m, d.getUTCDate());
+    return new Date(r).getUTCMonth() === m ? r : Date.UTC(y, m + 1, 0);      // 29 Feb -> 28 Feb
+  }
+  function dayDiff(a, b) { return Math.round((b - a) / 86400000); }
+  function span(a, b) { return b > a ? dayDiff(a, b) : 0; }
+  function overlapDays(a0, a1, b0, b1) { return span(Math.max(a0, b0), Math.min(a1, b1)); }
+  function unionDays(list, lo, hi) {                // days covered by any period, clipped to [lo, hi]
+    var iv = list.filter(Boolean).map(function (p) { return [Math.max(p[0], lo), Math.min(p[1], hi)]; })
+      .filter(function (p) { return p[1] > p[0]; }).sort(function (a, b) { return a[0] - b[0]; });
+    var tot = 0, cs = null, ce = null;
+    iv.forEach(function (p) {
+      if (cs === null) { cs = p[0]; ce = p[1]; }
+      else if (p[0] <= ce) ce = Math.max(ce, p[1]);
+      else { tot += span(cs, ce); cs = p[0]; ce = p[1]; }
+    });
+    return cs === null ? tot : tot + span(cs, ce);
+  }
+
+  /* ======================================================================
+     MODEL: one function decides the path AND the numbers. The tree
+     highlight, the evidence chips, the chart, the timeline, the readouts
+     and the workpaper all read its result.
+       window    = the 5 years ending on the sale                  121(a)
+       owned, used = days inside the window (each needs 730)       121(a), Reg 1.121-1(c)(1)
+       shortest  = min(owned, used, days since last 121 sale)      121(c)(1)(B)
+       cap       = limit x min(shortest, 730) / 730                Reg 1.121-3(g)(1)
+       nonqual   = (gain - dep) x nonqualified days / days owned   121(b)(5), after (d)(6)
+       excluded  = min(gain - dep - nonqual, cap)
+     ====================================================================== */
+  function model(i) {
+    var limit = (i.status === 'mfj' || i.status === 'surv') ? 500000 : 250000;   // 121(b)(1), (2)(A), (4)
+    var gain = i.gain, dep = Math.min(i.dep, i.gain), elig = gain - dep;           // 121(d)(6)
+    var winStart = addYears(i.sale, -5), from = Math.max(i.acquired, winStart);
+    var owned = span(from, i.sale), used = unionDays(i.use, from, i.sale);
+    var ownTotal = span(i.acquired, i.sale);
+    var hasPrior = i.lastSale !== null, since = hasPrior ? span(i.lastSale, i.sale) : null;
+    var prior = hasPrior && i.lastSale > addYears(i.sale, -2);                      // 121(b)(3)
+    var periods = [owned, used]; if (hasPrior) periods.push(since);
+    var shortest = Math.min.apply(null, periods);
+
+    // 121(b)(5): nonqualified use from 1/1/2009, less any part after the last day used as a home
+    var nqDays = 0;
+    if (i.nq) {
+      var lo = Math.max(i.nq[0], Date.UTC(2009, 0, 1), i.acquired), hi = Math.min(i.nq[1], i.sale);
+      nqDays = span(lo, hi);
+      var lastUse = -Infinity;
+      i.use.forEach(function (p) { if (p && p[1] > p[0]) lastUse = Math.max(lastUse, Math.min(p[1], i.sale)); });
+      if (lastUse > -Infinity && nqDays > 0) nqDays -= overlapDays(lo, hi, Math.max(lastUse, winStart), i.sale);
+    }
+    var nqAlloc = ownTotal > 0 ? elig * nqDays / ownTotal : 0;
+    var excludable = elig - nqAlloc;
+
+    var path = [], cap = null, reduced = false, outcome;
+    function step(node, ans) { path.push({ node: node, ans: ans }); }
+    step('1', i.principal ? 'yes' : 'no');
+    if (!i.principal) { cap = 0; outcome = 'none'; }
+    else {
+      var owned2 = owned >= 730, used2 = used >= 730;
+      step('2', owned2 ? 'yes' : 'no');
+      if (owned2) {
+        step('3', used2 ? 'yes' : 'no');
+        if (used2) step('4', prior ? 'yes' : 'no');
+      }
+      reduced = !owned2 || !used2 || prior;
+      if (!reduced) {
+        var joint = i.status === 'mfj';
+        step('5', joint ? 'yes' : 'no');
+        if (!joint) { cap = limit; outcome = 'full'; }
+        else {
+          step('6', i.both ? 'yes' : 'no');
+          if (i.both) { cap = limit; outcome = 'full'; }
+          else { cap = null; outcome = 'sum'; }
+        }
+      } else {
+        step('A', i.reason ? 'yes' : 'no');
+        if (!i.reason) { cap = 0; outcome = 'none'; }
+        else {
+          step('B', 'then'); step('C', 'then');
+          cap = limit * Math.min(shortest, 730) / 730;
+          step('D', excludable <= cap ? 'le' : 'gt');
+          outcome = 'reduced';
+        }
+      }
+    }
+    var excluded = cap === null ? null : Math.min(excludable, cap);
+    var taxCap = excluded === null ? null : excludable - excluded;
+    return {
+      limit: limit, gain: gain, dep: dep, elig: elig, winStart: winStart,
+      owned: owned, used: used, ownTotal: ownTotal, since: since, prior: prior, shortest: shortest,
+      nqDays: nqDays, nqAlloc: nqAlloc, excludable: excludable,
+      path: path, reduced: reduced, outcome: outcome, cap: cap,
+      excluded: excluded, taxCap: taxCap,
+      taxable: excluded === null ? null : dep + nqAlloc + taxCap,
+      binding: cap === null ? null : (cap <= excludable ? 'cap' : 'gain')       // ties: the cap, as the statute applies it first
+    };
+  }
+
+  function niceCeil(v) {
+    var p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+  }
+
+  /* Exact geometry: both curves are piecewise linear, so draw them from their knots.
+     The x axis is months (730 days = 24 months). */
+  function geom(m) {
+    var months = m.shortest * 24 / 730;
+    var xMax = Math.min(60, Math.max(30, Math.ceil((months + 3) / 6) * 6));
+    var elig = Math.max(m.excludable, 0);
+    var yMax = niceCeil(Math.max(m.limit, Math.min(elig, m.limit * 1.6)));
+    var capAt = function (x) { return m.limit * Math.min(x, 24) / 24; };
+    var excAt = function (x) { return Math.min(elig, capAt(x)); };
+    var cross = elig < m.limit ? 24 * elig / m.limit : null;           // where the cap meets the excludable gain
+    var excX = [0];
+    if (cross !== null && cross > 0 && cross < 24) excX.push(cross);
+    excX.push(24, xMax);
+    var mx = Math.min(months, xMax);
+    return {
+      xMax: xMax, yMax: yMax, eligY: Math.min(elig, yMax), eligClipped: elig > yMax, months: months,
+      capPts: [0, 24, xMax].map(function (x) { return [x, capAt(x)]; }),
+      excPts: excX.map(function (x) { return [x, excAt(x)]; }),
+      mx: mx, my: m.excluded === null ? null : (m.outcome === 'none' ? 0 : excAt(mx))
+    };
+  }
+
+  /* ======================= page wiring (not model code) ======================= */
+  var usd = function (v) { return (v < 0 ? '−$' : '$') + Math.abs(Math.round(v)).toLocaleString('en-US'); };
+  var short = function (v) { return v >= 1e6 ? '$' + (v / 1e6) + 'M' : v >= 1000 ? '$' + (v / 1000) + 'k' : '$' + v; };
+  var nfmt = function (v) { return Math.round(v).toLocaleString('en-US'); };
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var monYr = function (t) { var d = new Date(t); return MON[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); };
+  var longD = function (t) { var d = new Date(t); return MON[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear(); };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var qsa = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var state = { status: 'single', baseline: null };
+  var FIELDS = ['sale', 'gain', 'dep', 'acq', 'u1a', 'u1b', 'u2a', 'u2b', 'nqa', 'nqb', 'last'];
+  var CHECKS = ['principal', 'reason', 'both'];
+  var SALE = '2026-06-30';
+  var PRESETS = {
+    full:   { status: 'single', sale: SALE, gain: 400000, dep: 0,     acq: '2020-06-01', u1a: '2020-06-01', u1b: SALE, last: '' },
+    job:    { status: 'mfj',    sale: SALE, gain: 90000,  dep: 0,     acq: '2025-06-30', u1a: '2025-06-30', u1b: SALE, last: '' },
+    health: { status: 'single', sale: SALE, gain: 240000, dep: 0,     acq: '2025-03-31', u1a: '2025-03-31', u1b: SALE, last: '' },
+    repeat: { status: 'single', sale: SALE, gain: 180000, dep: 5000,  acq: '2023-06-30', u1a: '2023-06-30', u1b: SALE, last: '2024-12-30' },
+    rental: { status: 'single', sale: SALE, gain: 300000, dep: 12000, acq: '2019-01-01', u1a: '2022-01-01', u1b: SALE, nqa: '2019-01-01', nqb: '2021-12-31', last: '' }
+  };
+
+  var nodes = {};
+  if (typeof document !== 'undefined') {
+    var bang = 0;
+    qsa('details.node').forEach(function (d) {
+      var k = d.querySelector('.badge').textContent.trim();
+      nodes[k === '!' ? '!' + (++bang) : k] = d;
+    });
+  }
+
+  function leafFor(key, ans) {
+    var ul = nodes[key].parentElement.querySelector(':scope > ul');
+    if (!ul) return null;
+    var hit = null;
+    qsa(':scope > li > .leaf', ul).forEach(function (l) {
+      var t = l.querySelector('.ans').textContent.toLowerCase();
+      if (ans === 'le' ? t.indexOf('≤') > -1 : ans === 'gt' ? t.indexOf('>') > -1 : t === ans) hit = l;
+    });
+    return hit;
+  }
+
+  function setStatus(s) {
+    state.status = s;
+    ['single', 'surv', 'mfj'].forEach(function (k) { $('st-' + k).setAttribute('aria-pressed', s === k); });
+    $('both-wrap').hidden = s !== 'mfj';
+  }
+
+  function read() {
+    var v = function (id) { return $(id).value.trim(); };
+    var money = function (id) { var s = v(id).replace(/[^0-9.]/g, ''); return s === '' ? null : +s; };
+    var d = function (id) { return parseD(v(id)); };
+    var pair = function (a, b) { var x = d(a), y = d(b); return x !== null && y !== null ? [x, y] : null; };
+    var sale = d('sale'), last = d('last');
+    return {
+      status: state.status, gain: money('gain'), dep: money('dep') || 0, sale: sale, acquired: d('acq'),
+      use: [pair('u1a', 'u1b'), pair('u2a', 'u2b')], nq: pair('nqa', 'nqb'),
+      lastSale: last !== null && sale !== null && last < sale ? last : null,
+      principal: $('principal').checked, reason: $('reason').checked, both: $('both').checked
+    };
+  }
+
+  function validate(i) {
+    var block = [], warn = [], v = function (id) { return $(id).value.trim(); };
+    if (i.gain === null) block.push('Enter the realized gain.');
+    if (i.sale === null) block.push('Enter the date of sale.');
+    if (i.acquired === null) block.push('Enter the date acquired.');
+    if (i.sale !== null && i.acquired !== null && i.acquired >= i.sale) block.push('The sale must be after the date acquired.');
+    [['u1a', 'u1b', 'Main-home period'], ['u2a', 'u2b', 'Second main-home period'], ['nqa', 'nqb', 'Not-a-main-home period']].forEach(function (p) {
+      var a = v(p[0]), b = v(p[1]);
+      if ((a === '') !== (b === '')) warn.push(p[2] + ': enter both dates; it is ignored until you do.');
+      else if (a && b && parseD(a) >= parseD(b)) warn.push(p[2] + ': the end date is not after the start; it is ignored.');
+    });
+    if (i.acquired !== null && i.use[0] && i.use[0][0] < i.acquired) warn.push('Use before the date acquired is not counted.');
+    if (i.gain !== null && $('dep').value && i.dep > i.gain) warn.push('Depreciation exceeds the gain; the gain is used.');
+    if (v('last') && i.sale !== null && parseD(v('last')) >= i.sale) warn.push('The last §121 sale must be before this sale; it is ignored.');
+    if (!i.use[0] && !i.use[1] && !block.length) warn.push('No main-home period entered, so days used are 0.');
+    return { block: block, warn: warn };
+  }
+
+  function svgEl(tag, attrs, text) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function clearSvg(svg) { var keep = svg.querySelector('desc'); while (svg.lastChild && svg.lastChild !== keep) svg.removeChild(svg.lastChild); }
+
+  function drawChart(m, g) {
+    var W = 640, H = 320, L = 64, R = 28, T = 26, B = 44;
+    var px = function (x) { return L + x / g.xMax * (W - L - R); };
+    var py = function (y) { return H - B - y / g.yMax * (H - T - B); };
+    var svg = $('chart'); clearSvg(svg);
+    var add = function (e) { svg.appendChild(e); return e; };
+    var pts = function (a) { return a.map(function (p) { return px(p[0]).toFixed(1) + ',' + py(p[1]).toFixed(1); }).join(' '); };
+
+    for (var k = 0; k <= 5; k++) {
+      var yv = g.yMax * k / 5;
+      add(svgEl('line', { x1: L, x2: W - R, y1: py(yv), y2: py(yv), 'class': k ? 'grid-line' : 'base-line' }));
+      add(svgEl('text', { x: L - 8, y: py(yv) + 3.5, 'text-anchor': 'end', 'class': 'axis-text' }, short(yv)));
+    }
+    for (var x = 0; x <= g.xMax; x += 6) add(svgEl('text', { x: px(x), y: H - B + 16, 'text-anchor': 'middle', 'class': 'axis-text' + (x === 24 ? ' emph' : '') }, x + ''));
+    add(svgEl('text', { x: (L + W - R) / 2, y: H - 8, 'text-anchor': 'middle', 'class': 'axis-text' }, 'Shortest qualifying period, months (24 = 730 days). Dollar axis starts at $0.'));
+
+    var live = m.outcome !== 'none', bindCap = live && m.binding === 'cap', bindGain = live && m.binding === 'gain';   // no limit binds when nothing qualifies
+    add(svgEl('polyline', { points: pts(g.capPts), 'class': 'ln ln-cap' + (bindCap ? ' bind' : ''), 'data-hl': 'C' }));
+    add(svgEl('line', { x1: L, x2: W - R, y1: py(g.eligY), y2: py(g.eligY), 'class': 'ln ln-gain' + (bindGain ? ' bind' : ''), 'data-hl': 'D' }));
+    add(svgEl('polyline', { points: pts(g.excPts), 'class': 'ln ln-exc', 'data-hl': 'D' }));
+    add(svgEl('text', { x: px(g.xMax), y: py(m.limit) - 7, 'text-anchor': 'end', 'class': 'lbl', 'data-hl': 'C' },
+      'Cap: ' + usd(m.limit) + ' × days ÷ 730, flat from 24 months' + (bindCap ? ' — the limit' : '')));
+    var gl = 'Excludable gain ' + usd(Math.max(m.excludable, 0)) + (g.eligClipped ? ' (above chart)' : '') + (bindGain ? ' — the limit' : '');
+    add(svgEl('text', { x: W - R, y: py(g.eligY) + (g.eligY > g.yMax * .85 ? 15 : -7), 'text-anchor': 'end', 'class': 'lbl', 'data-hl': 'D' }, gl));
+
+    if (g.my !== null) {
+      var right = g.mx > g.xMax * 0.6;
+      add(svgEl('line', { x1: px(g.mx), x2: px(g.mx), y1: py(g.my), y2: py(0), 'class': 'mk-guide', 'data-hl': 'B' }));
+      add(svgEl('circle', { cx: px(g.mx), cy: py(g.my), r: 5.5, 'class': 'mk', 'data-hl': 'B' }));
+      add(svgEl('text', { x: px(g.mx) + (right ? -10 : 10), y: py(g.my) + (g.my > g.yMax * .12 ? 20 : -12), 'text-anchor': right ? 'end' : 'start', 'class': 'lbl strong', 'data-hl': 'B' },
+        'This sale: ' + nfmt(m.shortest) + ' days → ' + usd(m.excluded) + ' excluded'));
+    }
+    $('chart-desc').textContent = 'Chart of the excluded amount against the shortest qualifying period, 0 to ' + g.xMax + ' months. The cap rises from $0 to ' + usd(m.limit) + ' at 24 months. ' +
+      (m.excluded === null ? 'This sale has a separate limit per spouse, so no marker is shown.' : 'This sale: shortest period ' + nfmt(m.shortest) + ' days, ' + usd(m.excluded) + ' excluded.');
+  }
+
+  function drawTimeline(m, i) {
+    var W = 640, L = 132, R = 18, ds = m.winStart, de = i.sale;
+    var px = function (t) { return L + (t - ds) / (de - ds) * (W - L - R); };
+    var svg = $('timeline'); clearSvg(svg);
+    var add = function (e) { svg.appendChild(e); return e; };
+    var rows = [
+      ['Owned', [[Math.max(i.acquired, ds), de]], m.owned, 'tl-own'],
+      ['Lived there', i.use, m.used, 'tl-use'],
+      ['Not a main home', i.nq && m.nqDays > 0 ? [i.nq] : [], m.nqDays, 'tl-nq']
+    ];
+    for (var k = 0; k <= 5; k++) {
+      var t = addYears(ds, k), x = px(Math.min(t, de));
+      add(svgEl('line', { x1: x, x2: x, y1: 26, y2: 122, 'class': 'grid-line' }));
+      add(svgEl('text', { x: x, y: 16, 'text-anchor': k === 0 ? 'start' : k === 5 ? 'end' : 'middle', 'class': 'axis-text' }, monYr(t)));
+    }
+    rows.forEach(function (r, idx) {
+      var y = 36 + idx * 30;
+      add(svgEl('text', { x: 0, y: y + 8, 'class': 'lbl' }, r[0]));
+      var ok = idx < 2 ? (r[2] >= 730 ? '✓' : '✕') : '';
+      add(svgEl('text', { x: 0, y: y + 21, 'class': 'axis-text' }, idx === 2 ? nfmt(r[2]) + ' days, all years owned' : nfmt(r[2]) + ' days (730 needed) ' + ok));
+      add(svgEl('rect', { x: L, y: y, width: W - L - R, height: 18, rx: 3, 'class': 'tl-track' }));
+      r[1].filter(Boolean).forEach(function (p) {
+        var a = Math.max(p[0], ds), b = Math.min(p[1], de);
+        if (b > a) add(svgEl('rect', { x: px(a), y: y, width: Math.max(2, px(b) - px(a)), height: 18, rx: 3, 'class': r[3] }));
+      });
+    });
+    var lb = addYears(de, -2);
+    add(svgEl('line', { x1: px(lb), x2: px(lb), y1: 26, y2: 128, 'class': 'tl-look' }));
+    add(svgEl('text', { x: px(lb) - 4, y: 142, 'text-anchor': 'end', 'class': 'axis-text' }, '2 years before sale'));
+    add(svgEl('line', { x1: px(de), x2: px(de), y1: 26, y2: 128, 'class': 'tl-sale' }));
+    add(svgEl('text', { x: px(de), y: 158, 'text-anchor': 'end', 'class': 'lbl strong' }, 'Sale ' + longD(de)));
+    if (i.lastSale !== null && i.lastSale >= ds) {
+      add(svgEl('path', { d: 'M' + px(i.lastSale) + ' 124 l5 7 l-5 7 l-5 -7 z', 'class': 'tl-prior' }));
+      add(svgEl('text', { x: px(i.lastSale) + 9, y: 135, 'class': 'axis-text' }, 'Last §121 sale ' + longD(i.lastSale)));
+    }
+    $('tl-desc').textContent = 'Timeline of the five years ending ' + longD(de) + '. Owned ' + nfmt(m.owned) + ' days, lived there ' + nfmt(m.used) + ' days, 730 needed for each' +
+      (m.nqDays > 0 ? '; ' + nfmt(m.nqDays) + ' days of nonqualified use' : '') + '.';
+  }
+
+  function evidence(m, i) {
+    var E = {}, yes = function (b) { return b ? 'pass' : 'fail'; };
+    E['1'] = [yes(i.principal), i.principal ? 'Treated as the principal residence' : 'Not the principal residence'];
+    E['2'] = [yes(m.owned >= 730), nfmt(m.owned) + ' days owned in the window (730 needed)'];
+    E['3'] = [yes(m.used >= 730), nfmt(m.used) + ' days used as a home (730 needed)'];
+    E['4'] = i.lastSale === null ? ['pass', 'No earlier §121 sale entered']
+      : [m.prior ? 'fail' : 'pass', 'Last §121 sale ' + nfmt(m.since) + ' days before' + (m.prior ? ' (within 2 years)' : '')];
+    E['5'] = ['info', { single: 'Single or married filing separately', surv: 'Unmarried surviving spouse (limit $500,000)', mfj: 'Married filing jointly' }[i.status]];
+    E['6'] = [yes(i.both), i.both ? 'Both spouses meet the §121(b)(2)(A) tests' : 'A spouse fails a §121(b)(2)(A) test'];
+    E['A'] = [yes(i.reason), i.reason ? 'Job, health or unforeseen-circumstances reason' : 'No qualifying reason'];
+    E['B'] = ['info', 'Shortest of owned, used, since last sale = ' + nfmt(m.shortest) + ' days'];
+    E['C'] = ['info', m.cap === null ? '—' : usd(m.limit) + ' × ' + nfmt(Math.min(m.shortest, 730)) + ' ÷ 730 = ' + usd(m.cap)];
+    E['D'] = ['info', m.excluded === null ? '—' : 'Excludable gain ' + usd(m.excludable) + ' → excluded ' + usd(m.excluded)];
+    E['!1'] = [m.dep > 0 ? 'warn' : 'info', m.dep > 0 ? usd(m.dep) + ' of depreciation is taxable' : 'No depreciation after 5/6/1997'];
+    E['!2'] = [m.nqAlloc > 0 ? 'warn' : 'info', m.nqAlloc > 0 ? nfmt(m.nqDays) + ' ÷ ' + nfmt(m.ownTotal) + ' days → ' + usd(m.nqAlloc) + ' not excludable' : 'No nonqualified use entered'];
+    return E;
+  }
+  var GLYPH = { pass: '✓', fail: '✕', info: '•', warn: '!', skip: '–' };
+
+  function insights(m, i) {
+    var out = [], bad = [];
+    if (i.principal) {
+      if (m.owned < 730) bad.push('ownership (' + nfmt(m.owned) + ' days; 730 needed)');
+      if (m.used < 730) bad.push('use (' + nfmt(m.used) + ' days; 730 needed)');
+      if (m.prior) bad.push('the 2-year look-back');
+    }
+    if (!i.principal) out.push(['bad', 'Not the principal residence, so §121 does not apply. Reg. §1.121-1(b)(2) lists the facts-and-circumstances factors.']);
+    else if (m.outcome === 'none') out.push(['bad', 'Fails ' + bad.join(' and ') + ' and no job, health or unforeseen reason is checked, so nothing is excluded. With a qualifying reason the cap would be ' + usd(m.limit * Math.min(m.shortest, 730) / 730) + '.']);
+    if (m.reduced && i.reason) {
+      out.push(['warn', 'Fails ' + bad.join(' and ') + '. Qualifies for a reduced cap: ' + usd(m.limit) + ' × ' + nfmt(m.shortest) + ' ÷ 730 = ' + usd(m.cap) + '.']);
+      var shortOU = 730 - Math.min(m.owned, m.used);
+      if (shortOU > 0 && !m.prior) out.push(['info', 'A sale about ' + shortOU + ' days later (' + longD(i.sale + shortOU * 86400000) + ') would meet both 730-day tests, if the home stays owned and occupied.']);
+      if (m.prior) out.push(['info', 'A sale after ' + longD(addYears(i.lastSale, 2)) + ' would clear the 2-year limit on the earlier §121 sale.']);
+    }
+    if (m.outcome === 'full') out.push(['ok', 'Owned ' + nfmt(m.owned) + ' and used ' + nfmt(m.used) + ' days (730 needed); no §121 sale in the last 2 years. The cap is the full ' + usd(m.limit) + '.']);
+    if (m.outcome === 'sum') out.push(['info', 'The couple fails a §121(b)(2)(A) test, so the limit is the sum of each spouse\'s separate limit (§121(b)(2)(B)). Work each spouse separately; this tool shows no figure.']);
+    if (m.excluded !== null && m.outcome !== 'none' && m.taxCap > 0) out.push(['warn', usd(m.taxCap) + ' of gain is above the cap and is taxable.']);
+    if (m.dep > 0) out.push(['warn', usd(m.dep) + ' of depreciation after May 6, 1997 is taxable (unrecaptured §1250 gain, up to 25%) whatever the exclusion: §121(d)(6).']);
+    if (m.nqAlloc > 0) out.push(['warn', usd(m.nqAlloc) + ' of gain is allocated to ' + nfmt(m.nqDays) + ' days of nonqualified use (' + (100 * m.nqDays / m.ownTotal).toFixed(1) + '% of ' + nfmt(m.ownTotal) + ' days owned) and cannot be excluded: §121(b)(5), applied after (d)(6).']);
+    if (m.excluded !== null && m.outcome === 'full' && m.taxable === 0) out.push(['ok', 'The whole gain is excluded.']);
+    return out;
+  }
+
+  function memo(m, i) {
+    var L = [], hr = '------------------------------------------------------------';
+    L.push('IRC §121 — EXCLUSION OF GAIN ON SALE OF PRINCIPAL RESIDENCE', 'Prepared with TaxVisual (taxvisual.com) on ' + longD(Date.now()) + '. General information, not tax advice.', hr);
+    L.push('FACTS');
+    L.push('  Filing status ............ ' + { single: 'Single / MFS', surv: 'Unmarried surviving spouse', mfj: 'Married filing jointly' }[i.status]);
+    L.push('  Date acquired ............ ' + longD(i.acquired), '  Date of sale ............. ' + longD(i.sale));
+    L.push('  Five-year window ......... ' + longD(m.winStart) + ' to ' + longD(i.sale));
+    i.use.filter(Boolean).forEach(function (p, k) { L.push('  Lived there (period ' + (k + 1) + ') ... ' + longD(p[0]) + ' to ' + longD(p[1])); });
+    if (i.nq) L.push('  Not a main home .......... ' + longD(i.nq[0]) + ' to ' + longD(i.nq[1]));
+    L.push('  Last §121 sale ........... ' + (i.lastSale === null ? 'None' : longD(i.lastSale)));
+    L.push('  Realized gain ............ ' + usd(m.gain), '  Depreciation after 5/6/97  ' + usd(m.dep), hr);
+    L.push('TESTS');
+    var E = evidence(m, i), seen = {};
+    m.path.forEach(function (s) { seen[s.node] = true; });
+    [['1', 'Principal residence', '§121(a); Reg. §1.121-1(b)(2)'], ['2', 'Ownership, 730 days', '§121(a); Reg. §1.121-1(c)(1)'],
+     ['3', 'Use, 730 days', '§121(a); Reg. §1.121-1(c)(2)'], ['4', 'One sale every 2 years', '§121(b)(3)'],
+     ['5', 'Joint return', '§121(b)(1), (b)(4)'], ['6', 'Joint-return tests', '§121(b)(2)'],
+     ['A', 'Job, health or unforeseen reason', '§121(c)(2); Reg. §1.121-3(c)–(e)'], ['B', 'Shortest qualifying period', '§121(c)(1)(B)'],
+     ['C', 'Reduced cap', 'Reg. §1.121-3(g)(1)'], ['D', 'Excluded amount', '§121(c)(1)']].forEach(function (t) {
+      if (!seen[t[0]]) return;
+      L.push('  Step ' + t[0] + '  ' + t[1] + ' [' + t[2] + ']', '          ' + (E[t[0]][0] === 'pass' ? 'PASS  ' : E[t[0]][0] === 'fail' ? 'FAIL  ' : '') + E[t[0]][1]);
+    });
+    L.push(hr, 'COMPUTATION');
+    L.push('  Gain ..................................... ' + usd(m.gain), '  Less depreciation, §121(d)(6) ............ ' + usd(-m.dep));
+    if (m.nqAlloc > 0) L.push('  Less nonqualified use, §121(b)(5) ........ ' + usd(-m.nqAlloc) + '  (' + nfmt(m.nqDays) + ' ÷ ' + nfmt(m.ownTotal) + ' days)');
+    L.push('  Excludable gain .......................... ' + usd(m.excludable));
+    L.push('  Cap ...................................... ' + (m.cap === null ? 'sum of separate spousal limits (not computed)' : usd(m.cap) + (m.reduced && m.cap > 0 ? '  (' + usd(m.limit) + ' × ' + nfmt(m.shortest) + ' ÷ 730)' : '')));
+    L.push(hr, 'RESULT');
+    L.push('  Excluded ................................. ' + (m.excluded === null ? '—' : usd(m.excluded)));
+    L.push('  Taxable .................................. ' + (m.taxable === null ? '—' : usd(m.taxable)));
+    if (m.taxable !== null) L.push('    depreciation (up to 25%) ............... ' + usd(m.dep), '    nonqualified use ....................... ' + usd(m.nqAlloc), '    above the cap .......................... ' + usd(m.taxCap));
+    L.push(hr, 'NOT MODELLED', '  Spouses with different ownership or use periods (§121(b)(2)(B)); military, Foreign Service and temporary-absence exceptions;', '  §121(d)–(g) elections and special rules. Counting convention: a period from A to B is B − A days.');
+    L.push('', 'SOURCES', '  26 U.S.C. §121; 26 C.F.R. §§1.121-1, 1.121-3. Verify against govinfo.gov / ecfr.gov before relying.');
+    return L.join('\n');
+  }
+
+  function fmtDelta(cur, base) {
+    if (base === null || cur === null) return '';
+    var d = cur - base; if (Math.abs(d) < 0.5) return 'same as baseline';
+    return (d > 0 ? '+' : '−') + '$' + Math.abs(Math.round(d)).toLocaleString('en-US') + ' vs baseline';
+  }
+
+  function render() {
+    var i = read(), v = validate(i), msgs = $('msgs');
+    msgs.innerHTML = '';
+    v.block.concat(v.warn).forEach(function (t, k) { var li = document.createElement('li'); li.className = k < v.block.length ? 'err' : 'warn'; li.textContent = t; msgs.appendChild(li); });
+    if (v.block.length) { $('v-chip').textContent = 'Enter the facts'; $('v-chip').className = 'chip info'; $('v-why').textContent = v.block[0]; ['r-exc', 'r-tax', 'r-cap'].forEach(function (id) { $(id).textContent = '—'; }); return; }
+
+    var m = model(i), g = geom(m);
+    saveHash();
+    drawChart(m, g); drawTimeline(m, i);
+
+    // result bar
+    var chip = { full: ['Full exclusion', 'ok'], reduced: ['Reduced exclusion', 'warn'], none: ['No exclusion', 'bad'], sum: ['Separate spousal limits', 'info'] }[m.outcome];
+    $('v-chip').textContent = chip[0]; $('v-chip').className = 'chip ' + chip[1];
+    var ins = insights(m, i);
+    $('v-why').textContent = ins.length ? ins[0][1] : '';
+    var b = state.baseline;
+    $('r-exc').textContent = m.excluded === null ? '—' : usd(m.excluded);
+    $('r-tax').textContent = m.taxable === null ? '—' : usd(m.taxable);
+    $('r-cap').textContent = m.cap === null ? '—' : usd(m.cap);
+    $('r-exc-d').textContent = b ? fmtDelta(m.excluded, b.exc) : (m.excluded === null ? 'See the tests below' : (m.outcome === 'none' ? 'Nothing excluded' : ''));
+    $('r-tax-d').textContent = b ? fmtDelta(m.taxable, b.tax) : (m.taxable === null ? '' : (m.taxable === 0 ? 'Nothing taxable' : [[m.taxCap, 'over the cap'], [m.dep, 'depreciation'], [m.nqAlloc, 'nonqualified use']].filter(function (c) { return c[0] > 0.5; }).map(function (c) { return usd(c[0]) + ' ' + c[1]; }).join(' + ')));
+    $('r-cap-d').textContent = b ? fmtDelta(m.cap, b.cap) : (m.cap === null ? '' : usd(m.limit) + ' limit' + (m.reduced ? ', prorated' : ''));
+    var list = $('insights'); list.innerHTML = '';
+    ins.forEach(function (x) { var li = document.createElement('li'); li.className = x[0]; li.innerHTML = '<i aria-hidden="true">' + ({ ok: '✓', bad: '✕', warn: '!', info: 'i' }[x[0]]) + '</i><span></span>'; li.lastChild.textContent = x[1]; list.appendChild(li); });
+
+    $('chart-lede').textContent = m.outcome === 'none'
+      ? 'This sale fails a test with no qualifying reason, so nothing is excluded. The lines show what a qualifying sale of this size would exclude.'
+      : 'The thin line is the cap. The bold line is what you can exclude: the smaller of the cap and the excludable gain. The dot is this sale.';
+    $('chart-note').textContent = (m.dep > 0 || m.nqAlloc > 0) ? 'Excludable gain is the gain less depreciation (§121(d)(6)) and less gain allocated to nonqualified use (§121(b)(5)).' : '';
+
+    // part-to-whole bar
+    var bar = $('bar'), lg = $('legend');
+    bar.innerHTML = ''; lg.innerHTML = '';
+    if (m.excluded !== null && m.gain > 0) {
+      [['Excluded', m.excluded, 'var(--neutral)', 'Never taxed'],
+       ['Taxable above the cap', m.taxCap, 'var(--fill-strong)', 'Capital gain'],
+       ['Taxable nonqualified use', m.nqAlloc, 'var(--step-3)', '§121(b)(5)'],
+       ['Taxable depreciation', m.dep, 'var(--step-4)', 'Unrecaptured §1250, up to 25%']].forEach(function (s) {
+        if (s[1] > 0) { var sp = document.createElement('span'); sp.style.flex = s[1] + ' 0 0'; sp.style.background = s[2]; bar.appendChild(sp); }
+        var it = document.createElement('div'); it.className = 'legend-item';
+        it.innerHTML = '<span class="legend-swatch" style="background:' + s[2] + '"></span><div>' + s[0] + '<b>' + usd(s[1]) + '</b>' + s[3] + '</div>';
+        lg.appendChild(it);
+      });
+    }
+
+    // tree: ink the path, dim the rest, write the evidence
+    qsa('li.dim, .branch-head.dim, .branch-sub.dim').forEach(function (e) { e.classList.remove('dim'); });
+    qsa('details.node.on, .leaf.taken, .leaf.final').forEach(function (e) { e.classList.remove('on', 'taken', 'final'); });
+    var reached = { '!1': true, '!2': true };
+    m.path.forEach(function (s, idx) {
+      reached[s.node] = true;
+      nodes[s.node].classList.add('on');
+      var leaf = leafFor(s.node, s.ans);
+      if (leaf) { leaf.classList.add('taken'); if (idx === m.path.length - 1) leaf.classList.add('final'); }
+    });
+    var E = evidence(m, i);
+    Object.keys(nodes).forEach(function (k) {
+      var q = nodes[k].querySelector('.qtext'), ev = q.querySelector('.ev');
+      if (!ev) { ev = document.createElement('span'); ev.className = 'ev'; q.appendChild(ev); }
+      var st = reached[k] ? E[k][0] : 'skip', tx = reached[k] ? E[k][1] : 'Not reached on this path';
+      ev.className = 'ev ev-' + st; ev.innerHTML = '<i aria-hidden="true">' + GLYPH[st] + '</i><span></span>'; ev.lastChild.textContent = tx;
+      if (!reached[k]) nodes[k].closest('li').classList.add('dim');
+    });
+    var hasA = !!reached.A;
+    $('reduced').classList.toggle('dim', !hasA); $('reduced').nextElementSibling.classList.toggle('dim', !hasA);
+    $('path-note').textContent = 'Your path: ' + m.path.map(function (s) { return 'Step ' + s.node; }).join(' → ') + '.';
+    $('memo').textContent = memo(m, i);
+    state.last = m;
+  }
+
+  /* ---- share state in the URL hash ---- */
+  function saveHash() {
+    try {
+      var p = new URLSearchParams();
+      p.set('st', state.status);
+      FIELDS.forEach(function (id) { if ($(id).value) p.set(id, $(id).value); });
+      CHECKS.forEach(function (id) { p.set(id, $(id).checked ? '1' : '0'); });
+      history.replaceState(null, '', '#' + p.toString());
+    } catch (e) { /* file:// or sandboxed frame: the link just will not carry state */ }
+  }
+  function loadHash() {
+    try {
+      var h = location.hash.replace(/^#/, ''); if (!h) return false;
+      var p = new URLSearchParams(h); if (!p.has('sale')) return false;
+      setStatus(['single', 'surv', 'mfj'].indexOf(p.get('st')) > -1 ? p.get('st') : 'single');
+      FIELDS.forEach(function (id) { var x = p.get(id) || ''; $(id).value = (id === 'gain' || id === 'dep') && x ? nfmt(+x.replace(/[^0-9.]/g, '')) : x; });
+      CHECKS.forEach(function (id) { $(id).checked = p.get(id) === '1'; });
+      $('u2row').hidden = !(p.get('u2a') || p.get('u2b'));
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function load(name) {
+    var s = PRESETS[name];
+    setStatus(s.status);
+    FIELDS.forEach(function (id) { $(id).value = s[id] != null ? (id === 'gain' || id === 'dep' ? nfmt(s[id]) : s[id]) : ''; });
+    $('principal').checked = true; $('reason').checked = true; $('both').checked = true;
+    $('u2row').hidden = true; $('addperiod').hidden = false;
+    render();
+  }
+
+  function hl(key) { var s = $('chart'); if (key) s.setAttribute('data-hl-active', key); else s.removeAttribute('data-hl-active'); }
+  function flash(t) { var s = $('act-status'); s.textContent = t; clearTimeout(flash.t); flash.t = setTimeout(function () { s.textContent = ''; }, 2200); }
+  function copy(text, done) {
+    var fallback = function () { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); flash(done); } catch (e) { flash('Copy failed'); } document.body.removeChild(ta); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { flash(done); }, fallback); else fallback();
+  }
+
+  if (typeof document !== 'undefined') {
+    ['B', 'C', 'D'].forEach(function (k) {
+      var sm = nodes[k].querySelector('summary');
+      ['mouseenter', 'focus'].forEach(function (ev) { sm.addEventListener(ev, function () { hl(k); }); });
+      ['mouseleave', 'blur'].forEach(function (ev) { sm.addEventListener(ev, function () { hl(null); }); });
+    });
+    $('expand').addEventListener('click', function () { qsa('details.node').forEach(function (d) { d.open = true; }); });
+    $('collapse').addEventListener('click', function () { qsa('details.node').forEach(function (d) { d.open = false; }); });
+    qsa('[data-jump]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var t = $(a.getAttribute('href').slice(1)); if (!t) return;
+        var list = t.nextElementSibling;
+        while (list && !list.classList.contains('tree')) list = list.nextElementSibling;
+        if (list) qsa('details.node', list).forEach(function (d) { d.open = true; });
+        t.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      });
+    });
+    ['single', 'surv', 'mfj'].forEach(function (k) { $('st-' + k).addEventListener('click', function () { setStatus(k); render(); }); });
+    FIELDS.concat(CHECKS).forEach(function (id) { $(id).addEventListener('input', render); $(id).addEventListener('change', render); });
+    ['gain', 'dep'].forEach(function (id) {
+      $(id).addEventListener('blur', function () { var s = $(id).value.replace(/[^0-9.]/g, ''); $(id).value = s === '' ? '' : nfmt(+s); });
+    });
+    $('example').addEventListener('change', function () { if ($('example').value) load($('example').value); $('example').value = ''; });
+    $('reset').addEventListener('click', function () { state.baseline = null; $('pin').hidden = false; $('unpin').hidden = true; load('job'); });
+    $('addperiod').addEventListener('click', function () { $('u2row').hidden = false; $('addperiod').hidden = true; $('u2a').focus(); });
+    $('pin').addEventListener('click', function () { var m = state.last; if (!m || m.excluded === null) return; state.baseline = { exc: m.excluded, tax: m.taxable, cap: m.cap }; $('pin').hidden = true; $('unpin').hidden = false; render(); });
+    $('unpin').addEventListener('click', function () { state.baseline = null; $('pin').hidden = false; $('unpin').hidden = true; render(); });
+    $('act-memo').addEventListener('click', function () { copy($('memo').textContent, 'Workpaper copied'); });
+    $('act-link').addEventListener('click', function () { copy(location.href, 'Link copied'); });
+    $('act-print').addEventListener('click', function () { window.print(); });
+    if (!loadHash()) { load('job'); } else { render(); }
+  }
+  </script>
+</body>
+</html>

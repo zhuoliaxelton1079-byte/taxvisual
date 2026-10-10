@@ -1,0 +1,1751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The QBI Deduction | TaxVisual</title>
+<meta name="description" content="An interactive view of the section 199A qualified business income deduction: the threshold, the wage-and-property ceiling that phases in, and the separate phase-out that applies to a specified service business.">
+<link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<link rel="stylesheet" href="../../assets/css/components.css">
+<link rel="stylesheet" href="../../assets/css/workpaper.css">
+<style>
+  /* ---------------------------------------------------------------------
+     Tool-scoped theme, namespaced apart from the site-wide --tv-* tokens.
+     Same system as tools/charitable-deduction-limits/ — see
+     docs/interactive-tool-pattern.md.
+
+     The part-to-whole bar splits ONE quantity, 20% of QBI, into the four
+     fates the statute can send it to: kept, or lost to each of three
+     limits in the order they apply. That is ordered, so it is a single-hue
+     ORDINAL ramp with the kept part darkest, not a categorical set.
+
+     Validated with the dataviz validator:
+       --ordinal, light  #0b2a4d,#325781,#5a84b5,#86b6ef  on #fcfcfb
+       --ordinal, dark   #1d4f88,#557eac,#8dacd1,#cce1fa  on #1a1a19
+     Both pass monotone L, adjacent dL >= 0.06, one hue (1-2 degrees) and a
+     light end clearing the surface (2.06:1 and 2.10:1).
+
+     Four steps rather than five leaves room to spread them, so unlike the
+     charitable ramp these also clear the CATEGORICAL floors under
+     --pairs all: worst normal dE 15.4 both modes, worst CVD 15.4 (light)
+     and 14.9 (dark), worst tritan 15.1 and 14.3. The only outstanding
+     validator note is the surface-contrast WARN on the end step, which the
+     skill says is discharged by visible labels — the legend writes out
+     every value and every name.
+     --------------------------------------------------------------------- */
+  :root{
+    color-scheme: light;
+    --tool-surface:   #fcfcfb;
+    --page:           #f9f9f7;
+    --tool-ink:       #0b0b0b;
+    --ink-soft:       #52514e;
+    --ink-muted:      #75736e;  /* 4.6:1 on the light surface */
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --tool-accent:    #2a78d6;
+    --fill-strong:    #2a78d6;
+    --step-1:         #0b2a4d;
+    --step-2:         #325781;
+    --step-3:         #5a84b5;
+    --step-4:         #86b6ef;
+    --compare:        #8a8a8a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --tool-surface:  #1a1a19;
+      --page:          #0d0d0d;
+      --tool-ink:      #ffffff;
+      --ink-soft:      #c3c2b7;
+      --ink-muted:     #898781;
+      --gridline:      #2c2c2a;
+      --baseline:      #383835;
+      --border:        rgba(255,255,255,0.10);
+      --tool-accent:   #3987e5;
+      --fill-strong:   #3987e5;
+      --step-1:        #1d4f88;
+      --step-2:        #557eac;
+      --step-3:        #8dacd1;
+      --step-4:        #cce1fa;
+      --compare:       #808080;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --tool-surface:  #1a1a19;
+    --page:          #0d0d0d;
+    --tool-ink:      #ffffff;
+    --ink-soft:      #c3c2b7;
+    --ink-muted:     #898781;
+    --gridline:      #2c2c2a;
+    --baseline:      #383835;
+    --border:        rgba(255,255,255,0.10);
+    --tool-accent:   #3987e5;
+    --fill-strong:   #3987e5;
+    --step-1:        #1d4f88;
+    --step-2:        #557eac;
+    --step-3:        #8dacd1;
+    --step-4:        #cce1fa;
+    --compare:       #808080;
+  }
+
+  * { box-sizing: border-box; }
+  body{ margin:0; background: var(--page); }
+  .app{
+    background: var(--page);
+    color: var(--tool-ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 28px 16px 40px;
+  }
+  .wrap{ max-width: 1000px; margin: 0 auto; }
+
+  .masthead{
+    display:flex; flex-direction:column; gap:8px;
+    padding-bottom: 20px; margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .kicker{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color: var(--ink-muted);
+  }
+  .app h1{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-weight:600; font-size: clamp(24px,3.4vw,32px);
+    margin:2px 0 0; text-wrap: balance; color: var(--tool-ink);
+  }
+  .standfirst{ font-size:15px; color: var(--ink-soft); margin:0; line-height:1.55; max-width:66ch; }
+
+  .layout{
+    display:grid; grid-template-columns: 300px minmax(0,1fr);
+    gap:28px; align-items:start;
+  }
+  @media (max-width: 860px){ .layout{ grid-template-columns: minmax(0,1fr); } }
+
+  /* ---- controls ---- */
+  .rail{
+    background: var(--tool-surface); border:1px solid var(--border);
+    border-radius:10px; padding:20px; position:sticky; top:16px;
+  }
+  @media (max-width:860px){ .rail{ position:static; } }
+  .rail h2{
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    color: var(--ink-muted); margin:0 0 12px; font-weight:600;
+  }
+  .seg{ display:flex; gap:4px; margin-bottom:18px; }
+  .seg button{
+    flex:1; font:inherit; font-size:12.5px; padding:8px 4px;
+    background:transparent; color: var(--ink-soft);
+    border:1px solid var(--border); border-radius:6px;
+    cursor:pointer; transition: background 140ms ease, color 140ms ease;
+  }
+  .seg button:hover{ background: color-mix(in srgb, var(--tool-accent) 8%, transparent); }
+  .seg button[aria-pressed="true"]{
+    background: var(--tool-accent); color:#fff; border-color: var(--tool-accent);
+  }
+  .seg-note{ font-size:11px; color: var(--ink-muted); margin:-12px 0 18px; line-height:1.45; }
+
+  .field{ margin-bottom:17px; }
+  .field label{ display:block; font-size:12px; color: var(--ink-soft); margin-bottom:2px; }
+  .field .amount{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:21px; font-weight:500; color: var(--tool-ink);
+    font-variant-numeric: tabular-nums; line-height:1.2;
+  }
+  input[type="range"]{ width:100%; margin:5px 0 0; accent-color: var(--tool-accent); }
+
+  .group{ border-top:1px solid var(--border); margin-top:20px; padding-top:16px; }
+  .group-head{
+    font-size:11px; font-weight:600; color: var(--ink-soft);
+    line-height:1.4; margin:0 0 12px;
+  }
+  .group-head .sub{ display:block; font-weight:400; color: var(--ink-muted); font-size:10.5px; }
+  .field.compact{ margin-bottom:12px; }
+  .field.compact label{ font-size:11.5px; margin-bottom:1px; }
+  .field.compact .amount{ font-size:14px; }
+
+  .stats{
+    border-top:1px solid var(--border); margin-top:20px; padding-top:18px;
+    display:grid; gap:16px;
+  }
+  .stat .label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color: var(--ink-muted); margin-bottom:2px;
+  }
+  .stat .value{
+    font-size:26px; font-weight:600; line-height:1.1;
+    font-variant-numeric: proportional-nums;
+  }
+  .stat .value.accent{ color: var(--tool-accent); }
+  .stat .value.small{ font-size:15px; font-weight:500; line-height:1.35; }
+  .stat .sub{ font-size:11.5px; color: var(--ink-muted); margin-top:3px; line-height:1.4; }
+
+  /* ---- panel ---- */
+  .panel{
+    background: var(--tool-surface); border:1px solid var(--border);
+    border-radius:10px; padding:20px 20px 18px; margin-bottom:22px;
+  }
+  .panel h3{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-size:18px; font-weight:600; margin:0 0 4px; color: var(--tool-ink);
+  }
+  .panel .lede{ font-size:13px; color: var(--ink-soft); margin:0 0 16px; line-height:1.5; max-width:64ch; }
+
+  /* ---- chart ---- */
+  .chart-scroll{ overflow-x:auto; overflow-y:hidden; }
+  .chart-scroll:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .chart-shell{ min-width:600px; }
+  .chart-shell svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .axis-text{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10.5px; fill: var(--ink-muted); }
+  .axis-text.emph{ fill: var(--tool-ink); font-weight:500; }
+  .band-text{ font-family:"IBM Plex Sans", sans-serif; font-size:11.5px; font-weight:600; fill: var(--ink-soft); }
+  .anno-text{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10px; fill: var(--ink-muted); }
+  .anno-text.bind{ fill: var(--tool-ink); }
+  /* An annotation placed along its own line can cross the curve; the halo
+     keeps it readable where it does. */
+  .anno-text.haloed{ paint-order: stroke; stroke: var(--tool-surface); stroke-width:3px; }
+  .marker-text{
+    font-family:"IBM Plex Sans", sans-serif; font-size:12px; font-weight:600;
+    fill: var(--tool-ink); paint-order: stroke; stroke: var(--tool-surface); stroke-width:3px;
+  }
+  .curve-label{
+    font-family:"IBM Plex Sans", sans-serif; font-size:11px; font-weight:600;
+    paint-order: stroke; stroke: var(--tool-surface); stroke-width:3px;
+  }
+
+  /* ---- part-to-whole bar ---- */
+  .split{ margin-top:26px; padding-top:20px; border-top:1px solid var(--gridline); }
+  .split h4{
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color: var(--ink-muted); margin:0 0 10px; font-weight:600;
+  }
+  .ptw{ display:flex; gap:2px; height:30px; }
+  .ptw > div{ min-width:2px; border-radius:2px; }
+  .ptw > div:first-child{ border-radius:4px 2px 2px 4px; }
+  .ptw > div:last-child{ border-radius:2px 4px 4px 2px; }
+  .ptw-scale{
+    display:flex; justify-content:space-between;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:10.5px; color: var(--ink-muted); margin-top:5px;
+  }
+  .legend{ display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:12px 22px; margin-top:16px; }
+  .legend-item{ display:flex; align-items:flex-start; gap:7px; font-size:12px; color: var(--ink-soft); }
+  .legend-swatch{ width:11px; height:11px; border-radius:3px; flex:none; margin-top:3px; }
+  .legend-item b{
+    display:block; color: var(--tool-ink); font-weight:600;
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums;
+  }
+  .legend-item .why{ display:block; color: var(--ink-muted); font-size:11px; margin-top:2px; line-height:1.4; }
+
+  /* ---- source-rules disclosure ---- */
+  details.sources{ padding:0; overflow:hidden; }
+  details.sources > summary{
+    list-style:none; cursor:pointer;
+    padding:18px 20px; display:flex; align-items:baseline; gap:11px; flex-wrap:wrap;
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-size:17px; font-weight:600; color: var(--tool-ink);
+    transition: background 140ms ease;
+  }
+  details.sources > summary::-webkit-details-marker{ display:none; }
+  details.sources > summary::before{
+    content:''; width:7px; height:7px; flex:none; align-self:center;
+    border-right:2px solid var(--tool-accent); border-bottom:2px solid var(--tool-accent);
+    transform: rotate(-45deg); transition: transform 160ms ease;
+  }
+  details.sources[open] > summary::before{ transform: rotate(45deg); }
+  details.sources > summary:hover{ background: color-mix(in srgb, var(--tool-accent) 6%, transparent); }
+  details.sources > summary:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
+  .summary-hint{
+    font-family:"IBM Plex Sans", sans-serif; font-size:12.5px; font-weight:400;
+    color: var(--ink-muted);
+  }
+  .sources-body{ padding:0 20px 20px; }
+  .sources-body p{ font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:70ch; margin:0 0 15px; }
+  .sources-body a{ color: var(--tool-accent); }
+  .src-meta{ margin:0 0 14px; }
+  .src-meta strong{ color: var(--tool-ink); }
+  .statute{
+    max-height:430px; overflow-y:auto;
+    border:1px solid var(--gridline); border-radius:8px;
+    padding:16px 18px; background: var(--page);
+    font-size:13px; line-height:1.62; color: var(--ink-soft);
+  }
+  .statute:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .statute .lv{ margin-left:16px; }
+  .statute > .lv{ margin-left:0; margin-top:16px; }
+  .statute > .lv:first-child{ margin-top:0; }
+  .statute .lv > p{ margin:0 0 7px; max-width:none; font-size:13px; line-height:1.62; }
+  .statute .lv-n{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-weight:500; color: var(--tool-ink);
+  }
+  .statute .lv-h{ font-weight:600; color: var(--tool-ink); }
+  .statute-head{
+    font-family:"IBM Plex Sans", sans-serif; font-size:11px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.07em; color: var(--ink-muted);
+    margin:22px 0 10px; padding-top:16px; border-top:1px solid var(--gridline);
+  }
+  .statute-head:first-child{ margin-top:0; padding-top:0; border-top:none; }
+  .note{
+    border-left:3px solid var(--tool-accent);
+    padding:2px 0 2px 14px; margin:18px 0 0;
+    font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:70ch;
+  }
+  .note b{ color: var(--tool-ink); font-weight:600; }
+
+  .footnote{ font-size:12px; color: var(--ink-muted); line-height:1.55; max-width:74ch; margin:14px 0 0; }
+
+  .tooltip{
+    position:fixed; z-index:50; pointer-events:none;
+    transform: translate(-50%, calc(-100% - 12px));
+    background: var(--tool-ink); color: var(--page);
+    border-radius:6px; padding:7px 10px; font-size:12px; line-height:1.45;
+    opacity:0; transition: opacity 120ms ease; white-space:nowrap;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+  }
+  .tooltip.show{ opacity:1; }
+
+  /* workpaper layer: layout glue only; the pieces are in assets/css/workpaper.css */
+  .masthead.wp-head{ flex-direction:row; align-items:flex-end; }
+  .mast-text{ display:flex; flex-direction:column; gap:8px; }
+  @media (min-width:861px){ .rail{ top:128px; max-height:calc(100vh - 148px); overflow-y:auto; } }
+  .field .amount.sr-only{ position:absolute; }
+  .panel.wp-workpaper{ margin-bottom:0; }
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+  }
+  @media (prefers-reduced-motion: reduce){ .app *, .tooltip{ transition:none !important; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../../index.html" aria-label="TaxVisual home">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="20" width="20" height="1.3" rx=".65"/><path d="M2 20V14.7Q2 13.2 3.5 13.2H5.5Q7 13.2 7 14.7V20Z"/><path d="M9.5 20V10.1Q9.5 8.6 11 8.6H13Q14.5 8.6 14.5 10.1V20Z"/><rect x="17" y="9.3" width="5" height="10.7"/><path d="M17 8.7V5Q17 3.5 18.5 3.5H20.5Q22 3.5 22 5V8.7Z" fill-opacity=".45"/></svg>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../learn/index.html">Learn</a></li>
+          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../dashboard/index.html">Dashboard</a></li>
+          <li><a href="../../consulting/index.html">Consulting</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+
+<div class="app" id="main">
+  <div class="wrap">
+
+    <div class="masthead wp-head">
+      <div class="mast-text">
+      <div class="kicker">Deductions &middot; Simulation</div>
+      <h1>The QBI Deduction and the Two Things That Happen at the Threshold</h1>
+      <p class="standfirst">
+        Below a taxable-income threshold the deduction is simply 20% of qualified business income.
+        Cross it and one of two different limits phases in over the next band of income &mdash; a ceiling
+        built from W-2 wages and property for an ordinary business, or, for a specified service business,
+        the income itself draining away to nothing. Same threshold, same band, very different damage.
+      </p>
+      </div>
+      <div class="wp-actions" role="group" aria-label="Share and export">
+        <button type="button" class="wp-btn" id="wp-copy">Copy workpaper</button>
+        <button type="button" class="wp-btn" id="wp-print">Print</button>
+        <button type="button" class="wp-btn" id="wp-link">Copy link</button>
+        <span class="wp-status" id="wp-status" role="status"></span>
+      </div>
+    </div>
+
+    <section class="wp-result" aria-label="Result">
+      <div class="wp-verdict">
+        <span class="wp-chip info" id="wpChip">&mdash;</span>
+        <p class="wp-why" id="wpWhy"></p>
+      </div>
+      <div class="wp-figs">
+        <div class="wp-fig"><div class="label">&sect;199A deduction</div><div class="val accent" id="statDed">$0</div><div class="delta" id="statDedSub">&nbsp;</div></div>
+        <div class="wp-fig"><div class="label">Next $1 of taxable income</div><div class="val small" id="statSlope">&mdash;</div><div class="delta" id="statSlopeSub">&nbsp;</div></div>
+        <div class="wp-fig"><div class="label">What limits it</div><div class="val small" id="statBinding">&mdash;</div><div class="delta" id="statBindingSub">&nbsp;</div></div>
+      </div>
+      <div class="wp-pin"><button type="button" class="wp-btn" id="wpPin">Pin as baseline</button><button type="button" class="wp-btn quiet" id="wpUnpin" hidden>Clear baseline</button></div>
+    </section>
+
+    <div class="layout">
+
+      <aside class="rail">
+        <div class="rail-top">
+          <label class="sel"><span>Load an example</span>
+            <select id="example">
+              <option value="">Choose&hellip;</option>
+              <option value="s1">Workbook 1: below the threshold</option>
+              <option value="s2">Workbook 2: above, service business</option>
+              <option value="s3">Workbook 3: above, ordinary</option>
+              <option value="s4">Workbook 4: in the band, ordinary</option>
+              <option value="s5">Workbook 5: in the band, service</option>
+              <option value="s6">Second tab: 20% not SSTB</option>
+            </select></label>
+          <button type="button" class="wp-btn quiet" id="wpReset">Reset</button>
+        </div>
+        <h2>The business</h2>
+        <div class="seg" id="typeSeg" role="group" aria-label="Kind of business">
+          <button type="button" data-sstb="no"  aria-pressed="true">Ordinary</button>
+          <button type="button" data-sstb="yes" aria-pressed="false">Service (SSTB)</button>
+        </div>
+        <p class="seg-note" id="typeNote">&nbsp;</p>
+
+        <div class="field">
+          <label for="tiSlider">Taxable income, less net capital gain</label>
+          <div class="amount sr-only" id="tiOut">$200,000</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="tiNum" aria-label="Taxable income, dollars"></div>
+          <input type="range" id="tiSlider" min="0" max="500000" step="1000" value="200000">
+        </div>
+
+        <div class="field">
+          <label for="qbiSlider">Qualified business income</label>
+          <div class="amount sr-only" id="qbiOut">$180,000</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="qbiNum" aria-label="Qualified business income, dollars"></div>
+          <input type="range" id="qbiSlider" min="0" max="500000" step="1000" value="180000">
+        </div>
+
+        <div class="field compact">
+          <label for="w2Slider">W-2 wages paid by the business</label>
+          <div class="amount sr-only" id="w2Out">$60,000</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="w2Num" aria-label="W-2 wages, dollars"></div>
+          <input type="range" id="w2Slider" min="0" max="300000" step="1000" value="60000">
+        </div>
+
+        <div class="field compact">
+          <label for="ubiaSlider">Unadjusted basis of qualified property</label>
+          <div class="amount sr-only" id="ubiaOut">$100,000</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="ubiaNum" aria-label="Unadjusted basis of qualified property, dollars"></div>
+          <input type="range" id="ubiaSlider" min="0" max="1000000" step="5000" value="100000">
+        </div>
+
+        <div class="group">
+          <div class="group-head">
+            The statutory band
+            <span class="sub">Inputs, not a fixed year &mdash; see the footnote</span>
+          </div>
+
+          <div class="field compact">
+            <label for="threshSlider">Threshold amount &sect;199A(e)(2)</label>
+            <div class="amount sr-only" id="threshOut">$191,950</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="threshNum" aria-label="Threshold amount, dollars"></div>
+            <input type="range" id="threshSlider" min="100000" max="400000" step="50" value="191950">
+          </div>
+
+          <div class="field compact">
+            <label for="rangeSlider">Phase-in range &sect;199A(b)(3)(B)</label>
+            <div class="amount sr-only" id="rangeOut">$50,000</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="rangeNum" aria-label="Phase-in range, dollars"></div>
+            <input type="range" id="rangeSlider" min="25000" max="200000" step="5000" value="50000">
+          </div>
+        </div>
+
+        <ul class="wp-msgs" id="wpMsgs" aria-live="polite"></ul>
+        <p class="sr-only" id="liveResult" role="status" aria-live="polite"></p>
+      </aside>
+
+      <div>
+        <details class="panel sources">
+          <summary>
+            The source rules
+            <span class="summary-hint">26 U.S.C. &sect;199A(a), (b), (d) and (e), full text &mdash; optional</span>
+          </summary>
+          <div class="sources-body">
+            <p class="src-meta">
+              <strong>The deduction, the wage limitation, the service-business exception and the
+              threshold.</strong> Reproduced in full, unedited, from the U.S. Code as published by the
+              Legal Information Institute, retrieved 29 September 2026.
+              <a href="https://www.law.cornell.edu/uscode/text/26/199A" target="_blank" rel="noopener">&sect;199A at source</a>
+            </p>
+
+            <div class="statute" tabindex="0" role="region"
+                 aria-label="Full text of 26 U.S.C. section 199A subsections (a), (b), (d) and (e)">
+              <p class="statute-head">26 U.S.C. &sect;199A(a) &mdash; Allowance of deduction</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(a)</span> <span class="lv-h">Allowance of deduction</span> <span class="lv-t">In the case of a taxpayer other than a corporation, except as provided in subsection (i), there shall be allowed as a deduction for any taxable year an amount equal to the lesser of—</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-t">the combined qualified business income amount of the taxpayer, or</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-t">an amount equal to 20 percent of the excess (if any) of—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">the taxable income of the taxpayer for the taxable year, over</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">the net capital gain (as defined in section 1(h)) of the taxpayer for such taxable year.</span></p>
+              </div>
+            </div>
+          </div>              <p class="statute-head">26 U.S.C. &sect;199A(b) &mdash; Combined qualified business income amount</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-h">Combined qualified business income amount</span> <span class="lv-t">For purposes of this section—</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">In general</span> <span class="lv-t">The term “combined qualified business income amount” means, with respect to any taxable year, an amount equal to—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">the sum of the amounts determined under paragraph (2) for each qualified trade or business carried on by the taxpayer, plus</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">20 percent of the aggregate amount of the qualified REIT dividends and qualified publicly traded partnership income of the taxpayer for the taxable year.</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Determination of deductible amount for each trade or business</span> <span class="lv-t">The amount determined under this paragraph with respect to any qualified trade or business is the lesser of—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">20 percent of the taxpayer’s qualified business income with respect to the qualified trade or business, or</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">the greater of—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">50 percent of the W–2 wages with respect to the qualified trade or business, or</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">the sum of 25 percent of the W–2 wages with respect to the qualified trade or business, plus 2.5 percent of the unadjusted basis immediately after acquisition of all qualified property.</span></p>
+                </div>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(3)</span> <span class="lv-h">Modifications to limit based on taxable income</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">Exception from limit</span> <span class="lv-t">In the case of any taxpayer whose taxable income for the taxable year does not exceed the threshold amount, paragraph (2) shall be applied without regard to subparagraph (B).</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Phase-in of limit for certain taxpayers</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-h">In general</span> <span class="lv-t">If—</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">the taxable income of a taxpayer for any taxable year exceeds the threshold amount, but does not exceed the sum of the threshold amount plus $75,000 ($150,000 in the case of a joint return), and</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">the amount determined under paragraph (2)(B) (determined without regard to this subparagraph) with respect to any qualified trade or business carried on by the taxpayer is less than the amount determined under paragraph (2)(A) with respect such trade or business,</span></p>
+                  </div>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-h">Amount of reduction</span> <span class="lv-t">The amount determined under this subparagraph is the amount which bears the same ratio to the excess amount as—</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">the amount by which the taxpayer’s taxable income for the taxable year exceeds the threshold amount, bears to</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">$75,000 ($150,000 in the case of a joint return).</span></p>
+                  </div>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-h">Excess amount</span> <span class="lv-t">For purposes of clause (ii), the excess amount is the excess of—</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">the amount determined under paragraph (2)(A) (determined without regard to this paragraph), over</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">the amount determined under paragraph (2)(B) (determined without regard to this paragraph).</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(4)</span> <span class="lv-h">Wages, etc.</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">The term “W–2 wages” means, with respect to any person for any taxable year of such person, the amounts described in paragraphs (3) and (8) of section 6051(a) paid by such person with respect to employment of employees by such person during the calendar year ending during such taxable year.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Limitation to wages attributable to qualified business income</span> <span class="lv-t">Such term shall not include any amount which is not properly allocable to qualified business income for purposes of subsection (c)(1).</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-h">Return requirement</span> <span class="lv-t">Such term shall not include any amount which is not properly included in a return filed with the Social Security Administration</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(5)</span> <span class="lv-h">Acquisitions, dispositions, and short taxable years</span> <span class="lv-t">The Secretary shall provide for the application of this subsection in cases of a short taxable year or where the taxpayer acquires, or disposes of, the major portion of a trade or business or the major portion of a separate unit of a trade or business during the taxable year.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(6)</span> <span class="lv-h">Qualified property</span> <span class="lv-t">For purposes of this section:</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">The term “qualified property” means, with respect to any qualified trade or business for a taxable year, tangible property of a character subject to the allowance for depreciation under section 167—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">which is held by, and available for use in, the qualified trade or business at the close of the taxable year,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">which is used at any point during the taxable year in the production of qualified business income, and</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-t">the depreciable period for which has not ended before the close of the taxable year.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Depreciable period</span> <span class="lv-t">The term “depreciable period” means, with respect to qualified property of a taxpayer, the period beginning on the date the property was first placed in service by the taxpayer and ending on the later of—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">the date that is 10 years after such date, or</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">the last day of the last full year in the applicable recovery period that would apply to the property under section 168 (determined without regard to subsection (g) thereof).</span></p>
+                </div>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(7)</span> <span class="lv-h">Special rule with respect to income received from cooperatives</span> <span class="lv-t">In the case of any qualified trade or business of a patron of a specified agricultural or horticultural cooperative, the amount determined under paragraph (2) with respect to such trade or business shall be reduced by the lesser of—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">9 percent of so much of the qualified business income with respect to such trade or business as is properly allocable to qualified payments received from such cooperative, or</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">50 percent of so much of the W–2 wages with respect to such trade or business as are so allocable.</span></p>
+              </div>
+            </div>
+          </div>              <p class="statute-head">26 U.S.C. &sect;199A(d) &mdash; Qualified trade or business</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(d)</span> <span class="lv-h">Qualified trade or business</span> <span class="lv-t">For purposes of this section—</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">In general</span> <span class="lv-t">The term “qualified trade or business” means any trade or business other than—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">a specified service trade or business, or</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">the trade or business of performing services as an employee.</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Specified service trade or business</span> <span class="lv-t">The term “specified service trade or business” means any trade or business—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">which is described in section 1202(e)(3)(A) (applied without regard to the words “engineering, architecture,”) or which would be so described if the term “employees or owners” were substituted for “employees” therein, or</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">which involves the performance of services that consist of investing and investment management, trading, or dealing in securities (as defined in section 475(c)(2)), partnership interests, or commodities (as defined in section 475(e)(2)).</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(3)</span> <span class="lv-h">Exception for specified service businesses based on taxpayer’s income</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">If, for any taxable year, the taxable income of any taxpayer is less than the sum of the threshold amount plus $75,000 ($150,000 in the case of a joint return), then—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">any specified service trade or business of the taxpayer shall not fail to be treated as a qualified trade or business due to paragraph (1)(A), but</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">only the applicable percentage of qualified items of income, gain, deduction, or loss, and the W–2 wages and the unadjusted basis immediately after acquisition of qualified property, of the taxpayer allocable to such specified service trade or business shall be taken into account in computing the qualified business income, W–2 wages, and the unadjusted basis immediately after acquisition of qualified property of the taxpayer for the taxable year for purposes of applying this section.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Applicable percentage</span> <span class="lv-t">For purposes of subparagraph (A), the term “applicable percentage” means, with respect to any taxable year, 100 percent reduced (not below zero) by the percentage equal to the ratio of—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">the taxable income of the taxpayer for the taxable year in excess of the threshold amount, bears to</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">$75,000 ($150,000 in the case of a joint return).</span></p>
+                </div>
+              </div>
+            </div>
+          </div>              <p class="statute-head">26 U.S.C. &sect;199A(e) &mdash; Other definitions</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(e)</span> <span class="lv-h">Other definitions</span> <span class="lv-t">For purposes of this section—</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">Taxable income</span> <span class="lv-t">Except as otherwise provided in subsection (g)(2)(B), taxable income shall be computed without regard to section 68 and without regard to any deduction allowable under this section.</span></p>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Threshold amount</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">The term “threshold amount” means $157,500 (200 percent of such amount in the case of a joint return).</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Inflation adjustment</span> <span class="lv-t">In the case of any taxable year beginning after 2018, the dollar amount in subparagraph (A) shall be increased by an amount equal to—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">such dollar amount, multiplied by</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">the cost-of-living adjustment determined under section 1(f)(3) for the calendar year in which the taxable year begins, determined by substituting “calendar year 2017” for “calendar year 2016” in subparagraph (A)(ii) thereof.</span></p>
+                </div>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(3)</span> <span class="lv-h">Qualified REIT dividend</span> <span class="lv-t">The term “qualified REIT dividend” means any dividend from a real estate investment trust received during the taxable year which—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">is not a capital gain dividend, as defined in section 857(b)(3), and</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">is not qualified dividend income, as defined in section 1(h)(11).</span></p>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(4)</span> <span class="lv-h">Qualified publicly traded partnership income</span> <span class="lv-t">The term “qualified publicly traded partnership income” means, with respect to any qualified trade or business of a taxpayer, the sum of—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-t">the net amount of such taxpayer’s allocable share of each qualified item of income, gain, deduction, and loss (as defined in subsection (c)(3) and determined after the application of subsection (c)(4)) from a publicly traded partnership (as defined in section 7704(a)) [2] which is not treated as a corporation under section 7704(c), plus</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-t">any gain recognized by such taxpayer upon disposition of its interest in such partnership to the extent such gain is treated as an amount realized from the sale or exchange of property other than a capital asset under section 751(a).</span></p>
+              </div>
+            </div>
+          </div>            </div>
+
+            <p class="note">
+              <b>Verify before relying on this.</b> Retrieved 29 September 2026. Tax law changes;
+              confirm against the primary source above before using it in class or in practice.
+              Nothing here is tax advice.
+            </p>
+          </div>
+        </details>
+
+        <section class="panel" aria-labelledby="insH">
+          <h3 id="insH">What would change this</h3>
+          <ul class="wp-insights" id="wpInsights"></ul>
+        </section>
+
+        <section class="panel">
+          <h3>The deduction as taxable income rises</h3>
+          <p class="lede" id="chartLede"></p>
+
+          <div class="chart-scroll" tabindex="0" role="region"
+               aria-label="Chart: the section 199A deduction as taxable income rises">
+            <div class="chart-shell">
+              <svg id="curveChart" viewBox="0 0 760 350" preserveAspectRatio="xMidYMid meet"
+                   role="img" aria-labelledby="curveDesc"></svg>
+              <p class="sr-only" id="curveDesc"></p>
+            </div>
+          </div>
+
+          <div class="split">
+            <h4>20% of your QBI, and where it went</h4>
+            <div class="ptw" id="ptwBar" role="img" aria-labelledby="ptwDesc"></div>
+            <p class="sr-only" id="ptwDesc"></p>
+            <div class="ptw-scale">
+              <span>$0</span>
+              <span id="ptwEnd">$0</span>
+            </div>
+            <div class="legend" id="ptwLegend"></div>
+          </div>
+
+          <p class="footnote">
+            Educational simulation, not tax advice. A date-neutral model: the threshold and the
+            phase-in range are inputs rather than a fixed tax year, so the mechanics hold whatever the
+            figures are. They open on the 2024 single-filer amounts the source worksheet uses,
+            $191,950 and $50,000. <b>&sect;199A(b)(3)(B) and (d)(3) now read $75,000 ($150,000 joint)</b>,
+            so for a current year set the range slider accordingly; the threshold itself is inflation
+            adjusted each year under &sect;199A(e)(2)(B). One trade or business only: no aggregation, no
+            netting of a loss against another business, and no qualified REIT dividends or publicly
+            traded partnership income, which get 20% under &sect;199A(b)(1)(B) with no wage limit at all.
+            Source model: ACCTG 410 Individual Taxation Toolbox, &ldquo;QBI deduction&rdquo; and
+            &ldquo;20% deduc not SSTB&rdquo; tabs, with the corrections noted in the tool documentation.
+          </p>
+        </section>
+
+        <section class="panel" aria-labelledby="compH">
+          <h3 id="compH">The computation, line by line</h3>
+          <p class="lede">Each line with its authority. The line that takes the most is marked as the limit.</p>
+          <div class="wp-table-wrap">
+            <table class="wp-table">
+              <thead><tr><th scope="col">Line</th><th scope="col">Amount</th><th scope="col">Authority</th></tr></thead>
+              <tbody id="wpRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel wp-workpaper" aria-labelledby="wpH">
+          <h3 id="wpH">Workpaper</h3>
+          <p class="lede">A plain-text record of the facts, computation, authority and result. Copy it into your file or print it.</p>
+          <pre class="wp-memo" id="wpMemo" tabindex="0"></pre>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav aria-label="Footer">
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h2>Learn</h2>
+            <ul>
+              <li><a href="../../learn/index.html">Learn</a></li>
+              <li><a href="../../learn/textbook/index.html">Visualized tax guide</a></li>
+              <li><a href="../../learn/guides/index.html">Concept guides</a></li>
+              <li><a href="../../learn/glossary/index.html">Glossary</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Tools</h2>
+            <ul>
+              <li><a href="../../tools/index.html">All tools</a></li>
+              <li><a href="../../review/1040/index.html">1040 preview</a></li>
+              <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+              <li><a href="../../review/index.html">Return review</a></li>
+              <li><a href="../../review/how-it-works/index.html">How it works</a></li>
+              <li><a href="../../review/privacy/index.html">Privacy</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Dashboard</h2>
+            <ul>
+              <li><a href="../../dashboard/index.html">Dashboard</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Consulting</h2>
+            <ul>
+              <li><a href="../../consulting/index.html">Consulting</a></li>
+              <li><a href="../../consulting/planning/index.html">One-on-one tax planning</a></li>
+              <li><a href="../../training/team/index.html">Team training</a></li>
+              <li><a href="../../training/workshops/index.html">Public workshops</a></li>
+              <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>About</h2>
+            <ul>
+              <li><a href="../../about/index.html">About TaxVisual</a></li>
+              <li><a href="../../about/team/index.html">Our team</a></li>
+              <li><a href="../../methodology/index.html">Methodology</a></li>
+              <li><a href="../../sitemap/index.html">Site map</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Connect</h2>
+            <ul>
+              <li><a href="../../contact/index.html">Contact</a></li>
+              <li><a href="../../updates/index.html">Updates</a></li>
+              <li><a href="../../community/index.html">Community</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual publishes educational tax policy simulations for classrooms, policy workshops, and self-study. Not tax advice.</p>
+        <p class="footer-note"><a href="../../contact/index.html">Get email updates</a></p>
+      </div>
+    </div>
+  </footer>
+
+
+<script src="../../assets/js/workpaper.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  /* ==================================================================
+     MODEL — §199A, built from the two ACCTG 410 workbook tabs and checked
+     line by line against the statute reproduced on this page.
+
+       p      = MEDIAN((TI - threshold) / range, 0, 1)    the phase-in %
+       applic = 1 - p                                     §199A(d)(3)(B)
+
+     ONE ratio drives BOTH limits. That is the whole shape of the section:
+     the same band of taxable income phases in a wage-and-property ceiling
+     for an ordinary business and phases OUT the income itself for a
+     specified service business.
+
+       qbiA   = sstb ? QBI  * applic : QBI                §199A(d)(3)(A)(ii)
+       w2A    = sstb ? W2   * applic : W2                 "
+       ubiaA  = sstb ? UBIA * applic : UBIA               "
+
+       tentative = 0.20 * qbiA                            §199A(b)(2)(A)
+       wageOnly  = 0.50 * w2A                             §199A(b)(2)(B)(i)
+       wageProp  = 0.25 * w2A + 0.025 * ubiaA             §199A(b)(2)(B)(ii)
+       ceiling   = MAX(wageOnly, wageProp)                §199A(b)(2)(B)
+       excess    = MAX(tentative - ceiling, 0)            §199A(b)(3)(B)(iii)
+       reduce    = excess * p                             §199A(b)(3)(B)(ii)
+       component = tentative - reduce                     §199A(b)(2)
+       cap       = 0.20 * TI                              §199A(a)(2)
+       deduction = MIN(component, cap)                    §199A(a)
+
+     Ported from the workbook, with three corrections. All three are cases
+     where a tab disagrees with the statute, and each is documented in
+     docs/tools/qbi-deduction.md:
+
+       1. The SSTB reduction scales W-2 wages and UBIA too, not only the
+          deduction. "QBI deduction" row 24 reduces the deduction by RP%,
+          which gets the 20%-of-QBI part right, but then rows 28-30 compute
+          the wage ceiling from the FULL wages. §199A(d)(3)(A)(ii) says only
+          the applicable percentage of "the W-2 wages and the unadjusted
+          basis" is taken into account at all.
+       2. Cell G31 multiplies the wage ceiling by RP% where it needs
+          (1 - RP%). With the reduced wages of correction 1 that cell is not
+          needed at all, but the slip is what makes the tab's scenario 5
+          come out at 26,118.79 instead of 29,393.53.
+       3. The 20%-of-taxable-income cap is applied LAST, not first. Row 14
+          starts from 20% x MIN(QBI, TI), which folds §199A(a)(2) in before
+          the wage limitation instead of after it. The second tab, "20%
+          deduc not SSTB", already has this right at cell I32 —
+          MIN(max, tentative-after-phase-out) — and that is the structure
+          used here.
+
+     Corrections 1 and 3 are invisible in four of the tab's five scenarios;
+     see the doc for the inputs that separate them.
+
+     Verified against both tabs: scenarios 1-4 of "QBI deduction" reproduce
+     exactly (28,000 / 0 / 30,000 / 35,034), as does "20% deduc not SSTB"
+     (15,000). Scenario 5 is the one the corrections move.
+     ================================================================== */
+  function model(i){
+    const TI = i.ti, Q = i.qbi, W2 = i.w2, UB = i.ubia;
+    const t = i.threshold, R = i.range, sstb = !!i.sstb;
+
+    const p = R <= 0 ? (TI > t ? 1 : 0)
+                     : Math.max(0, Math.min(1, (TI - t) / R));
+    const applic = 1 - p;
+
+    const qbiA  = sstb ? Q  * applic : Q;
+    const w2A   = sstb ? W2 * applic : W2;
+    const ubiaA = sstb ? UB * applic : UB;
+
+    const tentative = 0.20 * qbiA;
+    const wageOnly  = 0.50 * w2A;
+    const wageProp  = 0.25 * w2A + 0.025 * ubiaA;
+    const ceiling   = Math.max(wageOnly, wageProp);
+    const excess    = Math.max(tentative - ceiling, 0);
+    const reduce    = excess * p;
+    const component = tentative - reduce;
+    const cap       = 0.20 * TI;
+    const ded       = Math.min(component, cap);
+
+    /* Where 20% of QBI went. The four parts sum to 0.20 * QBI exactly,
+       which is what the part-to-whole bar below the chart shows. */
+    const most     = 0.20 * Q;
+    const lostSstb = most - tentative;
+    const lostWage = reduce;
+    const lostCap  = component - ded;
+
+    return {
+      p: p, applic: applic, tentative: tentative,
+      wageOnly: wageOnly, wageProp: wageProp, ceiling: ceiling,
+      excess: excess, reduce: reduce, component: component,
+      cap: cap, ded: ded, most: most,
+      lostSstb: lostSstb, lostWage: lostWage, lostCap: lostCap,
+      zone: p <= 0 ? 'below' : (p >= 1 ? 'above' : 'band')
+    };
+  }
+
+  /* Which of the three limits took the most. Ties go to the earliest in the
+     order the statute applies them, so the candidates are tested in that
+     order and a later one has to be strictly larger to win. */
+  function bindingFor(r, qbi){
+    if (qbi <= 0) return 'none';
+    if (r.ded >= r.most - 1e-9) return 'full';
+    const parts = [['sstb', r.lostSstb], ['wage', r.lostWage], ['cap', r.lostCap]];
+    let best = parts[0];
+    for (let k = 1; k < parts.length; k++) if (parts[k][1] > best[1] + 1e-9) best = parts[k];
+    return best[0];
+  }
+
+  /* Exact knots of the deduction curve as a function of taxable income.
+
+     Outside the phase-in band the curve is piecewise linear, so the knots
+     are the band edges plus the points where MIN(component, cap) switches
+     branch. INSIDE the band an SSTB curve is a genuine parabola, not a
+     kink: §199A(d)(3) scales the tentative amount by (1-p) while
+     §199A(b)(3)(B) multiplies the excess by p, and the product is
+     quadratic. So the band-crossing roots are solved as a quadratic, and
+     the interior is then subdivided — the one place in these tools where
+     the curve is not linear between its knots. */
+  function knots(i, xMin, xMax){
+    const t = i.threshold, R = i.range, Q = i.qbi;
+    const C0 = Math.max(0.5 * i.w2, 0.25 * i.w2 + 0.025 * i.ubia);
+    const E0 = Math.max(0.20 * Q - C0, 0);
+    /* The taxpayer's own position is a knot. Everywhere else the chords
+       are close enough to invisible, but the marker is drawn AT the model
+       value, so without this the dot would float a hair off its own line
+       inside an SSTB band. */
+    const xs = [xMin, xMax, t, t + R, i.ti];
+
+    /* Below the band component is 0.20*Q, so cap 0.20*TI meets it at TI = Q.
+       Above the band component is constant too: 0 for an SSTB (applicable
+       percentage nil), 0.20*Q - E0 otherwise. */
+    xs.push(Q);
+    xs.push(i.sstb ? 0 : (0.20 * Q - E0) / 0.20);
+
+    /* Inside the band, in p-space where TI = t + p*R:
+         component(p) = 0.20Q - E0*p                     (ordinary)
+         component(p) = (1-p) * (0.20Q - E0*p)           (SSTB)
+         cap(p)       = 0.20t + 0.20R*p
+       so component - cap = 0 is  A p^2 + B p + C = 0. */
+    if (R > 0){
+      const A = i.sstb ? E0 : 0;
+      const B = i.sstb ? -(0.20 * Q + E0 + 0.20 * R) : -(E0 + 0.20 * R);
+      const C = 0.20 * (Q - t);
+      const pushP = function(pp){ if (pp > 0 && pp < 1) xs.push(t + pp * R); };
+      if (Math.abs(A) < 1e-12){
+        if (Math.abs(B) > 1e-12) pushP(-C / B);
+      } else {
+        const disc = B * B - 4 * A * C;
+        if (disc >= 0){
+          const s = Math.sqrt(disc);
+          pushP((-B + s) / (2 * A));
+          pushP((-B - s) / (2 * A));
+        }
+      }
+      /* 64 chords across the band hold the drawn error to about E0/16384 —
+         well under a pixel on any y scale this chart uses — while every
+         knot above stays exact. Only needed where the curve actually bends. */
+      if (i.sstb && E0 > 0){
+        for (let k = 1; k < 64; k++) xs.push(t + (R * k) / 64);
+      }
+    }
+
+    const seen = {}, out = [];
+    for (let k = 0; k < xs.length; k++){
+      const v = xs[k];
+      if (!(v >= xMin && v <= xMax)) continue;
+      const key = v.toFixed(6);
+      if (!seen[key]){ seen[key] = 1; out.push(+key); }
+    }
+    return out.sort(function(a, z){ return a - z; });
+  }
+
+  function curvePoints(i, xMin, xMax){
+    return knots(i, xMin, xMax).map(function(x){
+      return { x: x, y: model({ ti:x, qbi:i.qbi, w2:i.w2, ubia:i.ubia,
+                                threshold:i.threshold, range:i.range, sstb:i.sstb }).ded };
+    });
+  }
+
+  /* The marginal effect, read off the polyline the chart actually draws, so
+     the number in the rail and the line on screen cannot disagree. Takes
+     the segment to the RIGHT of the taxpayer, because the readout asks what
+     the NEXT dollar of taxable income does. */
+  function slopeAt(pts, x){
+    for (let k = 0; k < pts.length - 1; k++){
+      if (pts[k+1].x > pts[k].x && x >= pts[k].x && x < pts[k+1].x)
+        return (pts[k+1].y - pts[k].y) / (pts[k+1].x - pts[k].x);
+    }
+    const n = pts.length;
+    if (n >= 2 && pts[n-1].x > pts[n-2].x)
+      return (pts[n-1].y - pts[n-2].y) / (pts[n-1].x - pts[n-2].x);
+    return 0;
+  }
+
+  /* ============================== FORMATTING ============================== */
+  const usd0 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', maximumFractionDigits:0 });
+  const usd2 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 });
+  const pct0 = new Intl.NumberFormat('en-US',{ style:'percent', maximumFractionDigits:0 });
+  const pct1 = new Intl.NumberFormat('en-US',{ style:'percent', maximumFractionDigits:1 });
+  const num0 = new Intl.NumberFormat('en-US',{ maximumFractionDigits:0 });
+
+  function money(v){ return Math.abs(v - Math.round(v)) < 0.005 ? usd0.format(v) : usd2.format(v); }
+  function abbr(v){
+    if (Math.abs(v) >= 1000){ const k = v/1000; return '$' + (k % 1 === 0 ? k : k.toFixed(1)) + 'k'; }
+    return '$' + num0.format(v);
+  }
+  function cents(slope){
+    const sign = slope > 0 ? '+' : (slope < 0 ? '−' : '');
+    const a = Math.abs(slope);
+    /* Past a dollar per dollar, cents stop reading as a quantity - and this
+       rule really does go past it. With no W-2 wages the ceiling is zero, so
+       the whole of 20% of QBI phases out across the band, and each extra
+       dollar of taxable income can cost MORE than a dollar of deduction. */
+    if (a >= 1) return sign + '$' + (Math.abs(a - Math.round(a)) < 0.005 ? a.toFixed(0) : a.toFixed(2));
+    const c = a * 100;
+    return sign + (c >= 10 ? Math.round(c) : Math.round(c * 10) / 10) + '¢';
+  }
+
+  const state = { ti:200000, qbi:180000, w2:60000, ubia:100000,
+                  threshold:191950, range:50000, sstb:false };
+
+  const $ = function(id){ return document.getElementById(id); };
+  const els = {
+    liveResult:$('liveResult'), typeSeg:$('typeSeg'), typeNote:$('typeNote'),
+    tiSlider:$('tiSlider'), tiOut:$('tiOut'),
+    qbiSlider:$('qbiSlider'), qbiOut:$('qbiOut'),
+    w2Slider:$('w2Slider'), w2Out:$('w2Out'),
+    ubiaSlider:$('ubiaSlider'), ubiaOut:$('ubiaOut'),
+    threshSlider:$('threshSlider'), threshOut:$('threshOut'),
+    rangeSlider:$('rangeSlider'), rangeOut:$('rangeOut'),
+    statDed:$('statDed'), statDedSub:$('statDedSub'),
+    statSlope:$('statSlope'), statSlopeSub:$('statSlopeSub'),
+    statBinding:$('statBinding'), statBindingSub:$('statBindingSub'),
+    chartLede:$('chartLede'), curve:$('curveChart'), curveDesc:$('curveDesc'),
+    ptwBar:$('ptwBar'), ptwLegend:$('ptwLegend'), ptwEnd:$('ptwEnd'), ptwDesc:$('ptwDesc'),
+    tooltip:$('tooltip')
+  };
+
+  const NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs){
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+  function clear(node){ while (node.firstChild) node.removeChild(node.firstChild); }
+
+  const CEIL_STEPS = [1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+  function niceCeil(v){
+    if (v <= 0) return 10;
+    const mag = Math.pow(10, Math.floor(Math.log10(v)));
+    const r = v / mag;
+    for (let k = 0; k < CEIL_STEPS.length; k++) if (r <= CEIL_STEPS[k] + 1e-9) return CEIL_STEPS[k] * mag;
+    return 10 * mag;
+  }
+  function niceStep(range, target){
+    const raw = range / target;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const r = raw / mag;
+    return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10) * mag;
+  }
+  function ticksFrom0(max, target){
+    const step = niceStep(max, target);
+    const out = [];
+    for (let v = 0; v <= max + step * 0.001; v += step) out.push(v);
+    return out;
+  }
+  /* This axis does not start at zero — it is centred on the phase-in band. */
+  function ticksIn(min, max, target){
+    const step = niceStep(max - min, target);
+    const out = [];
+    for (let v = Math.ceil(min / step) * step; v <= max + step * 0.001; v += step) out.push(v);
+    return out;
+  }
+
+  function showTip(x, y, html){
+    els.tooltip.innerHTML = html;
+    els.tooltip.style.left = x + 'px';
+    els.tooltip.style.top  = y + 'px';
+    els.tooltip.classList.add('show');
+  }
+  function hideTip(){ els.tooltip.classList.remove('show'); }
+
+  function other(){
+    return { ti:state.ti, qbi:state.qbi, w2:state.w2, ubia:state.ubia,
+             threshold:state.threshold, range:state.range, sstb:!state.sstb };
+  }
+
+  /* =============================== CHART =============================== */
+  const PAD = { l:66, r:24 };
+
+  /* The whole story happens in and around the phase-in band, and on a
+     0-based axis that band is a sliver, so the window is centred on it. The
+     y axis still starts at zero — it is the one carrying magnitude. */
+  function domain(i){
+    const t = i.threshold, R = i.range;
+    let xMin = Math.max(0, t - R * 0.8);
+    let xMax = t + R * 1.8;
+    if (i.ti < xMin) xMin = Math.max(0, i.ti - R * 0.25);
+    if (i.ti > xMax) xMax = i.ti + R * 0.25;
+    return { xMin: xMin, xMax: xMax };
+  }
+
+  function renderCurve(r, dom, mine, theirs){
+    const svg = els.curve, W = 760, H = 350;
+    const x0 = PAD.l, x1 = W - PAD.r, y0 = 56, y1 = 268;
+    clear(svg);
+
+    const t = state.threshold, R = state.range;
+    const yMax = niceCeil(Math.max(r.most, 1) * 1.15);
+    const X = function(v){ return x0 + ((v - dom.xMin) / (dom.xMax - dom.xMin)) * (x1 - x0); };
+    const Y = function(v){ return y1 - (v / yMax) * (y1 - y0); };
+
+    /* --- y gridlines --- */
+    ticksFrom0(yMax, 4).forEach(function(v){
+      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(v), y2:Y(v),
+        stroke: v === 0 ? 'var(--baseline)' : 'var(--gridline)', 'stroke-width':1 }));
+      const tx = svgEl('text',{ x:x0-9, y:Y(v)+3.5, 'text-anchor':'end', class:'axis-text' });
+      tx.textContent = abbr(v);
+      svg.appendChild(tx);
+    });
+
+    /* --- the band, as two rules and three labels. No shading: the rules
+           already divide the plot, per the chart rules in the pattern doc. --- */
+    [t, t + R].forEach(function(v){
+      if (v < dom.xMin || v > dom.xMax) return;
+      svg.appendChild(svgEl('line',{ x1:X(v), x2:X(v), y1:y0-6, y2:y1,
+        stroke:'var(--baseline)', 'stroke-width':1 }));
+    });
+
+    /* Zone labels read off the same two rules the chart drew, clipped to the
+       window so a band running off-screen is not labelled where it is not. */
+    [
+      { left: dom.xMin,          right: Math.min(t, dom.xMax),     full:'No wage limit at all', short:'none' },
+      { left: Math.max(t, dom.xMin), right: Math.min(t + R, dom.xMax), full:'The phase-in band', short:'band' },
+      { left: Math.max(t + R, dom.xMin), right: dom.xMax,          full:'Limit fully applied', short:'full' }
+    ].forEach(function(zn){
+      if (zn.right <= zn.left) return;
+      const w = X(zn.right) - X(zn.left);
+      const label = w > 128 ? zn.full : (w > 34 ? zn.short : null);
+      if (!label) return;
+      const tx = svgEl('text',{ x:(X(zn.left)+X(zn.right))/2, y:38, 'text-anchor':'middle', class:'band-text' });
+      tx.textContent = label;
+      svg.appendChild(tx);
+    });
+
+    /* --- reference lines and every label that sits inside the plot ---
+
+       Up to five labels compete for space here: two horizontal reference
+       lines, the 20%-of-taxable-income ray, and one for each curve. Their
+       positions come from the numbers, not from the layout, and several of
+       them coincide BY CONSTRUCTION - the cap ray meets the 20%-of-QBI line
+       exactly where taxable income equals QBI, and above the band an
+       ordinary business with a low ceiling lands on the same number as a
+       service business.
+
+       So nothing is drawn directly. Every label is collected with its x
+       extent and one pass at the end pushes any that would overlap down the
+       page. Placing them one at a time does not work: fixing the pair that
+       collides today just moves the collision to another pair, which is
+       what happened three times before this was written. */
+    const labels = [];
+    const b = bindingFor(r, state.qbi);
+
+    /* Plex Mono advances 0.6em and Plex Sans averages less, so 6px a
+       character at this size is an over-estimate for both. It is only used
+       to decide whether two labels overlap in x, where erring wide is the
+       safe direction. */
+    function addLabel(L){
+      const w = L.text.length * 6;
+      L.x0 = L.anchor === 'end' ? L.x - w : (L.anchor === 'middle' ? L.x - w / 2 : L.x);
+      L.x1 = L.x0 + w;
+      labels.push(L);
+    }
+
+    if (r.most > 0 && r.most <= yMax){
+      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(r.most), y2:Y(r.most),
+        stroke: b === 'full' ? 'var(--ink-muted)' : 'var(--baseline)', 'stroke-width':1 }));
+      addLabel({ x:x1 - 5, anchor:'end', y:Y(r.most) - 6,
+        text:'20% of your QBI ' + usd0.format(r.most) + (b === 'full' ? ' \u2014 nothing cuts it' : ''),
+        cls:(b === 'full' ? 'anno-text bind' : 'anno-text') + ' haloed', fill:null });
+    }
+
+    /* The wage/property ceiling is a fixed line only for an ordinary
+       business; for an SSTB it is itself scaled by the applicable
+       percentage, so drawing it flat would be a lie. */
+    const C0 = Math.max(0.5 * state.w2, 0.25 * state.w2 + 0.025 * state.ubia);
+    if (!state.sstb && C0 > 0 && C0 <= yMax){
+      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(C0), y2:Y(C0),
+        stroke: b === 'wage' ? 'var(--ink-muted)' : 'var(--baseline)', 'stroke-width':1 }));
+      addLabel({ x:x1 - 5, anchor:'end', y:Y(C0) - 6,
+        text:'wage/property ceiling ' + usd0.format(C0) + (b === 'wage' ? ' \u2014 the limit' : ''),
+        cls:(b === 'wage' ? 'anno-text bind' : 'anno-text') + ' haloed', fill:null });
+    }
+
+    /* 20% of taxable income only matters where it can actually bite, which
+       is where QBI exceeds taxable income - inside this window that is the
+       left-hand end or nothing at all. */
+    if (state.qbi > dom.xMin){
+      const xEnd = Math.min(dom.xMax, state.qbi, yMax / 0.20);
+      if (xEnd > dom.xMin){
+        svg.appendChild(svgEl('line',{ x1:X(dom.xMin), y1:Y(0.20 * dom.xMin),
+          x2:X(xEnd), y2:Y(0.20 * xEnd), stroke:'var(--baseline)', 'stroke-width':1 }));
+        addLabel({ x:X(xEnd) - 4, anchor:'end', y:Y(0.20 * xEnd) + 13,
+          text:'20% of taxable income' + (b === 'cap' ? ' \u2014 the limit' : ''),
+          cls:(b === 'cap' ? 'anno-text bind' : 'anno-text') + ' haloed', fill:null });
+      }
+    }
+
+    /* --- the two curves. Same measure, same units, so one axis: the
+           taxpayer's own business type inked strongly and the other kind
+           shown beside it, because the contrast IS the lesson. --- */
+    function draw(pts, stroke, width){
+      let d = '';
+      pts.forEach(function(pt){
+        d += (d ? 'L' : 'M') + X(pt.x).toFixed(2) + ' ' + Y(pt.y).toFixed(2);
+      });
+      svg.appendChild(svgEl('path',{ d:d, fill:'none', stroke:stroke, 'stroke-width':width,
+        'stroke-linejoin':'round', 'stroke-linecap':'round' }));
+    }
+    draw(theirs, 'var(--compare)', 1.5);
+    draw(mine,   'var(--fill-strong)', 2.5);
+
+    /* Label each curve where the two are FURTHEST APART, not at the right
+       edge. Above the band they converge, and two labels stacked on one
+       point say nothing about which line is which. At the widest gap each
+       label sits beside the line it names. */
+    function yOn(pts, x){
+      for (let k = 0; k < pts.length - 1; k++){
+        const a = pts[k], z = pts[k+1];
+        if (x >= a.x && x <= z.x && z.x > a.x) return a.y + (z.y - a.y) * (x - a.x) / (z.x - a.x);
+      }
+      return null;
+    }
+    let gapX = null, gap = -1;
+    mine.concat(theirs).forEach(function(pt){
+      const a = yOn(mine, pt.x), z = yOn(theirs, pt.x);
+      if (a === null || z === null) return;
+      const g = Math.abs(a - z);
+      if (g > gap){ gap = g; gapX = pt.x; }
+    });
+
+    const mineName   = state.sstb ? 'service business' : 'ordinary business';
+    const theirsName = state.sstb ? 'if it were ordinary' : 'if it were a service business';
+
+    if (gapX !== null && Y(0) - Y(gap) > 26){
+      const ax = X(gapX);
+      const anc = ax > x1 - 150 ? 'end' : (ax < x0 + 150 ? 'start' : 'middle');
+      const px = anc === 'end' ? ax - 4 : (anc === 'start' ? ax + 4 : ax);
+      [[yOn(mine, gapX), mineName, 'var(--fill-strong)'],
+       [yOn(theirs, gapX), theirsName, 'var(--compare)']].forEach(function(L){
+        const o = L[1] === mineName ? yOn(theirs, gapX) : yOn(mine, gapX);
+        const above = L[0] >= o;                 /* the higher VALUE sits above */
+        addLabel({ x:px, anchor:anc, y:Y(L[0]) + (above ? -9 : 17),
+                   text:L[1], cls:'curve-label', fill:L[2] });
+      });
+    } else if (mine.length){
+      /* the two coincide across the whole window - one line, one label */
+      const last = mine[mine.length - 1];
+      addLabel({ x:x1 - 5, anchor:'end', y:Y(last.y) - 7,
+                 text:mineName + ' (both kinds alike here)',
+                 cls:'curve-label', fill:'var(--fill-strong)' });
+    }
+
+    /* The one placement pass. Working in increasing y, push each label below
+       any already-placed label it would overlap - and only those it overlaps
+       in x, so one on the left and one on the right can share a height.
+
+       20px of clearance, not 13: the viewBox is 760 wide inside a panel
+       nearer 600, so everything renders at about 0.68 on screen and a 13px
+       gap became 9px between 7px glyphs. Measured off a render. */
+    labels.sort(function(a, z){ return a.y - z.y; });
+    const placed = [];
+    labels.forEach(function(L){
+      let y = L.y;
+      placed.forEach(function(P){
+        if (L.x1 < P.x0 || L.x0 > P.x1) return;        /* no overlap in x */
+        if (y < P.y + 20) y = P.y + 20;
+      });
+      L.y = Math.min(Math.max(y, y0 + 10), y1 - 2);
+      placed.push(L);
+      const tx = svgEl('text',{ x:L.x, y:L.y, 'text-anchor':L.anchor, class:L.cls, fill:L.fill });
+      tx.textContent = L.text;
+      svg.appendChild(tx);
+    });
+
+    /* --- this taxpayer --- */
+    if (state.ti >= dom.xMin && state.ti <= dom.xMax){
+      svg.appendChild(svgEl('line',{ x1:X(state.ti), x2:X(state.ti),
+        y1:Y(r.ded), y2:y1, stroke:'var(--fill-strong)', 'stroke-width':1, opacity:0.35 }));
+      svg.appendChild(svgEl('circle',{ cx:X(state.ti), cy:Y(r.ded), r:7,
+        fill:'var(--fill-strong)', stroke:'var(--tool-surface)', 'stroke-width':2.5 }));
+      const lbl = svgEl('text',{ x:X(state.ti), y:Y(r.ded)-16,
+        'text-anchor':'middle', class:'marker-text' });
+      lbl.textContent = money(r.ded);
+      svg.appendChild(lbl);
+    }
+
+    /* --- x axis, with the two band edges called out by value --- */
+    const taken = [];
+    [{ v:t, text:usd0.format(t) }, { v:t + R, text:usd0.format(t + R) }].forEach(function(e){
+      const px = X(e.v);
+      if (px < x0 - 1 || px > x1 + 1) return;
+      const tx = svgEl('text',{ x:px, y:y1+17, 'text-anchor':'middle', class:'axis-text emph' });
+      tx.textContent = e.text;
+      svg.appendChild(tx);
+      taken.push(px);
+    });
+    ticksIn(dom.xMin, dom.xMax, 6).forEach(function(v){
+      const px = X(v);
+      if (px < x0 - 1 || px > x1 + 1) return;
+      for (let k = 0; k < taken.length; k++) if (Math.abs(taken[k] - px) < 46) return;
+      const tx = svgEl('text',{ x:px, y:y1+17, 'text-anchor':'middle', class:'axis-text' });
+      tx.textContent = abbr(v);
+      svg.appendChild(tx);
+    });
+    const lbl1 = svgEl('text',{ x:(x0+x1)/2, y:y1+38, 'text-anchor':'middle', class:'axis-text' });
+    lbl1.textContent = 'Taxable income less net capital gain — window centred on the band, not on zero';
+    svg.appendChild(lbl1);
+
+    const yt = svgEl('text',{ x:x0-48, y:16, class:'axis-text' });
+    yt.textContent = '§199A deduction';
+    svg.appendChild(yt);
+
+    /* --- hover --- */
+    const hit = svgEl('rect',{ x:x0, y:y0, width:x1-x0, height:y1-y0, fill:'transparent', style:'cursor:crosshair' });
+    const cross = svgEl('line',{ x1:0, x2:0, y1:y0, y2:y1, stroke:'var(--ink-muted)', 'stroke-width':1, opacity:0 });
+    const dot = svgEl('circle',{ r:5, fill:'var(--fill-strong)', stroke:'var(--tool-surface)', 'stroke-width':2, opacity:0 });
+    svg.appendChild(hit); svg.appendChild(cross); svg.appendChild(dot);
+
+    hit.addEventListener('pointermove', function(e){
+      const box = svg.getBoundingClientRect();
+      const vx = ((e.clientX - box.left) / box.width) * W;
+      const ti = Math.max(dom.xMin, Math.min(dom.xMax,
+        dom.xMin + ((vx - x0) / (x1 - x0)) * (dom.xMax - dom.xMin)));
+      const a = model({ ti:ti, qbi:state.qbi, w2:state.w2, ubia:state.ubia,
+                        threshold:t, range:R, sstb:state.sstb });
+      const o = model({ ti:ti, qbi:state.qbi, w2:state.w2, ubia:state.ubia,
+                        threshold:t, range:R, sstb:!state.sstb });
+      cross.setAttribute('x1', X(ti)); cross.setAttribute('x2', X(ti)); cross.setAttribute('opacity', 0.45);
+      dot.setAttribute('cx', X(ti)); dot.setAttribute('cy', Y(a.ded)); dot.setAttribute('opacity', 1);
+      showTip(e.clientX, box.top + (Y(a.ded) / H) * box.height,
+        'taxable income <b>' + money(ti) + '</b><br>' +
+        (state.sstb ? 'service' : 'ordinary') + ' <b>' + money(a.ded) + '</b><br>' +
+        (state.sstb ? 'ordinary' : 'service') + ' <b>' + money(o.ded) + '</b>');
+    });
+    hit.addEventListener('pointerleave', function(){
+      cross.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); hideTip();
+    });
+
+    /* --- the generated description, naming what the chart currently shows --- */
+    const oNow = model(other());
+    els.curveDesc.textContent =
+      'Line chart of the section 199A deduction against taxable income less net capital gain, for ' +
+      'qualified business income of ' + money(state.qbi) + ', W-2 wages of ' + money(state.w2) +
+      ' and qualified property of ' + money(state.ubia) + '. The horizontal axis runs from ' +
+      money(dom.xMin) + ' to ' + money(dom.xMax) + ', centred on the phase-in band rather than ' +
+      'starting at zero; the vertical axis is the deduction from $0 to ' + money(yMax) + '. Two ' +
+      'vertical rules mark the threshold at ' + money(t) + ' and the end of the band at ' +
+      money(t + R) + '. Below the threshold there is no wage limit; across the band the limit ' +
+      'phases in; above it the limit applies in full. Two lines are drawn: the ' +
+      (state.sstb ? 'service business' : 'ordinary business') + ' the inputs describe, and the same ' +
+      'figures as ' + (state.sstb ? 'an ordinary business' : 'a service business') + ' for comparison. ' +
+      'A horizontal line marks 20% of qualified business income, ' + money(r.most) + ', the most the ' +
+      'deduction can ever be. At a taxable income of ' + money(state.ti) + ' the deduction is ' +
+      money(r.ded) + (state.qbi > 0 ? ', and ' + money(oNow.ded) + ' for the other kind of business' : '') + '.';
+  }
+
+  /* ================== 20% OF QBI, AND WHERE IT WENT ================== */
+  function renderSplit(r){
+    clear(els.ptwBar); clear(els.ptwLegend);
+    els.ptwEnd.textContent = money(r.most);
+
+    if (r.most <= 0){
+      els.ptwDesc.textContent = 'No qualified business income, so there is nothing to split.';
+      return;
+    }
+
+    /* The four parts sum to 20% of QBI exactly — the deduction plus what
+       each limit took, in the order the statute applies them. */
+    const parts = [
+      { v:r.ded,      color:'var(--step-1)', name:'deducted',
+        why:'§199A(a) — what you actually get' },
+      { v:r.lostSstb, color:'var(--step-2)', name:'lost to the service-business phase-out',
+        why:'§199A(d)(3) — only ' + pct1.format(r.applic) + ' of the business counts' },
+      { v:r.lostWage, color:'var(--step-3)', name:'lost to the wage and property ceiling',
+        why:'§199A(b)(3)(B) — ' + pct1.format(r.p) + ' of the way through the band' },
+      { v:r.lostCap,  color:'var(--step-4)', name:'lost to the 20%-of-taxable-income cap',
+        why:'§199A(a)(2) — applies after everything else' }
+    ];
+
+    parts.forEach(function(p){
+      if (p.v <= 1e-9) return;
+      const seg = document.createElement('div');
+      seg.style.cssText = 'flex-grow:' + p.v + ';flex-basis:0;background:' + p.color + ';';
+      els.ptwBar.appendChild(seg);
+    });
+
+    /* The legend lists every part, including the ones at zero: "the wage
+       ceiling took nothing" is information, and a segment of zero width
+       cannot say it. */
+    parts.forEach(function(p){
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      const sw = document.createElement('span');
+      sw.className = 'legend-swatch';
+      sw.style.background = p.color;
+      const txt = document.createElement('span');
+      const bb = document.createElement('b');
+      bb.textContent = money(p.v);
+      const nm = document.createTextNode(p.name);
+      const why = document.createElement('span');
+      why.className = 'why';
+      why.textContent = p.why;
+      txt.appendChild(bb); txt.appendChild(nm); txt.appendChild(why);
+      item.appendChild(sw); item.appendChild(txt);
+      els.ptwLegend.appendChild(item);
+    });
+
+    els.ptwDesc.textContent =
+      'Of ' + money(r.most) + ', being 20% of qualified business income, ' +
+      parts.map(function(p){ return money(p.v) + ' ' + p.name; }).join(', ') + '.';
+  }
+
+  /* =============================== RENDER =============================== */
+  function renderCore(){
+    const r = model(state);
+    const dom = domain(state);
+    const mine   = curvePoints(state, dom.xMin, dom.xMax);
+    const theirs = curvePoints(other(), dom.xMin, dom.xMax);
+    const b = bindingFor(r, state.qbi);
+    const slope = slopeAt(mine, state.ti);
+
+    els.tiOut.textContent     = money(state.ti);
+    els.qbiOut.textContent    = money(state.qbi);
+    els.w2Out.textContent     = money(state.w2);
+    els.ubiaOut.textContent   = money(state.ubia);
+    els.threshOut.textContent = money(state.threshold);
+    els.rangeOut.textContent  = money(state.range);
+
+    els.typeNote.textContent = state.sstb
+      ? 'Health, law, accounting, consulting, athletics, financial services and the like, or any '
+        + 'business whose principal asset is the reputation or skill of its people — §199A(d)(2).'
+      : 'Any trade or business that is not a specified service trade or business.';
+
+    els.statDed.textContent = money(r.ded);
+    els.statDedSub.textContent = state.qbi > 0
+      ? pct1.format(r.ded / state.qbi) + ' of your qualified business income, out of a possible 20%'
+      : 'no qualified business income set';
+
+    els.statSlope.textContent = slope === 0 ? 'no change' : cents(slope) + ' of deduction';
+    els.statSlopeSub.textContent =
+      slope < -1e-9
+        ? 'each extra dollar of taxable income costs you ' + cents(slope).replace('−','') +
+          ' of deduction, on top of the tax on the dollar itself'
+        : slope > 1e-9
+          ? 'still climbing — the 20%-of-taxable-income cap is what is binding here'
+          : (r.zone === 'above' ? 'past the band; the limit no longer moves' : 'nothing changes here');
+
+    els.statBinding.textContent =
+      b === 'none' ? 'No business income yet' :
+      b === 'full' ? 'Nothing — you get the full 20%' :
+      b === 'sstb' ? 'The service-business phase-out' :
+      b === 'wage' ? 'The wage and property ceiling' :
+                     'The 20%-of-taxable-income cap';
+
+    els.statBindingSub.textContent =
+      b === 'none' ? 'move the QBI slider to begin' :
+      b === 'full' ? 'below the threshold, or your wages and property are large enough' :
+      b === 'sstb' ? money(r.lostSstb) + ' gone because only ' + pct1.format(r.applic) +
+                     ' of a service business counts this far into the band' :
+      b === 'wage' ? money(r.lostWage) + ' gone — 50% of wages is ' + money(r.wageOnly) +
+                     ', 25% of wages plus 2.5% of property is ' + money(r.wageProp) :
+                     money(r.lostCap) + ' gone because the deduction cannot exceed 20% of taxable income';
+
+    els.chartLede.textContent =
+      'QBI ' + money(state.qbi) + ', W-2 wages ' + money(state.w2) + ', qualified property ' +
+      money(state.ubia) + '. One ratio drives both limits: how far taxable income has travelled from ' +
+      money(state.threshold) + ' to ' + money(state.threshold + state.range) + '. ' +
+      (state.sstb
+        ? 'For a service business that ratio drains the income itself, so the line falls to nothing.'
+        : 'For an ordinary business it phases in a ceiling built from wages and property.');
+
+    renderCurve(r, dom, mine, theirs);
+    renderSplit(r);
+  }
+
+  /* =============================== WIRING =============================== */
+
+  /* slider id, state key, readout id. One table, so the value shown in the
+     rail and the value spoken by a screen reader cannot drift. */
+  const CONTROLS = [
+    ['tiSlider',     'ti',        'tiOut'],
+    ['qbiSlider',    'qbi',       'qbiOut'],
+    ['w2Slider',     'w2',        'w2Out'],
+    ['ubiaSlider',   'ubia',      'ubiaOut'],
+    ['threshSlider', 'threshold', 'threshOut'],
+    ['rangeSlider',  'range',     'rangeOut']
+  ];
+
+  /* A range input announces its raw number, so each slider carries an
+     aria-valuetext holding the string the rail already shows. */
+  function valueText(c){ return els[c[2]].textContent; }
+
+  /* The answer is announced on `change`, never on `input`: `input` fires on
+     every frame of a drag and would talk over itself, while `change` fires
+     once on release and once per arrow key. Read back out of the rail
+     rather than recomputed, so there is only ever one version of it. */
+  function announce(){
+    els.liveResult.textContent =
+      'Section 199A deduction: ' + els.statDed.textContent + ', ' + els.statDedSub.textContent +
+      '. Next dollar of taxable income: ' + els.statSlope.textContent +
+      '. What limits it: ' + els.statBinding.textContent + ', ' + els.statBindingSub.textContent + '.';
+  }
+
+  CONTROLS.forEach(function(c){
+    els[c[0]].addEventListener('input', function(){
+      state[c[1]] = +this.value;
+      render();
+      this.setAttribute('aria-valuetext', valueText(c));
+    });
+    els[c[0]].addEventListener('change', announce);
+  });
+
+  els.typeSeg.addEventListener('click', function(e){
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    state.sstb = btn.getAttribute('data-sstb') === 'yes';
+    Array.prototype.forEach.call(this.querySelectorAll('button'), function(b){
+      b.setAttribute('aria-pressed', String((b.getAttribute('data-sstb') === 'yes') === state.sstb));
+    });
+    render();
+    announce();
+  });
+
+  /* ===================== WORKPAPER LAYER =====================
+     Everything below only READS model(); the §199A arithmetic above is
+     untouched, so tests/verify-qbi-deduction.mjs still covers it. The
+     shared pieces live in assets/js/workpaper.js and assets/css/workpaper.css. */
+  const WP = window.Workpaper;
+  const NUMS = [['tiNum','tiSlider','ti'], ['qbiNum','qbiSlider','qbi'], ['w2Num','w2Slider','w2'],
+                ['ubiaNum','ubiaSlider','ubia'], ['threshNum','threshSlider','threshold'], ['rangeNum','rangeSlider','range']];
+  const B24 = { threshold:191950, range:50000 };
+  const SCENARIOS = {
+    s1: { sstb:false, ti:180000, qbi:140000, w2:20000, ubia:125000, threshold:191950, range:50000 },
+    s2: { sstb:true,  ti:245000, qbi:180000, w2:60000, ubia:100000, threshold:191950, range:50000 },
+    s3: { sstb:false, ti:245000, qbi:180000, w2:60000, ubia:100000, threshold:191950, range:50000 },
+    s4: { sstb:false, ti:200000, qbi:180000, w2:60000, ubia:100000, threshold:191950, range:50000 },
+    s5: { sstb:true,  ti:200000, qbi:180000, w2:60000, ubia:100000, threshold:191950, range:50000 },
+    s6: { sstb:false, ti:150000, qbi:75000,  w2:20000, ubia:0,      threshold:170050, range:50000 }
+  };
+
+  function syncControls(){
+    NUMS.forEach(function(n){
+      const sl = els[n[1]], v = state[n[2]];
+      if (v > +sl.max) sl.max = String(Math.ceil(v / +sl.step) * +sl.step);
+      sl.value = String(v);
+    });
+    Array.prototype.forEach.call(els.typeSeg.querySelectorAll('button'), function(b){
+      b.setAttribute('aria-pressed', String((b.getAttribute('data-sstb') === 'yes') === state.sstb));
+    });
+  }
+  function loadScenario(o){
+    Object.keys(o).forEach(function(k){ state[k] = o[k]; });
+    syncControls(); render(); announce();
+  }
+
+  /* what one more block of an input does, read straight off model() */
+  function lever(key, amount){
+    const next = {}; Object.keys(state).forEach(function(k){ next[k] = state[k]; });
+    next[key] = state[key] + amount;
+    return model(next).ded - model(state).ded;
+  }
+  function leverText(key, amount, noun){
+    const d = lever(key, amount);
+    if (Math.abs(d) < 0.5) return null;
+    return 'Each extra ' + money(amount) + ' of ' + noun + (d > 0 ? ' adds ' : ' removes ') + money(Math.abs(d)) + ' of deduction here.';
+  }
+
+  function insightsFor(r, b){
+    const out = [], t = state.threshold, R = state.range, top = t + R;
+    if (r.zone === 'below'){
+      out.push(['ok', 'Taxable income is ' + money(t - state.ti) + ' below the threshold, so no limit applies yet: the deduction is 20% of QBI (' + money(r.most) + '), capped at 20% of taxable income (' + money(r.cap) + ').']);
+      if (state.sstb) out.push(['info', 'For a service business the deduction begins to phase out at ' + money(t) + ' and is gone by ' + money(top) + ' of taxable income.']);
+      else out.push(['info', 'Above ' + money(t) + ' a ceiling of 50% of W-2 wages (or 25% plus 2.5% of property) phases in over ' + money(R) + ' of taxable income.']);
+    } else if (r.zone === 'band'){
+      out.push(['warn', pct1.format(r.p) + ' of the way through the phase-in band (' + money(t) + ' to ' + money(top) + '); ' + money(top - state.ti) + ' of taxable income to go before the limit applies in full.']);
+    } else {
+      out.push([state.sstb ? 'bad' : 'info', state.sstb
+        ? 'Past the band the applicable percentage is nil: a service business gets no deduction.'
+        : 'Past the band the wage and property ceiling applies in full: ' + money(r.ceiling) + ' against 20% of QBI of ' + money(r.tentative) + '.']);
+    }
+    if (b === 'wage' && !state.sstb){
+      const T = r.tentative;
+      const need = Math.min(2 * T, state.ubia > 0 ? Math.max(0, (T - 0.025 * state.ubia) / 0.25) : 2 * T);
+      if (need > state.w2) out.push(['info', money(need) + ' of W-2 wages (' + money(need - state.w2) + ' more) would lift the ceiling above 20% of QBI and remove the wage limit.']);
+    }
+    if (state.w2 <= 0 && state.ubia <= 0 && !state.sstb && state.ti > t && state.qbi > 0)
+      out.push(['warn', 'No W-2 wages and no qualified property: the ceiling is zero, so across the band the whole 20% of QBI phases out.']);
+    [['w2', 10000, 'W-2 wages'], ['ubia', 100000, 'qualified property'], ['qbi', 10000, 'qualified business income'], ['ti', 10000, 'taxable income']].forEach(function(l){
+      const txt = leverText(l[0], l[1], l[2]);
+      if (txt) out.push(['info', txt]);
+    });
+    if (b !== 'full' && b !== 'none') out.push([b === 'cap' ? 'warn' : 'warn', els.statBinding.textContent + ': ' + els.statBindingSub.textContent + '.']);
+    return out;
+  }
+
+  /* the computation, line by line, with the authority for each line */
+  function rowsFor(r, b){
+    const Q = state.qbi, applic = r.applic, sstb = state.sstb;
+    const qbiA = sstb ? Q * applic : Q, w2A = sstb ? state.w2 * applic : state.w2;
+    const row = function(label, val, cite, cls){ return { label:label, val:val, cite:cite, cls:cls || '' }; };
+    return [
+      row('Phase-in ratio: (taxable income − threshold) ÷ range, 0 to 1', pct1.format(r.p), '§199A(b)(3)(B), (d)(3)'),
+      row('Applicable percentage: 1 − ratio', sstb ? pct1.format(applic) : 'not used (ordinary business)', '§199A(d)(3)(A)(ii)', sstb ? '' : 'sub'),
+      row('QBI taken into account', money(qbiA), '§199A(d)(3)(A)(ii)', b === 'sstb' ? 'bind' : ''),
+      row('20% of QBI taken into account', money(r.tentative), '§199A(b)(2)(A)'),
+      row('W-2 wages taken into account', money(w2A), '§199A(b)(2)(B), (d)(3)', 'sub'),
+      row('50% of W-2 wages', money(r.wageOnly), '§199A(b)(2)(B)(i)', 'sub'),
+      row('25% of W-2 wages + 2.5% of unadjusted basis', money(r.wageProp), '§199A(b)(2)(B)(ii)', 'sub'),
+      row('Wage and property ceiling: the greater of the two', money(r.ceiling), '§199A(b)(2)(B)'),
+      row('Excess of 20% of QBI over the ceiling', money(r.excess), '§199A(b)(3)(B)(iii)'),
+      row('Reduction: excess × ratio', money(r.reduce), '§199A(b)(3)(B)(ii)', b === 'wage' ? 'bind' : ''),
+      row('Combined amount: 20% of QBI less the reduction', money(r.component), '§199A(b)(2)'),
+      row('Cap: 20% of taxable income', money(r.cap), '§199A(a)(2)', b === 'cap' ? 'bind' : ''),
+      row('Deduction: the lesser of the last two', money(r.ded), '§199A(a)', 'key')
+    ];
+  }
+
+  function renderRows(rows){
+    const tb = $('wpRows'); clear(tb);
+    rows.forEach(function(x){
+      const tr = document.createElement('tr'); if (x.cls) tr.className = x.cls;
+      [['', x.label], ['n', x.val], ['c', x.cite]].forEach(function(c){
+        const td = document.createElement('td'); if (c[0]) td.className = c[0]; td.textContent = c[1]; tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+  }
+
+  function memoFor(r, b, rows){
+    const hr = '------------------------------------------------------------', L = [];
+    L.push('IRC §199A — QUALIFIED BUSINESS INCOME DEDUCTION', 'Prepared with TaxVisual (taxvisual.com) on ' + new Date().toISOString().slice(0, 10) + '. General information, not tax advice.', hr, 'FACTS');
+    L.push('  Kind of business ......................... ' + (state.sstb ? 'Specified service trade or business (SSTB)' : 'Ordinary trade or business'));
+    L.push('  Taxable income less net capital gain ..... ' + money(state.ti), '  Qualified business income ................ ' + money(state.qbi));
+    L.push('  W-2 wages ................................ ' + money(state.w2), '  Unadjusted basis of qualified property ... ' + money(state.ubia));
+    L.push('  Threshold amount, §199A(e)(2) ............ ' + money(state.threshold), '  Phase-in range, §199A(b)(3)(B) ........... ' + money(state.range), hr, 'COMPUTATION');
+    rows.forEach(function(x){ L.push('  ' + x.label + ' ... ' + x.val + '   [' + x.cite + ']'); });
+    L.push(hr, 'RESULT', '  Deduction ................................ ' + money(r.ded) + (state.qbi > 0 ? '  (' + pct1.format(r.ded / state.qbi) + ' of QBI)' : ''));
+    L.push('  What limits it ........................... ' + els.statBinding.textContent);
+    if (state.qbi > 0) L.push('    lost to the service-business phase-out . ' + money(r.lostSstb), '    lost to the wage and property ceiling .. ' + money(r.lostWage), '    lost to the 20%-of-taxable-income cap .. ' + money(r.lostCap));
+    L.push(hr, 'NOT MODELLED', '  One trade or business only: no aggregation, no netting of losses, no qualified REIT dividends or PTP income (§199A(b)(1)(B)).', '  The threshold and range are inputs; confirm them for the tax year and filing status.');
+    L.push('', 'SOURCES', '  26 U.S.C. §199A (text on this page). Verify against govinfo.gov before relying.');
+    return L.join('\n');
+  }
+
+  function extras(){
+    const r = model(state), b = bindingFor(r, state.qbi);
+    NUMS.forEach(function(n){
+      const input = $(n[0]);
+      if (document.activeElement !== input) input.value = WP.money(state[n[2]]).replace('$', '');
+    });
+
+    const zoneChip = r.zone === 'below' ? ['Below the threshold', 'ok']
+                   : r.zone === 'band'  ? ['In the phase-in band · ' + pct0.format(r.p), 'warn']
+                   : [state.sstb ? 'Above the band · no deduction' : 'Above the band', state.sstb ? 'bad' : 'info'];
+    $('wpChip').textContent = zoneChip[0]; $('wpChip').className = 'wp-chip ' + zoneChip[1];
+    $('wpWhy').textContent = 'Taxable income ' + money(state.ti) + ' against a threshold of ' + money(state.threshold) + ' and a band to ' + money(state.threshold + state.range) + '. ' + (state.sstb ? 'Service business.' : 'Ordinary business.');
+
+    const base = WP.pin.get();
+    if (base) els.statDedSub.textContent = els.statDedSub.textContent + ' · ' + WP.delta(r.ded, base.ded);
+    $('wpPin').hidden = !!base; $('wpUnpin').hidden = !base;
+
+    const warn = [];
+    if (state.range === 50000 && state.threshold === 191950) warn.push('These are the 2024 single-filer figures the source worksheet uses. §199A(b)(3)(B) now reads $75,000 ($150,000 joint): set the range for the year you are modelling.');
+    WP.fillMsgs($('wpMsgs'), { block:[], warn:warn });
+
+    WP.fillInsights($('wpInsights'), insightsFor(r, b));
+    const rows = rowsFor(r, b);
+    renderRows(rows);
+    $('wpMemo').textContent = memoFor(r, b, rows);
+
+    WP.hash.save({ k: state.sstb ? 1 : 0, ti: state.ti, qbi: state.qbi, w2: state.w2, ubia: state.ubia, th: state.threshold, rg: state.range });
+  }
+
+  /* render() is the page's one entry point: the original render, then the workpaper layer */
+  function render(){ renderCore(); extras(); }
+
+  NUMS.forEach(function(n){
+    const input = $(n[0]);
+    input.addEventListener('input', function(){
+      const v = WP.parseMoney(input.value);
+      if (v === null) return;
+      state[n[2]] = v; syncControls(); render();
+    });
+    input.addEventListener('change', announce);
+    input.addEventListener('blur', function(){ input.value = WP.money(state[n[2]]).replace('$', ''); });
+  });
+  $('example').addEventListener('change', function(){ if (this.value) loadScenario(SCENARIOS[this.value]); this.value = ''; });
+  $('wpReset').addEventListener('click', function(){ WP.pin.clear(); loadScenario(SCENARIOS.s4); });
+  $('wpPin').addEventListener('click', function(){ WP.pin.set({ ded: model(state).ded }); render(); });
+  $('wpUnpin').addEventListener('click', function(){ WP.pin.clear(); render(); });
+  WP.init({ memo: function(){ return $('wpMemo').textContent; } });
+
+  (function fromHash(){
+    const h = WP.hash.load();
+    if (!h || h.ti == null) return;
+    const n = function(k, d){ const v = +h[k]; return isFinite(v) && h[k] !== '' ? v : d; };
+    state.sstb = h.k === '1'; state.ti = n('ti', state.ti); state.qbi = n('qbi', state.qbi);
+    state.w2 = n('w2', state.w2); state.ubia = n('ubia', state.ubia);
+    state.threshold = n('th', state.threshold); state.range = n('rg', state.range);
+    syncControls();
+  })();
+
+  render();
+  CONTROLS.forEach(function(c){ els[c[0]].setAttribute('aria-valuetext', valueText(c)); });
+  window.addEventListener('resize', hideTip);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1849 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Charitable Deduction Limits | TaxVisual</title>
+<meta name="description" content="An interactive view of the charitable contribution percentage limits: how the 60%, 50%, 30% and 20% ceilings share one 50%-of-AGI pool, and what carries forward.">
+<link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<link rel="stylesheet" href="../../assets/css/components.css">
+<link rel="stylesheet" href="../../assets/css/workpaper.css">
+<style>
+  /* ---------------------------------------------------------------------
+     Tool-scoped theme, namespaced apart from the site-wide --tv-* tokens.
+     Same system as tools/tax-benefit-rule/ - see
+     docs/interactive-tool-pattern.md.
+
+     Five gift classes claim the pool in a fixed statutory order, so they
+     are ONE HUE AS AN ORDINAL RAMP (step 1 darkest), not a categorical
+     set. The carryover neutral sits deliberately OUTSIDE the ramp: it is
+     not another step of the same measure but the part that did not fit.
+
+     Validated with the dataviz validator:
+       --ordinal, light  #10365f,#1a5496,#2a78d6,#5296e0,#86b6ef  on #fcfcfb
+       --ordinal, dark   #1d4f88,#2a6bb5,#3987e5,#6ba6ec,#a0c6f3  on #1a1a19
+     both: monotone L, every adjacent dL >= 0.06, one hue (spread 2-3
+     degrees), light end clears the surface at 2.06:1 and 2.10:1.
+
+     The neutral is checked against EVERY ramp step, not just the one it
+     currently touches - segments become adjacent whenever the step
+     between them goes to zero. #707070 (light) clears the worst step at
+     normal dE 15.8 / protan 13.5 / tritan 11.2; #808080 (dark) at
+     15.4 / 13.0 / 11.1. The mid-greys either side of them fail: #8a8a8a
+     dips to 13.4 against #5296e0 and #999999 to 12.4 against #6ba6ec,
+     because their lightness crosses the ramp's rather than clearing it.
+
+     The ordinal validator governs here, not the categorical one. Run over
+     ramp-plus-neutral the categorical checks fail by construction, exactly
+     as docs/interactive-tool-pattern.md section 5 records: the lightness
+     band and the chroma floor are scoped to categorical palettes, and no
+     five-step single-hue ramp can meet the categorical dE 15 floor between
+     its own adjacent steps (that would need dL 0.16 a step, so the light
+     end would no longer clear the surface). The ramp therefore carries the
+     secondary encoding the skill requires instead: a 2px surface gap
+     between segments, and every value and class name written out in the
+     legend rather than left to colour.
+     --------------------------------------------------------------------- */
+  :root{
+    color-scheme: light;
+    --tool-surface:   #fcfcfb;
+    --page:           #f9f9f7;
+    --tool-ink:       #0b0b0b;
+    --ink-soft:       #52514e;
+    --ink-muted:      #75736e;  /* 4.6:1 on the light surface */
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --tool-accent:    #2a78d6;
+    --fill-strong:    #2a78d6;
+    --step-1:         #10365f;
+    --step-2:         #1a5496;
+    --step-3:         #2a78d6;
+    --step-4:         #5296e0;
+    --step-5:         #86b6ef;
+    --fill-neutral:   #707070;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --tool-surface:  #1a1a19;
+      --page:          #0d0d0d;
+      --tool-ink:      #ffffff;
+      --ink-soft:      #c3c2b7;
+      --ink-muted:     #898781;
+      --gridline:      #2c2c2a;
+      --baseline:      #383835;
+      --border:        rgba(255,255,255,0.10);
+      --tool-accent:   #3987e5;
+      --fill-strong:   #3987e5;
+      --step-1:        #1d4f88;
+      --step-2:        #2a6bb5;
+      --step-3:        #3987e5;
+      --step-4:        #6ba6ec;
+      --step-5:        #a0c6f3;
+      --fill-neutral:  #808080;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --tool-surface:  #1a1a19;
+    --page:          #0d0d0d;
+    --tool-ink:      #ffffff;
+    --ink-soft:      #c3c2b7;
+    --ink-muted:     #898781;
+    --gridline:      #2c2c2a;
+    --baseline:      #383835;
+    --border:        rgba(255,255,255,0.10);
+    --tool-accent:   #3987e5;
+    --fill-strong:   #3987e5;
+    --step-1:        #1d4f88;
+    --step-2:        #2a6bb5;
+    --step-3:        #3987e5;
+    --step-4:        #6ba6ec;
+    --step-5:        #a0c6f3;
+    --fill-neutral:  #808080;
+  }
+
+  * { box-sizing: border-box; }
+  body{ margin:0; background: var(--page); }
+  .app{
+    background: var(--page);
+    color: var(--tool-ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 28px 16px 40px;
+  }
+  .wrap{ max-width: 1000px; margin: 0 auto; }
+
+  .masthead{
+    display:flex; flex-direction:column; gap:8px;
+    padding-bottom: 20px; margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .kicker{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color: var(--ink-muted);
+  }
+  .app h1{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-weight:600; font-size: clamp(24px,3.4vw,32px);
+    margin:2px 0 0; text-wrap: balance; color: var(--tool-ink);
+  }
+  .standfirst{ font-size:15px; color: var(--ink-soft); margin:0; line-height:1.55; max-width:66ch; }
+
+  .layout{
+    display:grid; grid-template-columns: 300px minmax(0,1fr);
+    gap:28px; align-items:start;
+  }
+  @media (max-width: 860px){ .layout{ grid-template-columns: minmax(0,1fr); } }
+
+  /* ---- controls ---- */
+  .rail{
+    background: var(--tool-surface); border:1px solid var(--border);
+    border-radius:10px; padding:20px; position:sticky; top:16px;
+  }
+  @media (max-width:860px){ .rail{ position:static; } }
+  .rail h2{
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    color: var(--ink-muted); margin:0 0 14px; font-weight:600;
+  }
+  .field{ margin-bottom:17px; }
+  .field label{ display:block; font-size:12px; color: var(--ink-soft); margin-bottom:2px; }
+  .field .amount{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:21px; font-weight:500; color: var(--tool-ink);
+    font-variant-numeric: tabular-nums; line-height:1.2;
+  }
+  input[type="range"]{ width:100%; margin:5px 0 0; accent-color: var(--tool-accent); }
+
+  /* The five gift fields are compact so the whole rail still fits one
+     screen beside the chart; the AGI field above them stays full size. */
+  .gifts{ border-top:1px solid var(--border); margin-top:20px; padding-top:16px; }
+  .group-head{
+    font-size:11px; font-weight:600; color: var(--ink-soft);
+    line-height:1.4; margin:0 0 10px;
+  }
+  .group-head .sub{ display:block; font-weight:400; color: var(--ink-muted); font-size:10.5px; }
+  .group-head + .group-head, .field + .group-head{ margin-top:18px; }
+  .field.compact{ margin-bottom:12px; }
+  .field.compact label{
+    display:flex; align-items:baseline; justify-content:space-between; gap:8px;
+    font-size:11.5px; margin-bottom:1px;
+  }
+  .field.compact .amount{ font-size:14px; }
+  .field.compact .org{ font-size:10.5px; color: var(--ink-muted); line-height:1.35; margin:0 0 2px 15px; }
+  .swatch{
+    display:inline-block; width:9px; height:9px; border-radius:2px;
+    flex:none; margin-right:6px;
+  }
+  .pct{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:10.5px; color: var(--ink-muted); flex:none; white-space:nowrap;
+  }
+
+  .stats{
+    border-top:1px solid var(--border); margin-top:20px; padding-top:18px;
+    display:grid; gap:16px;
+  }
+  .stat .label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color: var(--ink-muted); margin-bottom:2px;
+  }
+  .stat .value{
+    font-size:26px; font-weight:600; line-height:1.1;
+    font-variant-numeric: proportional-nums;
+  }
+  .stat .value.accent{ color: var(--tool-accent); }
+  .stat .value.small{ font-size:15px; font-weight:500; line-height:1.35; }
+  .stat .sub{ font-size:11.5px; color: var(--ink-muted); margin-top:3px; line-height:1.4; }
+
+  /* ---- panel ---- */
+  .panel{
+    background: var(--tool-surface); border:1px solid var(--border);
+    border-radius:10px; padding:20px 20px 18px; margin-bottom:22px;
+  }
+  .panel h3{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-size:18px; font-weight:600; margin:0 0 4px; color: var(--tool-ink);
+  }
+  .panel .lede{ font-size:13px; color: var(--ink-soft); margin:0 0 16px; line-height:1.5; max-width:64ch; }
+
+  /* ---- chart ---- */
+  .chart-scroll{ overflow-x:auto; overflow-y:hidden; }
+  .chart-scroll:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .chart-shell{ min-width:600px; }
+  .chart-shell svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .axis-text{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10.5px; fill: var(--ink-muted); }
+  .axis-text.emph{ fill: var(--tool-ink); font-weight:500; }
+  .band-text{ font-family:"IBM Plex Sans", sans-serif; font-size:11.5px; font-weight:600; fill: var(--ink-soft); }
+  .anno-text{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:10px; fill: var(--ink-muted); }
+  .anno-text.bind{ fill: var(--tool-ink); }
+  /* A reference-line label is placed along its own line, so it can cross
+     the curve; the halo keeps it readable where it does. */
+  .anno-text.haloed{ paint-order: stroke; stroke: var(--tool-surface); stroke-width:3px; }
+  .marker-text{
+    font-family:"IBM Plex Sans", sans-serif; font-size:12px; font-weight:600;
+    fill: var(--tool-ink); paint-order: stroke; stroke: var(--tool-surface); stroke-width:3px;
+  }
+
+  /* ---- part-to-whole bar ---- */
+  .split{ margin-top:26px; padding-top:20px; border-top:1px solid var(--gridline); }
+  .split h4{
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color: var(--ink-muted); margin:0 0 10px; font-weight:600;
+  }
+  .ptw{ display:flex; gap:2px; height:30px; }
+  .ptw > div{ min-width:2px; border-radius:2px; }
+  .ptw > div:first-child{ border-radius:4px 2px 2px 4px; }
+  .ptw > div:last-child{ border-radius:2px 4px 4px 2px; }
+  .ptw-scale{
+    display:flex; justify-content:space-between;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:10.5px; color: var(--ink-muted); margin-top:5px;
+  }
+  .legend{ display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:12px 22px; margin-top:16px; }
+  .legend-item{ display:flex; align-items:flex-start; gap:7px; font-size:12px; color: var(--ink-soft); }
+  .legend-swatch{ width:11px; height:11px; border-radius:3px; flex:none; margin-top:3px; }
+  .legend-item b{
+    display:block; color: var(--tool-ink); font-weight:600;
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums;
+  }
+  .legend-item .why{ display:block; color: var(--ink-muted); font-size:11px; margin-top:2px; line-height:1.4; }
+
+  /* ---- source-rules disclosure ---- */
+  details.sources{ padding:0; overflow:hidden; }
+  details.sources > summary{
+    list-style:none; cursor:pointer;
+    padding:18px 20px; display:flex; align-items:baseline; gap:11px; flex-wrap:wrap;
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-size:17px; font-weight:600; color: var(--tool-ink);
+    transition: background 140ms ease;
+  }
+  details.sources > summary::-webkit-details-marker{ display:none; }
+  details.sources > summary::before{
+    content:''; width:7px; height:7px; flex:none; align-self:center;
+    border-right:2px solid var(--tool-accent); border-bottom:2px solid var(--tool-accent);
+    transform: rotate(-45deg); transition: transform 160ms ease;
+  }
+  details.sources[open] > summary::before{ transform: rotate(45deg); }
+  details.sources > summary:hover{ background: color-mix(in srgb, var(--tool-accent) 6%, transparent); }
+  details.sources > summary:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:-2px; }
+  .summary-hint{
+    font-family:"IBM Plex Sans", sans-serif; font-size:12.5px; font-weight:400;
+    color: var(--ink-muted);
+  }
+  .sources-body{ padding:0 20px 20px; }
+  .sources-body p{ font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:70ch; margin:0 0 15px; }
+  .sources-body a{ color: var(--tool-accent); }
+  .src-meta{ margin:0 0 14px; }
+  .src-meta strong{ color: var(--tool-ink); }
+  .statute{
+    max-height:430px; overflow-y:auto;
+    border:1px solid var(--gridline); border-radius:8px;
+    padding:16px 18px; background: var(--page);
+    font-size:13px; line-height:1.62; color: var(--ink-soft);
+  }
+  .statute:focus-visible{ outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .statute .lv{ margin-left:16px; }
+  .statute > .lv{ margin-left:0; margin-top:16px; }
+  .statute > .lv:first-child{ margin-top:0; }
+  .statute .lv > p{ margin:0 0 7px; max-width:none; font-size:13px; line-height:1.62; }
+  .statute .lv-n{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-weight:500; color: var(--tool-ink);
+  }
+  .statute .lv-h{ font-weight:600; color: var(--tool-ink); }
+  .statute-head{
+    font-family:"IBM Plex Sans", sans-serif; font-size:11px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.07em; color: var(--ink-muted);
+    margin:22px 0 10px; padding-top:16px; border-top:1px solid var(--gridline);
+  }
+  .statute-head:first-child{ margin-top:0; padding-top:0; border-top:none; }
+  .note{
+    border-left:3px solid var(--tool-accent);
+    padding:2px 0 2px 14px; margin:18px 0 0;
+    font-size:13px; color: var(--ink-soft); line-height:1.6; max-width:70ch;
+  }
+  .note b{ color: var(--tool-ink); font-weight:600; }
+
+  .footnote{ font-size:12px; color: var(--ink-muted); line-height:1.55; max-width:74ch; margin:14px 0 0; }
+
+  .tooltip{
+    position:fixed; z-index:50; pointer-events:none;
+    transform: translate(-50%, calc(-100% - 12px));
+    background: var(--tool-ink); color: var(--page);
+    border-radius:6px; padding:7px 10px; font-size:12px; line-height:1.45;
+    opacity:0; transition: opacity 120ms ease; white-space:nowrap;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+  }
+  .tooltip.show{ opacity:1; }
+
+  /* workpaper layer: layout glue only; the pieces are in assets/css/workpaper.css */
+  .masthead.wp-head{ flex-direction:row; align-items:flex-end; }
+  .mast-text{ display:flex; flex-direction:column; gap:8px; }
+  @media (min-width:861px){ .rail{ top:128px; max-height:calc(100vh - 148px); overflow-y:auto; } }
+  .field .amount.sr-only{ position:absolute; }
+  .panel.wp-workpaper{ margin-bottom:0; }
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+  }
+  @media (prefers-reduced-motion: reduce){ .app *, .tooltip{ transition:none !important; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../../index.html" aria-label="TaxVisual home">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="20" width="20" height="1.3" rx=".65"/><path d="M2 20V14.7Q2 13.2 3.5 13.2H5.5Q7 13.2 7 14.7V20Z"/><path d="M9.5 20V10.1Q9.5 8.6 11 8.6H13Q14.5 8.6 14.5 10.1V20Z"/><rect x="17" y="9.3" width="5" height="10.7"/><path d="M17 8.7V5Q17 3.5 18.5 3.5H20.5Q22 3.5 22 5V8.7Z" fill-opacity=".45"/></svg>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../learn/index.html">Learn</a></li>
+          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../dashboard/index.html">Dashboard</a></li>
+          <li><a href="../../consulting/index.html">Consulting</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+
+<div class="app" id="main">
+  <div class="wrap">
+
+    <div class="masthead wp-head">
+      <div class="mast-text">
+      <div class="kicker">Deductions &middot; Simulation</div>
+      <h1>The Charitable Deduction Is Not One Limit</h1>
+      <p class="standfirst">
+        Each kind of gift carries its own ceiling &mdash; 60%, 50%, 30% or 20% of AGI &mdash; but they all
+        draw on a single 50%-of-AGI pool, claimed in a fixed order. A gift early in that order can leave
+        a later one with no room even when its own ceiling is nowhere near binding. What does not fit is
+        not lost; it carries forward five years.
+      </p>
+      </div>
+      <div class="wp-actions" role="group" aria-label="Share and export">
+        <button type="button" class="wp-btn" id="wp-copy">Copy workpaper</button>
+        <button type="button" class="wp-btn" id="wp-print">Print</button>
+        <button type="button" class="wp-btn" id="wp-link">Copy link</button>
+        <span class="wp-status" id="wp-status" role="status"></span>
+      </div>
+    </div>
+
+    <section class="wp-result" aria-label="Result">
+      <div class="wp-verdict">
+        <span class="wp-chip info" id="wpChip">&mdash;</span>
+        <p class="wp-why" id="wpWhy"></p>
+      </div>
+      <div class="wp-figs">
+        <div class="wp-fig"><div class="label">Deducted this year</div><div class="val accent" id="statDeducted">$0</div><div class="delta" id="statDeductedSub">&nbsp;</div></div>
+        <div class="wp-fig"><div class="label">Carried forward</div><div class="val" id="statCarry">$0</div><div class="delta" id="statCarrySub">&nbsp;</div></div>
+        <div class="wp-fig"><div class="label">What limits it</div><div class="val small" id="statBinding">&mdash;</div><div class="delta" id="statBindingSub">&nbsp;</div></div>
+      </div>
+      <div class="wp-pin"><button type="button" class="wp-btn" id="wpPin">Pin as baseline</button><button type="button" class="wp-btn quiet" id="wpUnpin" hidden>Clear baseline</button></div>
+    </section>
+
+    <div class="layout">
+
+      <aside class="rail">
+        <div class="rail-top">
+          <label class="sel"><span>Load an example</span>
+            <select id="example">
+              <option value="">Choose&hellip;</option>
+              <option value="tab">Workbook tab: AGI $100,000</option>
+              <option value="cash">Large cash gift over 60%</option>
+              <option value="pool">The 50% pool runs out</option>
+              <option value="foundation">Gifts to a private foundation</option>
+              <option value="all">Everything fits</option>
+            </select></label>
+          <button type="button" class="wp-btn quiet" id="wpReset">Reset</button>
+        </div>
+        <h2>This year</h2>
+
+        <div class="field">
+          <label for="agiSlider">Adjusted gross income</label>
+          <div class="amount sr-only" id="agiOut">$100,000</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="agiNum" aria-label="Adjusted gross income, dollars"></div>
+          <input type="range" id="agiSlider" min="0" max="400000" step="1000" value="100000">
+        </div>
+
+        <div class="gifts">
+          <div class="group-head">
+            What you gave
+            <span class="sub">In the order the limits claim it</span>
+          </div>
+
+          <div class="field compact">
+            <label for="g1Slider">
+              <span><span class="swatch" style="background:var(--step-1)"></span>Cash</span>
+              <span class="pct">step 1 &middot; 60%</span>
+            </label>
+            <div class="org">to a public charity or private operating foundation</div>
+            <div class="amount sr-only" id="g1Out">$15,000</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="g1Num" aria-label="Step 1, cash, dollars"></div>
+            <input type="range" id="g1Slider" min="0" max="150000" step="1000" value="15000">
+          </div>
+
+          <div class="field compact">
+            <label for="g2Slider">
+              <span><span class="swatch" style="background:var(--step-2)"></span>Ordinary income property</span>
+              <span class="pct">step 2 &middot; 50%</span>
+            </label>
+            <div class="org">to a public charity or private operating foundation</div>
+            <div class="amount sr-only" id="g2Out">$10,000</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="g2Num" aria-label="Step 2, ordinary income property, dollars"></div>
+            <input type="range" id="g2Slider" min="0" max="150000" step="1000" value="10000">
+          </div>
+
+          <div class="field compact">
+            <label for="g3Slider">
+              <span><span class="swatch" style="background:var(--step-3)"></span>Cash or ordinary income property</span>
+              <span class="pct">step 3 &middot; 30%</span>
+            </label>
+            <div class="org">to a private non-operating foundation</div>
+            <div class="amount sr-only" id="g3Out">$0</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="g3Num" aria-label="Step 3, gifts to a private non-operating foundation, dollars"></div>
+            <input type="range" id="g3Slider" min="0" max="150000" step="1000" value="0">
+          </div>
+
+          <div class="field compact">
+            <label for="g4Slider">
+              <span><span class="swatch" style="background:var(--step-4)"></span>Capital gain property</span>
+              <span class="pct">step 4 &middot; 30%</span>
+            </label>
+            <div class="org">to a public charity or private operating foundation, at fair market value</div>
+            <div class="amount sr-only" id="g4Out">$30,000</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="g4Num" aria-label="Step 4, capital gain property, dollars"></div>
+            <input type="range" id="g4Slider" min="0" max="150000" step="1000" value="30000">
+          </div>
+
+          <div class="field compact">
+            <label for="g5Slider">
+              <span><span class="swatch" style="background:var(--step-5)"></span>Capital gain property</span>
+              <span class="pct">step 5 &middot; 20%</span>
+            </label>
+            <div class="org">to a private non-operating foundation</div>
+            <div class="amount sr-only" id="g5Out">$0</div>
+          <div class="wp-num"><span class="pre">$</span><input type="text" inputmode="decimal" autocomplete="off" id="g5Num" aria-label="Step 5, capital gain property to a private foundation, dollars"></div>
+            <input type="range" id="g5Slider" min="0" max="150000" step="1000" value="0">
+          </div>
+        </div>
+
+        <ul class="wp-msgs" id="wpMsgs" aria-live="polite"></ul>
+        <p class="sr-only" id="liveResult" role="status" aria-live="polite"></p>
+      </aside>
+
+      <div>
+        <details class="panel sources">
+          <summary>
+            The source rules
+            <span class="summary-hint">26 U.S.C. &sect;170(b), &sect;170(d) and 26 CFR &sect;1.170A-8, full text &mdash; optional</span>
+          </summary>
+          <div class="sources-body">
+            <p class="src-meta">
+              <strong>The percentage limitations, the carryover and the regulation.</strong>
+              Reproduced in full, unedited, from the U.S. Code and the Code of Federal Regulations as
+              published by the Legal Information Institute, retrieved 29 September 2026.
+              <a href="https://www.law.cornell.edu/uscode/text/26/170" target="_blank" rel="noopener">&sect;170 at source</a> &middot;
+              <a href="https://www.law.cornell.edu/cfr/text/26/1.170A-8" target="_blank" rel="noopener">&sect;1.170A-8 at source</a>
+            </p>
+
+            <div class="statute" tabindex="0" role="region"
+                 aria-label="Full text of 26 U.S.C. section 170(b) and (d) and 26 CFR section 1.170A-8">
+              <p class="statute-head">26 U.S.C. &sect;170(b) &mdash; Percentage limitations</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-h">Percentage limitations</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">Individuals</span> <span class="lv-t">In the case of an individual, the deduction provided in subsection (a) shall be limited as provided in the succeeding subparagraphs.</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">General rule</span> <span class="lv-t">Any charitable contribution to—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">a church or a convention or association of churches,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">an educational organization which normally maintains a regular faculty and curriculum and normally has a regularly enrolled body of pupils or students in attendance at the place where its educational activities are regularly carried on,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-t">an organization the principal purpose or functions of which are the providing of medical or hospital care or medical education or medical research, if the organization is a hospital, or if the organization is a medical research organization directly engaged in the continuous active conduct of medical research in conjunction with a hospital, and during the calendar year in which the contribution is made such organization is committed to spend such contributions for such research before January 1 of the fifth calendar year which begins after the date such contribution is made,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iv)</span> <span class="lv-t">an organization which normally receives a substantial part of its support (exclusive of income received in the exercise or performance by such organization of its charitable, educational, or other purpose or function constituting the basis for its exemption under section 501(a)) from the United States or any State or political subdivision thereof or from direct or indirect contributions from the general public, and which is organized and operated exclusively to receive, hold, invest, and administer property and to make expenditures to or for the benefit of a college or university which is an organization referred to in clause (ii) of this subparagraph and which is an agency or instrumentality of a State or political subdivision thereof, or which is owned or operated by a State or political subdivision thereof or by an agency or instrumentality of one or more States or political subdivisions,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(v)</span> <span class="lv-t">a governmental unit referred to in subsection (c)(1),</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(vi)</span> <span class="lv-t">an organization referred to in subsection (c)(2) which normally receives a substantial part of its support (exclusive of income received in the exercise or performance by such organization of its charitable, educational, or other purpose or function constituting the basis for its exemption under section 501(a)) from a governmental unit referred to in subsection (c)(1) or from direct or indirect contributions from the general public,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(vii)</span> <span class="lv-t">a private foundation described in subparagraph (F),</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(viii)</span> <span class="lv-t">an organization described in section 509(a)(2) or (3),</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ix)</span> <span class="lv-t">an agricultural research organization directly engaged in the continuous active conduct of agricultural research (as defined in section 1404 of the National Agricultural Research, Extension, and Teaching Policy Act of 1977) in conjunction with a land-grant college or university (as defined in such section) or a non-land grant college of agriculture (as defined in such section), and during the calendar year in which the contribution is made such organization is committed to spend such contribution for such research before January 1 of the fifth calendar year which begins after the date such contribution is made, or</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(x)</span> <span class="lv-t">an organization described in section 501(c)(19) that is a federally chartered corporation,</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Other contributions</span> <span class="lv-t">Any charitable contribution other than a charitable contribution to which subparagraph (A) or (G) applies shall be allowed to the extent that the aggregate of such contributions does not exceed the lesser of—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">30 percent of the taxpayer’s contribution base for the taxable year, or</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">the excess of 50 percent of the taxpayer’s contribution base for the taxable year over—</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">the amount of charitable contributions allowable under subparagraph (A) (determined without regard to subparagraph (C)) and subparagraph (G), reduced by</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">so much of the contributions taken into account under subparagraph (G) as does not exceed 10 percent of the taxpayer’s contribution base.</span></p>
+                  </div>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-h">Special limitation with respect to contributions described in subparagraph (A) of certain capital gain property</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">In the case of charitable contributions described in subparagraph (A) of capital gain property to which subsection (e)(1)(B) does not apply, the total amount of contributions of such property which may be taken into account under subsection (a) for any taxable year shall not exceed 30 percent of the taxpayer’s contribution base for such year. For purposes of this subsection, contributions of capital gain property to which this subparagraph applies shall be taken into account after all other charitable contributions (other than charitable contributions to which subparagraph (D) applies).</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">If charitable contributions described in subparagraph (A) of capital gain property to which clause (i) applies exceeds 30 percent of the taxpayer’s contribution base for any taxable year, such excess shall be treated, in a manner consistent with the rules of subsection (d)(1), as a charitable contribution of capital gain property to which clause (i) applies in each of the 5 succeeding taxable years in order of time.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-t">At the election of the taxpayer (made at such time and in such manner as the Secretary prescribes by regulations), subsection (e)(1) shall apply to all contributions of capital gain property (to which subsection (e)(1)(B) does not otherwise apply) made by the taxpayer during the taxable year. If such an election is made, clauses (i) and (ii) shall not apply to contributions of capital gain property made during the taxable year, and, in applying subsection (d)(1) for such taxable year with respect to contributions of capital gain property made in any prior contribution year for which an election was not made under this clause, such contributions shall be reduced as if subsection (e)(1) had applied to such contributions in the year in which made.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iv)</span> <span class="lv-t">For purposes of this paragraph, the term “capital gain property” means, with respect to any contribution, any capital asset the sale of which at its fair market value at the time of the contribution would have resulted in gain which would have been long-term capital gain. For purposes of the preceding sentence, any property which is property used in the trade or business (as defined in section 1231(b)) shall be treated as a capital asset.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(D)</span> <span class="lv-h">Special limitation with respect to contributions of capital gain property to organizations not described in subparagraph (A)</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-h">In general</span> <span class="lv-t">In the case of charitable contributions (other than charitable contributions to which subparagraph (A) applies) of capital gain property, the total amount of such contributions of such property taken into account under subsection (a) for any taxable year shall not exceed the lesser of—</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">20 percent of the taxpayer’s contribution base for the taxable year, or</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">the excess of 30 percent of the taxpayer’s contribution base for the taxable year over the amount of the contributions of capital gain property to which subparagraph (C) applies.</span></p>
+                  </div>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-h">Carryover</span> <span class="lv-t">If the aggregate amount of contributions described in clause (i) exceeds the limitation of clause (i), such excess shall be treated (in a manner consistent with the rules of subsection (d)(1)) as a charitable contribution of capital gain property to which clause (i) applies in each of the 5 succeeding taxable years in order of time.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(E)</span> <span class="lv-h">Contributions of qualified conservation contributions</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-h">In general</span> <span class="lv-t">Any qualified conservation contribution (as defined in subsection (h)(1)) shall be allowed to the extent the aggregate of such contributions does not exceed the excess of 50 percent of the taxpayer’s contribution base over the amount of all other charitable contributions allowable under this paragraph.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-h">Carryover</span> <span class="lv-t">If the aggregate amount of contributions described in clause (i) exceeds the limitation of clause (i), such excess shall be treated (in a manner consistent with the rules of subsection (d)(1)) as a charitable contribution to which clause (i) applies in each of the 15 succeeding years in order of time.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-h">Coordination with other subparagraphs</span> <span class="lv-t">For purposes of applying this subsection and subsection (d)(1), contributions described in clause (i) shall not be treated as described in subparagraph (A), (B), (C), or (D) and such subparagraphs shall apply without regard to such contributions.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iv)</span> <span class="lv-h">Special rule for contribution of property used in agriculture or livestock production</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-h">In general</span> <span class="lv-t">If the individual is a qualified farmer or rancher for the taxable year for which the contribution is made, clause (i) shall be applied by substituting “100 percent” for “50 percent”.</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-h">Exception</span> <span class="lv-t">Subclause (I) shall not apply to any contribution of property made after the date of the enactment of this subparagraph which is used in agriculture or livestock production (or available for such production) unless such contribution is subject to a restriction that such property remain available for such production. This subparagraph shall be applied separately with respect to property to which subclause (I) does not apply by reason of the preceding sentence prior to its application to property to which subclause (I) does apply.</span></p>
+                  </div>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(v)</span> <span class="lv-h">Definition</span> <span class="lv-t">For purposes of clause (iv), the term “qualified farmer or rancher” means a taxpayer whose gross income from the trade or business of farming (within the meaning of section 2032A(e)(5)) is greater than 50 percent of the taxpayer’s gross income for the taxable year.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(F)</span> <span class="lv-h">Certain private foundations</span> <span class="lv-t">The private foundations referred to in subparagraph (A)(vii) and subsection (e)(1)(B) are—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">a private operating foundation (as defined in section 4942(j)(3)),</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">any other private foundation (as defined in section 509(a)) which, not later than the 15th day of the third month after the close of the foundation’s taxable year in which contributions are received, makes qualifying distributions (as defined in section 4942(g), without regard to paragraph (3) thereof), which are treated, after the application of section 4942(g)(3), as distributions out of corpus (in accordance with section 4942(h)) in an amount equal to 100 percent of such contributions, and with respect to which the taxpayer obtains adequate records or other sufficient evidence from the foundation showing that the foundation made such qualifying distributions, and</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-t">a private foundation all of the contributions to which are pooled in a common fund and which would be described in section 509(a)(3) but for the right of any substantial contributor (hereafter in this clause called “donor”) or his spouse to designate annually the recipients, from among organizations described in paragraph (1) of section 509(a), of the income attributable to the donor’s contribution to the fund and to direct (by deed or by will) the payment, to an organization described in such paragraph (1), of the corpus in the common fund attributable to the donor’s contribution; but this clause shall apply only if all of the income of the common fund is required to be (and is) distributed to one or more organizations described in such paragraph (1) not later than the 15th day of the third month after the close of the taxable year in which the income is realized by the fund and only if all of the corpus attributable to any donor’s contribution to the fund is required to be (and is) distributed to one or more of such organizations not later than one year after his death or after the death of his surviving spouse if she has the right to designate the recipients of such corpus.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(G)</span> <span class="lv-h">Increased limitation for cash contributions</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-h">In general</span> <span class="lv-t">For taxable years beginning after December 31, 2017</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">60 percent of the taxpayer’s contribution base for the taxable year, over</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">the aggregate amount of contributions taken into account under subparagraph (A) for such taxable year.</span></p>
+                  </div>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-h">Carryover</span> <span class="lv-t">If the aggregate amount of contributions described in clause (i) exceeds the applicable limitation under clause (i) for any taxable year described in such clause, such excess shall be treated (in a manner consistent with the rules of subsection (d)(1)) as a charitable contribution to which clause (i) applies in each of the 5 succeeding years in order of time.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-h">Coordination with subparagraph (A)</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-h">In general</span> <span class="lv-t">Contributions taken into account under this subparagraph shall not be taken into account under subparagraph (A).</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-h">Limitation reduction</span> <span class="lv-t">For each taxable year described in clause (i), and each taxable year to which any contribution under this subparagraph is carried over under clause (ii), subparagraph (A) shall be applied by reducing (but not below zero) the contribution limitation allowed for the taxable year under such subparagraph by the aggregate contributions allowed under this subparagraph for such taxable year.</span></p>
+                  </div>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(H)</span> <span class="lv-h">Contribution base defined</span> <span class="lv-t">For purposes of this section, the term “contribution base” means adjusted gross income (computed without regard to any net operating loss carryback to the taxable year under section 172).</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(I)</span> <span class="lv-h">0.5-percent floor</span> <span class="lv-t">Any charitable contribution otherwise allowable (without regard to this subparagraph) as a deduction under this section shall be allowed only to the extent that the aggregate of such contributions exceeds 0.5 percent of the taxpayer’s contribution base for the taxable year. The preceding sentence shall be applied—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">first, by taking into account charitable contributions to which subparagraph (D) applies to the extent thereof,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">second, by taking into account charitable contributions to which subparagraph (C) applies to the extent thereof,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-t">third, by taking into account charitable contributions to which subparagraph (B) applies to the extent thereof,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iv)</span> <span class="lv-t">fourth, by taking into account charitable contributions to which subparagraph (E) applies to the extent thereof,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(v)</span> <span class="lv-t">fifth, by taking into account charitable contributions to which subparagraph (A) applies to the extent thereof, and</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(vi)</span> <span class="lv-t">sixth, by taking into account charitable contributions to which subparagraph (G) applies to the extent thereof.</span></p>
+                </div>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Corporations</span> <span class="lv-t">In the case of a corporation—</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">Any charitable contribution otherwise allowable (without regard to this subparagraph) as a deduction under this section for any taxable year, other than any contribution to which subparagraph (B) or (C) applies, shall be allowed only to the extent that the aggregate of such contributions—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">exceeds 1 percent of the taxpayer’s taxable income for the taxable year, and</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">does not exceed 10 percent of the taxpayer’s taxable income for the taxable year.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Qualified conservation contributions by certain corporate farmers and ranchers</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-h">In general</span> <span class="lv-t">Any qualified conservation contribution (as defined in subsection (h)(1))—</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">which is made by a corporation which, for the taxable year during which the contribution is made, is a qualified farmer or rancher (as defined in paragraph (1)(E)(v)) and the stock of which is not readily tradable on an established securities market at any time during such year, and</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">which, in the case of contributions made after the date of the enactment of this subparagraph, is a contribution of property which is used in agriculture or livestock production (or available for such production) and which is subject to a restriction that such property remain available for such production,</span></p>
+                  </div>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-h">Carryover</span> <span class="lv-t">If the aggregate amount of contributions described in clause (i) exceeds the limitation of clause (i), such excess shall be treated (in a manner consistent with the rules of subsection (d)(2) other than subparagraph (C) thereof) as a charitable contribution to which clause (i) applies in each of the 15 succeeding taxable years in order of time.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-h">Qualified conservation contributions by certain Native Corporations</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-h">In general</span> <span class="lv-t">Any qualified conservation contribution (as defined in subsection (h)(1)) which—</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">is made by a Native Corporation, and</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">is a contribution of property which was land conveyed under the Alaska Native Claims Settlement Act,</span></p>
+                  </div>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-h">Carryover</span> <span class="lv-t">If the aggregate amount of contributions described in clause (i) exceeds the limitation of clause (i), such excess shall be treated (in a manner consistent with the rules of subsection (d)(2) other than subparagraph (C) thereof) as a charitable contribution to which clause (i) applies in each of the 15 succeeding taxable years in order of time.</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-h">Native Corporation</span> <span class="lv-t">For purposes of this subparagraph, the term “Native Corporation” has the meaning given such term by section 3(m) of the Alaska Native Claims Settlement Act.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(D)</span> <span class="lv-h">Taxable income</span> <span class="lv-t">For purposes of this paragraph, taxable income shall be computed without regard to—</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">this section,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">part VIII (except section 248),</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-t">any net operating loss carryback to the taxable year under section 172,</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iv)</span> <span class="lv-t">any capital loss carryback to the taxable year under section 1212(a)(1) [1]</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(v)</span> <span class="lv-t">section 199A(g).</span></p>
+                </div>
+              </div>
+            </div>
+          </div>              <p class="statute-head">26 U.S.C. &sect;170(d) &mdash; Carryovers of excess contributions</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(d)</span> <span class="lv-h">Carryovers of excess contributions</span></p>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(1)</span> <span class="lv-h">Individuals</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">In the case of an individual, if the amount of charitable contributions described in subsection (b)(1)(A) payment of which is made within a taxable year (hereinafter in this paragraph referred to as the “contribution year”) exceeds 50 percent of the taxpayer’s contribution base for such year, such excess shall be treated as a charitable contribution described in subsection (b)(1)(A) paid in each of the 5 succeeding taxable years in order of time, but, with respect to any such succeeding taxable year, only to the extent of the lesser of the two following amounts:</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-t">the amount by which 50 percent of the taxpayer’s contribution base for such succeeding taxable year exceeds the sum of the charitable contributions described in subsection (b)(1)(A) payment of which is made by the taxpayer within such succeeding taxable year (determined without regard to this subparagraph) and the charitable contributions described in subsection (b)(1)(A) payment of which was made in taxable years before the contribution year which are treated under this subparagraph as having been paid in such succeeding taxable year; or</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-t">in the case of the first succeeding taxable year, the amount of such excess, and in the case of the second, third, fourth, or fifth succeeding taxable year, the portion of such excess not treated under this subparagraph as a charitable contribution described in subsection (b)(1)(A) paid in any taxable year intervening between the contribution year and such succeeding taxable year.</span></p>
+                </div>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">Special rule for net operating loss carryovers</span> <span class="lv-t">In applying subparagraph (A), the excess determined under subparagraph (A) for the contribution year shall be reduced to the extent that such excess reduces taxable income (as computed for purposes of the second sentence of section 172(b)(2)) and increases the net operating loss deduction for a taxable year succeeding the contribution year.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-h">Contributions disallowed by 0.5-percent floor carried forward only from years in which limitation is exceeded</span></p>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(i)</span> <span class="lv-h">In general</span> <span class="lv-t">In the case of any taxable year from which an excess is carried forward (determined without regard to this subparagraph) under any carryover rule, the applicable carryover rule shall be applied by increasing the excess determined under such applicable carryover rule for the contribution year (before the application of subparagraph (B)) by the amount attributable to the charitable contributions to which such rule applies which is not allowed as a deduction for the contribution year by reason of subsection (b)(1)(I).</span></p>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(ii)</span> <span class="lv-h">Carryover rule</span> <span class="lv-t">For purposes of this subparagraph, the term “carryover rule” means—</span></p>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(I)</span> <span class="lv-t">subparagraph (A) of this paragraph,</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(II)</span> <span class="lv-t">subparagraphs (C)(ii), (D)(ii), (E)(ii), and (G)(ii) of subsection (b)(1), and</span></p>
+                  </div>
+                  <div class="lv lv-4">
+                    <p><span class="lv-n">(III)</span> <span class="lv-t">the second sentence of subsection (b)(1)(B).</span></p>
+                  </div>
+                </div>
+                <div class="lv lv-3">
+                  <p><span class="lv-n">(iii)</span> <span class="lv-h">Applicable carryover rule</span> <span class="lv-t">For purposes of this subparagraph, the term “applicable carryover rule” means any carryover rule applicable to charitable contributions which were (in whole or in part) not allowed as a deduction for the contribution year by reason of subsection (b)(1)(I).</span></p>
+                </div>
+              </div>
+            </div>
+            <div class="lv lv-1">
+              <p><span class="lv-n">(2)</span> <span class="lv-h">Corporations</span></p>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(A)</span> <span class="lv-h">In general</span> <span class="lv-t">Any charitable contribution taken into account under subsection (b)(2)(A) for any taxable year which is not allowed as a deduction by reason of clause (ii) thereof shall be taken into account as a charitable contribution for the succeeding taxable year, except that, for purposes of determining under this subparagraph whether such contribution is allowed in such succeeding taxable year, contributions in such succeeding taxable year (determined without regard to this paragraph) shall be taken into account under subsection (b)(2)(A) before any contribution taken into account by reason of this paragraph.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(B)</span> <span class="lv-h">5-year carryforward</span> <span class="lv-t">No charitable contribution may be carried forward under subparagraph (A) to any taxable year following the fifth taxable year after the taxable year in which the charitable contribution was first taken into account. For purposes of the preceding sentence, contributions shall be treated as allowed on a first-in first-out basis.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(C)</span> <span class="lv-h">Contributions disallowed by 1-percent floor carried forward only from years in which 10 percent limitation is exceeded</span> <span class="lv-t">In the case of any taxable year from which a charitable contribution is carried forward under subparagraph (A) (determined without regard this subparagraph), subparagraph (A) shall be applied by substituting “clause (i) or (ii)” for “clause (ii)”.</span></p>
+              </div>
+              <div class="lv lv-2">
+                <p><span class="lv-n">(D)</span> <span class="lv-h">Special rule for net operating loss carryovers</span> <span class="lv-t">The amount of charitable contributions carried forward under subparagraph (A) shall be reduced to the extent that such carryfoward would (but for this subparagraph) reduce taxable income (as computed for purposes of the second sentence of section 172(b)(2)) and increase a net operating loss carryover under section 172 to a succeeding taxable year.</span></p>
+              </div>
+            </div>
+          </div>              <p class="statute-head">26 CFR &sect;1.170A-8 &mdash; Limitations on charitable deductions by individuals</p>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(a)</span> <span class="lv-t">Percentage limitations—(1) In general. An individual&#x27;s charitable contributions deduction is subject to 20-, 30-, and 50-percent limitations unless the individual qualifies for the unlimited charitable contributions deduction under section 170(b)(1)(C). For a discussion of these limitations and examples of their application, see paragraphs (b) through (f) of this section. If a husband and wife make a joint return, the deduction for contributions is the aggregate of the contributions made by the spouses, and the limitations in section 170(b) and this section are based on the aggregate contribution base of the spouses. A charitable contribution by an individual to or for the use of an organization described in section 170(c) may be deductible even though all, or some portion, of the funds of the organization may be used in foreign countries for charitable or educational purposes.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">“To” or “for the use of” defined. For purposes of section 170, a contribution of an income interest in property, whether or not such contributed interest is transferred in trust, for which a deduction is allowed under section 170(f)(2)(B) or (3)(A) shall be considered as made “for the use of” rather than “to” the charitable organization. A contribution of a remainder interest in property, whether or not such contributed interest is transferred in trust, for which a deduction is allowed under section 170(f)(2)(A) or (3)(A), shall be considered as made “to” the charitable organization except that, if such interest is transferred in trust and, pursuant to the terms of the trust instrument, the interest contributed is, upon termination of the predecessor estate, to be held in trust for the benefit of such organization, the contribution shall be considered as made “for the use of” such organization. Thus, for example, assume that A transfers property to a charitable remainder annuity trust described in section 664(d)(1) which is required to pay to B for life an annuity equal to 5 percent of the initial fair market value of the property transferred in trust. The trust instrument provides that after B&#x27;s death the remainder interest in the trust is to be transferred to M Church or, in the event M Church is not an organization described in section 170(c) when the amount is to be irrevocably transferred to such church, to an organization which is described in section 170(c) at that time. The contribution by A of the remainder interest shall be considered as made “to” M Church. However, if in the trust instrument A had directed that after B&#x27;s death the remainder interest is to be held in trust for the benefit of M Church, the contribution shall be considered as made “for the use of” M Church. This subparagraph does not apply to the contribution of a partial interest in property, or of an undivided portion of such partial interest, if such partial interest is the donor&#x27;s entire interest in the property and such entire interest was not created to avoid section 170(f)(2) or (3)(A). See paragraph (a)(2) of § 1.170A-6 and paragraphs (a)(2)(i) and (b)(1) of § 1.170A-7.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-t">50-percent limitation. An individual may deduct charitable contributions made during a taxable year to any one or more section 170(b)(1)(A) organizations, as defined in § 1.170A-9, to the extent that such contributions in the aggregate do not exceed 50 percent of his contribution base, as defined in section 170(b)(1)(F) and paragraph (e) of this section, for the taxable year. However, see paragraph (d) of this section for a limitation on the amount of charitable contributions of 30-percent capital gain property. To qualify for the 50-percent limitation the contributions must be made “to,” and not merely “for the use of,” one of the specified organizations. A contribution to an organization referred to in section 170(c)(2), other than a section 170(b)(1)(A) organization, will not qualify for the 50-percent limitation even though such organization makes the contribution available to an organization which is a section 170 (b)(1)(A) organization. For provisions relating to the carryover of contributions in excess of 50-percent of an individual&#x27;s contribution base see section 170(d)(1) and paragraph (b) of § 1.170A-10.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-t">20-percent limitation.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(1)</span> <span class="lv-t">An individual may deduct charitable contributions made during a taxable year:</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(i)</span> <span class="lv-t">To any one or more charitable organizations described in section 170(c) other than section 170(b)(1)(A) organizations, as defined in § 1.170A-9, and,</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">For the use of any charitable organization described in section 170(c), to the extent that such contributions in the aggregate do not exceed the lesser of the limitations under subparagraph (2) of this paragraph.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">For purposes of subparagraph (1) of this paragraph the limitations are:</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(i)</span> <span class="lv-t">20 percent of the individual&#x27;s contribution base, as defined in paragraph (e) of this section, for the taxable year, or</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">The excess of 50 percent of the individual&#x27;s contribution base, as so defined, for the taxable year over the total amount of the charitable contributions allowed under section 170(b)(1)(A) and paragraph (b) of this section, determined by first reducing the amount of such contributions under section 170(e)(1) and paragraph (a) of § 1.170A-4 but without applying the 30-percent limitation under section 170(b)(1)(D)(i) and paragraph (d)(1) of this section.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(d)</span> <span class="lv-t">30-percent limitation—(1) In general. An individual may deduct charitable contributions of 30-percent capital gain property, as defined in subparagraph (3) of this paragraph, made during a taxable year to or for the use of any charitable organization described in section 170(c) to the extent that such contributions in the aggregate do not exceed 30-percent of his contribution base, as defined in paragraph (e) of this section, subject, however, to the 50- and 20-percent limitations prescribed by paragraphs (b) and (c) of this section. For purposes of applying the 50-percent and 20-percent limitations described in paragraphs (b) and (c) of this section, charitable contributions of 30-percent capital gain property paid during the taxable year, and limited as provided by this subparagraph, shall be taken into account after all other charitable contributions paid during the taxable year. For provisions relating to the carryover of certain contributions of 30-percent capital gain property in excess of 30-percent of an individual&#x27;s contribution base, see section 170(b)(1)(D)(ii) and paragraph (c) of § 1.170A-10.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(2)</span> <span class="lv-t">Election by an individual to have section 170(e)(1)(B) apply to contributions—(i) In general.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(A) An individual may elect under section 170(b)(1)(D)(iii) for any taxable year to have the reduction rule of section 170(e)(1)(B) and paragraph (a) of § 1.170A-4 apply to all his charitable contributions of 30-percent capital gain property made during such taxable year or carried over to such taxable year from a taxable year beginning after December 31, 1969. If such election is made such contributions shall be treated as contributions of section 170(e) capital gain property in accordance with paragraph (b)(2)(iii) of § 1.170A-4. The election may be made with respect to contributions of 30-percent capital gain property carried over to the taxable year even though the individual has not made any contribution of 30-percent capital gain property in such year. If such an election is made, section 170(b)(1)(D) (i) and (ii) and subparagraph (1) of this paragraph shall not apply to such contributions made during such year. However, such contributions must be reduced as required under section 170(e)(1)(B) and paragraph (a) of § 1.170A-4.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(B) If there are carryovers to such taxable year of charitable contributions of 30-percent capital gain property made in preceding taxable years beginning after December 31, 1969, the amount of such contributions in each such preceding year shall be reduced as if section 170(e)(1)(B) had applied to them in the preceding year and shall be carried over to the taxable year and succeeding taxable years under section 170(d)(1) and paragraph (b) of § 1.170A-10 as contributions of property other than 30-percent capital gain property. For purposes of applying the immediately preceding sentence, the percentage limitations under section 170(b) for the preceding taxable year and for any taxable years intervening between such year and the year of the election shall not be redetermined and the amount of any deduction allowed for such years under section 170 in respect of the charitable contributions of 30-percent capital gain property in the preceding taxable year shall not be redetermined. However, the amount of the deduction so allowed under section 170 in the preceding taxable year must be subtracted from the reduced amount of the charitable contributions made in such year in order to determine the excess amount which is carried over from such year under section 170(d)(1). If the amount of the deduction so allowed in the preceding taxable year equals or exceeds the reduced amount of the charitable contributions, there shall be no carryover from such year to the year of the election.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">(C) An election under this subparagraph may be made for each taxable year in which charitable contributions of 30-percent capital gain property are made or to which they are carried over under section 170(b)(1)(D)(ii). If there are also carryovers under section 170(d)(1) to the year of the election by reason of an election made under this subparagraph for a previous taxable year, such carryovers under section 170(d)(1) shall not be redetermined by reason of the subsequent election.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(ii)</span> <span class="lv-t">Husband and wife making joint return. If a husband and wife make a joint return of income for a contribution year and one of the spouses elects under this subparagraph in a later year when he files a separate return, or if a spouse dies after a contribution year for which a joint return is made, any excess contribution of 30-percent capital gain property which is carried over to the election year from the contribution year shall be allocated between the husband and wife as provided in paragraph (d)(4) (i) and (iii) of § 1.170A-10. If a husband and wife file separate returns in a contribution year, any election under this subparagraph in a later year when a joint return is filed shall be applicable to any excess contributions of 30-percent capital gain property of either taxpayer carried over from the contribution year to the election year. The immediately preceding sentence shall also apply where two single individuals are subsequently married and file a joint return. A remarried individual who filed a joint return with his former spouse for a contribution year and thereafter files a joint return with his present spouse shall treat the carryover to the election year as provided in paragraph (d)(4)(ii) of § 1.170A-10.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(iii)</span> <span class="lv-t">Manner of making election. The election under subdivision (i) of this subparagraph shall be made by attaching to the income tax return for the election year a statement indicating that the election under section 170(b)(1)(D)(iii) and this subparagraph is being made. If there is a carryover to the taxable year of any charitable contributions of 30-percent capital gain property from a previous taxable year or years, the statement shall show a recomputation, in accordance with this subparagraph and § 1.170A-4, of such carryover, setting forth sufficient information with respect to the previous taxable year or any intervening year to show the basis of the recomputation. The statement shall indicate the district director, or the director of the internal revenue service center, with whom the return for the previous taxable year or years was filed, the name or names in which such return or returns were filed, and whether each such return was a joint or separate return.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(3)</span> <span class="lv-t">30-percent capital gain property defined. If there is a charitable contribution of a capital asset which, if it were sold by the donor at its fair market value at the time of its contribution, would result in the recognition of gain all, or any portion, of which would be long-term capital gain and if the amount of such contribution is not required to be reduced under section 170(e)(1)(B) and § 1.170A-4(a)(2), such capital asset shall be treated as “30-percent capital gain property” for purposes of section 170 and the regulations thereunder. For such purposes any property which is property used in the trade or business, as defined in section 1231(b), shall be treated as a capital asset. However, see paragraph (b)(4) of § 1.170A-4. For the treatment of such property as section 170(e) capital gain property, see paragraph (b)(2)(iii) of § 1.170A-4.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(e)</span> <span class="lv-t">Contribution base defined. For purposes of section 170 the term contribution base means adjusted gross income under section 62, computed without regard to any net operating loss carryback to the taxable year under section 172. See section 170(b)(1)(F).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(f)</span> <span class="lv-t">Illustrations. The application of this section may be illustrated by the following examples:</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-t">For 1970, D is allowed a charitable contributions deduction of $50,000 (50% of $100,000), which consists of the $40,000 contributed to section 170(b)(1)(A) organizations and $10,000 of the $30,000 contributed to the other organizations. Under paragraph (c) of this section, only $10,000 of the $30,000 contributed to the other organizations is allowed as a deduction since such contribution of $30,000 is allowed to the extent of the lesser of $20,000 (20% of $100,000) or $10,000 ([50% of $100,000]−$40,000 (contributions allowed under section 170(b)(1)(A) and paragraph (b) of this section)). D is not allowed a carryover to 1971 or to any other taxable year for any of the $20,000 ($30,000−$10,000) not deductible under section 170(b)(1)(B) and paragraph (c) of this section.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-t">For 1971, D is allowed a charitable contributions deduction of $4,000, consisting of $1,000 cash and $3,000 of the 30-percent capital gain property (30% of $10,000). Under section 170(b)(1)(D)(ii) and paragraph (c) of § 1.170A-10, D is allowed a carryover to 1972 of $8,000 ($11,000−$3,000) in respect of his contribution of 30-percent capital gain property in 1971.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-t">For 1970, E is allowed a charitable contributions deduction of $50,000 (50% of $100,000), which consists of the $40,000 contributed to section 170(b)(1)(A) organizations and $10,000 of the $30,000 contributed to the other organizations. Under paragraph (c) of this section, only $10,000 of the $30,000 contributed to the other organizations is allowed as a deduction since such contribution of $30,000 is allowed to the extent of the lesser of $20,000 (20% of $100,000) or ($10,000 ([50% of $100,000]−$40,000 (contributions allowed under section 170(b)(1)(A) and paragraph (b) of this section)). E is not allowed a carryover to 1971 or to any other taxable year for any of the $20,000 ($30,000−$10,000) not deductible under section 170(b)(1)(B) and paragraph (c) of this section.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-t">For 1971, E is allowed a charitable contributions deduction of $5,000 (50% of $10,000), consisting of $3,000 cash and $2,000 of the $3,000 (30% of $10,000) 30-percent capital gain property which is taken into account. This result is reached because, as provided in section 170(b)(1)(D)(i) and paragraph (d)(1) of this section, cash contributions are taken into account before charitable contributions of 30-percent capital gain property. Under section 170(b)(1)(D)(ii) and (d)(1) and paragraphs (b) and (c) of § 1.170A-10, E is allowed a carryover of $9,000 ([$11,000−$3,000] plus [$6,000 −$5,000]) to 1972 in respect of his contribution of 30-percent capital gain property in 1971.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">Accordingly, F is allowed a charitable contributions deduction for 1972 of $5,500 (50% of $11,000), which consists of $1,000 cash contributed in 1972 to the church, $3,000 of 30-percent capital gain property contributed in 1972 to the church, and $1,500 (carryover of $5,000 but not to exceed [$5,500−($1,000 + $3,000)]) of the carryover from 1971 under section 170(d)(1).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-t">No deduction is allowed for 1972 for the contribution in that year of $2,000 cash to the section 170(c)(4) organization since section 170(b)(1)(B)(ii) and paragraph (c) of this section limit the deduction for such contribution to $0([50% of $11,000]−[$1,000 + $1,500 + $3,000]). Moreover, F is not allowed a carryover to 1973 or to any other year for any of such $2,000 cash contributed to the section 170(c)(4) organization.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-t">Under section 170(d)(1) and paragraph (b) of § 1.170A-10, F is allowed a carryover to 1973 from 1971 of $3,500 ($5,000−$1,500) of contributions of other than 30-percent capital gain property. Under section 170(b)(1)(D)(ii) and paragraph (c) of § 1.170A-10, F is allowed a carryover to 1973 from 1971 of $6,000 ($6,000−$0 of such carryover treated as paid in 1972) of contributions of 30-percent capital gain property. The portion of such $6,000 carryover from 1971 which is treated as paid in 1972 is $0 ([50% of $11,000]−[$4,000 contributions to the church in 1972 plus $1,500 of section 170(d)(1) carryover treated as paid in 1972]).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-t">In 1971, A makes a charitable contribution to a church of 30-percent capital gain property having a fair market value of $11,000 and an adjusted basis of $10,000. A&#x27;s contribution base for 1971 is $60,000, and he makes no other charitable contributions in that year. A elects for 1971 under paragraph (d)(2) of this section to have section 170(e)(1)(B) and § 1.170A-4 apply to his contribution of $11,000 in that year and to his carryover of $45,000 from 1970. Accordingly, he is required to recompute his carryover from 1970 as if section 170(e)(1)(B) had applied to his contribution of 30-percent capital gain property in that year.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-t">If section 170(e)(1)(B) had applied in 1970 to his contribution of 30-percent capital gain property, A&#x27;s contribution would have been reduced from $60,000 to $35,000, the reduction of $25,000 being 50 percent of the gain of $50,000 ($60,000−$10,000) which would have been recognized as long-term capital gain if the property had been sold by A at its fair market value at the time of the contribution in 1970. Accordingly, by taking the election under paragraph (d)(2) of this section into account, A has a recomputed carryover to 1971 of $20,000 ($35,000− $15,000) of his contribution of 30-percent capital gain property in 1970. However, A&#x27;s charitable contributions deduction of $15,000 allowed for 1970 is not recomputed by reason of the election.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(d)</span> <span class="lv-t">Pursuant to the election for 1971, the contribution of 30-percent capital gain property for 1971 is reduced from $11,000 to $10,500, the reduction of $500 being 50 percent of the gain of $1,000 ($11,000−$10,000) which would have been recognized as long-term capital gain if the property had been sold by A at its fair market value at the time of its contribution in 1971.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(e)</span> <span class="lv-t">Accordingly, A is allowed a charitable contributions deduction for 1971 of $30,000 (total contributions of $30,500 [$20,000 + $10,500] but not to exceed 50% of $60,000).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(f)</span> <span class="lv-t">Under section 170(d)(1) and paragraph (b) of § 1.170A-10, A is allowed a carryover of $500 ($30,500−$30,000) to 1972 and the 3 succeeding taxable years. The $500 carryover, which by reason of the election is no longer treated as a contribution of 30-percent capital gain property, is treated as carried over under paragraph (b) of § 1.170A-10 from 1970 since in 1971 current year contributions are deducted before contributions which are carried over from preceding taxable years.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-t">The amount of the contribution of 30-percent capital gain property which may be taken into account for 1970 is limited by section 170(b)(1)(D)(i) and paragraph (d) of this section to $30,000 (30% of $100,000). Accordingly, under section 170(b)(1)(A) and paragraph (b) of this section B is allowed a deduction for 1970 of $30,000 of 30-percent capital gain property (contribution of $30,000 but not to exceed $50,000 [50% of $100,000]). No deduction is allowed for 1970 for the contribution in that year of $20,000 of cash to the private foundation since section 170(b)(1)(B)(ii) and paragraph (c) of this section limit the deduction for such contribution to $0 ([50% of $100,000]− $50,000, the amount of the contribution of 30-percent capital gain property).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(c)</span> <span class="lv-t">Under section 170(b)(1)(D)(ii) and paragraph (c) of § 1.170A-10, B is allowed a carryover to 1971 of $20,000 ($50,000−[30% of $100,000]) of his contribution in 1970 of 30-percent capital gain property. B is not allowed a carryover to 1971 or to any other taxable year for any of the $20,000 cash contribution in 1970 which is not deductible under section 170(b)(1)(B) and paragraph (c) of this section.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(d)</span> <span class="lv-t">The amount of the contribution of 30-percent capital gain property which may be taken into account for 1971 is limited by section 170(b)(1)(D)(i) and paragraph (d) of this section to $12,000 (30% of $40,000).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-t">Accordingly, under section 170(b)(1)(A) and paragraph (b) of this section B is allowed a deduction for 1971 of $12,000 of 30-percent capital gain property (contribution of $12,000 but not to exceed $20,000 [50% of $40,000]). No deduction is allowed for 1971 for the contribution in that year of $5,000 of cash to the private foundation, since section 170(b)(1)(B)(ii) and paragraph (c) of this section limit the deduction for such contribution to $0 ([50% of $40,000] −$20,000 carryover of 30-percent capital gain property from 1970).</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(e)</span> <span class="lv-t">Under section 170(b)(1)(D)(ii) and paragraph (c) of § 1.170A-10, B is allowed a carryover to 1972 of $8,000 ($20,000−[30% of $40,000]) of his contribution in 1970 of 30-percent capital gain property. B is not allowed a carryover to 1972 or to any other taxable year for any of the $5,000 cash contribution for 1971 which is not deductible under section 170(b)(1)(B) and paragraph (c) of this section.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(b)</span> <span class="lv-t">If D had not made the election under paragraph (d)(2) of this section for 1970, his deduction for 1970 under section 170(a) for the $40,000 contribution of property to the church would have been limited by section 170(b)(1)(D)(i) and paragraph (d) of this section to $30,000 (30% of $100,000), and under section 170(b)(1)(D)(ii) and paragraph (c) of § 1.170A-10 he would have been allowed a carryover to 1971 of $10,000 ($40,000−$30,000) for his contribution of such property. In addition, he would have been allowed under section 170(b)(1)(B)(ii) and paragraph (c) of this section for 1970 a charitable contributions deduction of $10,000 ([$100,000 × 50%]−$40,000) for the cash contributed to the private foundation. In such case, D would not have been allowed a carryover to 1971 or to any other taxable year for any of the $13,000 ($23,000−$10,000) of cash not deductible under section 170(b)(1)(B) and paragraph (c) of this section.</span></p>
+          </div>
+          <div class="lv lv-0">
+            <p><span class="lv-n">(g)</span> <span class="lv-t">Effective date. This section applies only to contributions paid in taxable years beginning after December 31, 1969.</span></p>
+          </div>            </div>
+
+            <p class="note">
+              <b>Verify before relying on this.</b> Retrieved 29 September 2026. Tax law changes;
+              confirm against the primary sources above before using it in class or in practice.
+              Nothing here is tax advice.
+            </p>
+          </div>
+        </details>
+
+        <section class="panel" aria-labelledby="insH">
+          <h3 id="insH">What would change this</h3>
+          <ul class="wp-insights" id="wpInsights"></ul>
+        </section>
+
+        <section class="panel">
+          <h3>How much of your giving is deductible this year</h3>
+          <p class="lede" id="chartLede"></p>
+
+          <div class="chart-scroll" tabindex="0" role="region"
+               aria-label="Chart: deduction allowed as adjusted gross income rises">
+            <div class="chart-shell">
+              <svg id="curveChart" viewBox="0 0 760 330" preserveAspectRatio="xMidYMid meet"
+                   role="img" aria-labelledby="curveDesc"></svg>
+              <p class="sr-only" id="curveDesc"></p>
+            </div>
+          </div>
+
+          <div class="split">
+            <h4>Everything you gave, split</h4>
+            <div class="ptw" id="ptwBar" role="img" aria-labelledby="ptwDesc"></div>
+            <p class="sr-only" id="ptwDesc"></p>
+            <div class="ptw-scale">
+              <span>$0</span>
+              <span id="ptwEnd">$0</span>
+            </div>
+            <div class="legend" id="ptwLegend"></div>
+          </div>
+
+          <p class="footnote">
+            Educational simulation, not tax advice. A date-neutral model of the percentage limits only:
+            it assumes you itemize, that every gift is substantiated and to a qualified organization,
+            and that you carry nothing in from an earlier year &mdash; the worksheet it is ported from
+            says not to use it when you do. It leaves out qualified conservation contributions, the
+            election under &sect;170(b)(1)(C)(iii) to deduct capital gain property at basis under the
+            higher 50% ceiling, and the 0.5%-of-AGI floor in &sect;170(b)(1)(I) that applies from 2026.
+            Source model: ACCTG 410 Individual Taxation Toolbox, &ldquo;Charitable donation
+            limitation&rdquo; tab, with three corrections noted in the tool documentation.
+          </p>
+        </section>
+
+        <section class="panel" aria-labelledby="compH">
+          <h3 id="compH">The five steps, line by line</h3>
+          <p class="lede">Each gift is allowed the least of what you gave, its own ceiling, and the room left in the 50% pool. Rows with something left over are marked as the limit.</p>
+          <div class="wp-table-wrap">
+            <table class="wp-table">
+              <thead><tr><th scope="col">Step and authority</th><th scope="col">Gave</th><th scope="col">Own ceiling</th><th scope="col">Pool room</th><th scope="col">Deducted</th><th scope="col">Carries forward</th><th scope="col">What held it back</th></tr></thead>
+              <tbody id="wpRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel wp-workpaper" aria-labelledby="wpH">
+          <h3 id="wpH">Workpaper</h3>
+          <p class="lede">A plain-text record of the facts, the five steps, the authority and the result. Copy it into your file or print it.</p>
+          <pre class="wp-memo" id="wpMemo" tabindex="0"></pre>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav aria-label="Footer">
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h2>Learn</h2>
+            <ul>
+              <li><a href="../../learn/index.html">Learn</a></li>
+              <li><a href="../../learn/textbook/index.html">Visualized tax guide</a></li>
+              <li><a href="../../learn/guides/index.html">Concept guides</a></li>
+              <li><a href="../../learn/glossary/index.html">Glossary</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Tools</h2>
+            <ul>
+              <li><a href="../../tools/index.html">All tools</a></li>
+              <li><a href="../../review/1040/index.html">1040 preview</a></li>
+              <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+              <li><a href="../../review/index.html">Return review</a></li>
+              <li><a href="../../review/how-it-works/index.html">How it works</a></li>
+              <li><a href="../../review/privacy/index.html">Privacy</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Dashboard</h2>
+            <ul>
+              <li><a href="../../dashboard/index.html">Dashboard</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Consulting</h2>
+            <ul>
+              <li><a href="../../consulting/index.html">Consulting</a></li>
+              <li><a href="../../consulting/planning/index.html">One-on-one tax planning</a></li>
+              <li><a href="../../training/team/index.html">Team training</a></li>
+              <li><a href="../../training/workshops/index.html">Public workshops</a></li>
+              <li><a href="../../training/on-demand/index.html">On-demand course</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>About</h2>
+            <ul>
+              <li><a href="../../about/index.html">About TaxVisual</a></li>
+              <li><a href="../../about/team/index.html">Our team</a></li>
+              <li><a href="../../methodology/index.html">Methodology</a></li>
+              <li><a href="../../sitemap/index.html">Site map</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Connect</h2>
+            <ul>
+              <li><a href="../../contact/index.html">Contact</a></li>
+              <li><a href="../../updates/index.html">Updates</a></li>
+              <li><a href="../../community/index.html">Community</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual publishes educational tax policy simulations for classrooms, policy workshops, and self-study. Not tax advice.</p>
+        <p class="footer-note"><a href="../../contact/index.html">Get email updates</a></p>
+      </div>
+    </div>
+  </footer>
+
+
+<script src="../../assets/js/workpaper.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  /* ==================================================================
+     MODEL — a line-for-line port of the workbook's
+     "Charitable donation limitation" tab (B1:H13).
+
+       AGI                                                  (B1)
+       pool = 0.5 * AGI                                     (B2, B3)
+
+     Five classes of gift. Each is allowed the smallest of its own value,
+     its own AGI percentage ceiling (column E) and the room left in the
+     shared 50% pool (column F). Whatever does not fit is carryover
+     (column H). Cell references, in the tab's own row order:
+
+       step 1  cash to a 50% limit organization             (row 5)
+         ceiling = 0.60*AGI                                 (E5 = D5*B1)
+         room    = n/a                                      (F5 = 'N/A')
+         ded     = MIN(C5, E5)                              (G5, note 2)
+       step 2  ordinary income property to a 50% org        (row 6)
+         ceiling = 0.50*AGI                                 (E6)
+         room    = 0.5*AGI - C5                             (F6)
+         ded     = MIN(C6, MIN(E6, F6))                     (G6)
+       step 3  cash or ordinary income property to a        (row 10)
+               private non-operating foundation
+         ceiling = 0.30*AGI                                 (E10)
+         room    = MAX(0, 0.5*AGI - SUM(C5:C7))             (F10)
+         ded     = MIN(C10, MIN(E10, F10))                  (G10)
+       step 4  capital gain property to a 50% org at FMV    (row 7)
+         ceiling = 0.30*AGI                                 (E7)
+         room    = 0.5*AGI - SUM(C5:C6)                     (F7)
+         ded     = MIN(C7, MIN(E7, F7))                     (G7)
+       step 5  capital gain property to a private           (row 11)
+               non-operating foundation
+         ceiling = 0.20*AGI                                 (E11)
+         room    = MIN(MAX(0.5*AGI - SUM(C5:C7,C10), 0),
+                       MAX(0.3*AGI - C7,  0),
+                       MAX(0.3*AGI - C10, 0))               (F11)
+         ded     = MIN(C11, MIN(E11, F11))                  (G11)
+       total     = SUM(G5:G11)                              (G13)
+
+     The rooms depend only on what was GIVEN, never on what an earlier
+     class was actually allowed, so the five rows do not have to be
+     evaluated in step order — the answer is the same whatever order they
+     are computed in. The step numbers are the order the statute claims
+     the pool in, which is what decides who runs out of room first.
+
+     Three deliberate deviations from the tab, each documented in
+     docs/tools/charitable-deduction-limits.md:
+
+       1. Every room is floored at zero. F6 and F7 carry no MAX(0, ...)
+          guard, so cash above 50% of AGI drives them negative and the tab
+          returns a negative deduction for rows 6 and 7. The tab's own
+          pasted IRS instructions (A18:A39) and IRS Worksheet 2 step 3
+          both say "if any result is zero or less, enter -0-".
+       2. G5 applies the 60% ceiling. The tab has G5 = C5 with no MIN
+          against E5, so it would deduct a cash gift of any size at all.
+          IRS Worksheet 2 line 13 is "the smaller of line 10 or line 12
+          (0.6 x AGI)", and E5 already exists on the tab for exactly this
+          — it is simply never referenced.
+       3. H7 and H11 are typed constants on the tab (5000 and 0) rather
+          than =C-G. They are correct at the shipped inputs but do not
+          move; here they are computed, as H5, H6 and H10 already are.
+
+     Verified against the tab's own figures: AGI 100,000 with gifts of
+     15,000 / 10,000 / 0 / 30,000 / 0 gives deductions of
+     15,000 / 10,000 / 0 / 25,000 / 0, a total of 50,000 (G13) and a
+     carryover of 5,000 on step 4 (H7).
+     ================================================================== */
+  function model(i){
+    const agi = i.agi;
+    /* tab column C, by cell, so the formulas below read as they do there */
+    const c5 = i.g1, c6 = i.g2, c10 = i.g3, c7 = i.g4, c11 = i.g5;
+    const z = function(v){ return v > 0 ? v : 0; };   /* "enter -0-" */
+
+    const ceil1 = 0.60 * agi, ceil2 = 0.50 * agi, ceil3 = 0.30 * agi,
+          ceil4 = 0.30 * agi, ceil5 = 0.20 * agi;
+
+    const room2 = z(0.5 * agi - c5);
+    const room3 = z(0.5 * agi - (c5 + c6 + c7));
+    const room4 = z(0.5 * agi - (c5 + c6));
+
+    /* F11 is three caps at once: the 50% pool, and two 30% cross-limits
+       from 170(b)(1)(D)(i)(II). Which of them binds is worth naming, so
+       they are kept apart rather than collapsed into one MIN. */
+    const room5pool  = z(0.5 * agi - (c5 + c6 + c7 + c10));
+    const room5cgCap = z(0.3 * agi - c7);
+    const room5ooCap = z(0.3 * agi - c10);
+    const room5 = Math.min(room5pool, Math.min(room5cgCap, room5ooCap));
+
+    const ded1 = Math.min(c5,  ceil1);
+    const ded2 = Math.min(c6,  Math.min(ceil2, room2));
+    const ded3 = Math.min(c10, Math.min(ceil3, room3));
+    const ded4 = Math.min(c7,  Math.min(ceil4, room4));
+    const ded5 = Math.min(c11, Math.min(ceil5, room5));
+
+    /* Step 1 has no pool room of its own (F5 is 'N/A'), which is modelled
+       as an infinite one so every row has the same shape. */
+    const rows = [
+      { step:1, pct:0.60, gift:c5,  ceiling:ceil1, room:Infinity, roomKind:'pool',  ded:ded1, carry:c5  - ded1 },
+      { step:2, pct:0.50, gift:c6,  ceiling:ceil2, room:room2,    roomKind:'pool',  ded:ded2, carry:c6  - ded2 },
+      { step:3, pct:0.30, gift:c10, ceiling:ceil3, room:room3,    roomKind:'pool',  ded:ded3, carry:c10 - ded3 },
+      { step:4, pct:0.30, gift:c7,  ceiling:ceil4, room:room4,    roomKind:'pool',  ded:ded4, carry:c7  - ded4 },
+      { step:5, pct:0.20, gift:c11, ceiling:ceil5, room:room5,
+        /* Pub. 526 step 5 caps the 20% class four ways at once. Which one
+           binds is worth naming, so the tie order follows F11's own MIN
+           order: the pool first, then the two 30% cross-limits. */
+        roomKind: (room5pool <= room5cgCap && room5pool <= room5ooCap) ? 'pool'
+                : (room5cgCap <= room5ooCap) ? 'cross-cg' : 'cross-other',
+        ded:ded5, carry:c11 - ded5 }
+    ];
+
+    const total = ded1 + ded2 + ded3 + ded4 + ded5;
+    const gifts = c5 + c6 + c10 + c7 + c11;
+    return {
+      rows: rows, total: total, gifts: gifts, carry: gifts - total,
+      pool: 0.5 * agi, cashCeiling: 0.60 * agi
+    };
+  }
+
+  /* Which of a row's limits actually binds. The statute states each class
+     as "the smaller of: N% of AGI, or 50% of AGI minus ...", so on a tie
+     the percentage ceiling is the one named — the earlier limit in the
+     order the statute applies them. */
+  function bindingFor(row){
+    if (row.gift <= 0)                      return 'none';
+    if (row.ded >= row.gift - 1e-9)         return 'full';
+    if (row.ceiling <= row.room + 1e-9)     return 'ceiling';
+    return row.roomKind;                 /* pool | cross-cg | cross-other */
+  }
+
+  /* The one limit to name for the whole return: the one holding back the
+     largest carryover. Ties go to the earliest step, because the rows are
+     already in the order the statute claims the pool. */
+  function overallBinding(r){
+    if (r.gifts <= 0)      return { key:'none', step:0 };
+    if (r.carry <= 1e-9)   return { key:'full', step:0 };
+    let worst = null;
+    for (let k = 0; k < r.rows.length; k++){
+      const row = r.rows[k];
+      if (row.carry > 1e-9 && (worst === null || row.carry > worst.carry)) worst = row;
+    }
+    return { key: bindingFor(worst), step: worst.step, pct: worst.pct, carry: worst.carry };
+  }
+
+  /* Exact knots of the deduction curve as a function of AGI.
+
+     Every quantity the model takes a MIN or a MAX over is affine in AGI,
+     and a min/max of affine functions bends only where two of them cross.
+     So the complete knot set is the pairwise intersections of that list —
+     computed, never sampled, which is what keeps the corners sharp at
+     exactly the points that carry the meaning. */
+  function knots(i, xMin, xMax){
+    const c5 = i.g1, c6 = i.g2, c10 = i.g3, c7 = i.g4, c11 = i.g5;
+    const S1 = c5, S2 = c5 + c6, S3 = c5 + c6 + c7, S4 = c5 + c6 + c7 + c10;
+    const A = [
+      [0.60, 0], [0.50, 0], [0.30, 0], [0.20, 0],            /* the ceilings */
+      [0.50, -S1], [0.50, -S2], [0.50, -S3], [0.50, -S4],    /* pool rooms   */
+      [0.30, -c7], [0.30, -c10],                             /* cross-limits */
+      [0, 0], [0, c5], [0, c6], [0, c7], [0, c10], [0, c11]  /* the gifts    */
+    ];
+    const xs = [xMin, xMax];
+    for (let a = 0; a < A.length; a++){
+      for (let b = a + 1; b < A.length; b++){
+        const dm = A[a][0] - A[b][0];
+        if (Math.abs(dm) < 1e-12) continue;
+        const x = (A[b][1] - A[a][1]) / dm;
+        if (x > xMin && x < xMax) xs.push(x);
+      }
+    }
+    const seen = {}, out = [];
+    for (let k = 0; k < xs.length; k++){
+      const key = xs[k].toFixed(6);
+      if (!seen[key]){ seen[key] = 1; out.push(+key); }
+    }
+    return out.sort(function(a, z){ return a - z; });
+  }
+
+  function curvePoints(i, xMin, xMax){
+    return knots(i, xMin, xMax).map(function(x){
+      return { x: x, y: model({ agi:x, g1:i.g1, g2:i.g2, g3:i.g3, g4:i.g4, g5:i.g5 }).total };
+    });
+  }
+
+  /* The AGI at which the last dollar becomes deductible. Read off the knot
+     set rather than searched for, so it is the true corner. */
+  function saturationAgi(i){
+    const gifts = i.g1 + i.g2 + i.g3 + i.g4 + i.g5;
+    const pts = curvePoints(i, 0, 1e9);
+    for (let k = 0; k < pts.length; k++) if (pts[k].y >= gifts - 1e-6) return pts[k].x;
+    return 0;
+  }
+
+  /* ============================== FORMATTING ============================== */
+  const usd0 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', maximumFractionDigits:0 });
+  const usd2 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 });
+  const pct0 = new Intl.NumberFormat('en-US',{ style:'percent', maximumFractionDigits:0 });
+  const num0 = new Intl.NumberFormat('en-US',{ maximumFractionDigits:0 });
+
+  function money(v){ return Math.abs(v - Math.round(v)) < 0.005 ? usd0.format(v) : usd2.format(v); }
+  function abbr(v){
+    if (Math.abs(v) >= 1000){ const k = v/1000; return '$' + (k % 1 === 0 ? k : k.toFixed(1)) + 'k'; }
+    return '$' + num0.format(v);
+  }
+  function pctLabel(p){ return Math.round(p * 100) + '%'; }
+
+  /* Class names, kept next to the ramp step each one owns so the rail
+     swatch, the bar segment and the legend cannot drift apart. */
+  const CLASSES = [
+    { step:1, key:'g1', fill:'var(--step-1)', name:'Cash',
+      org:'to a 50% limit organization' },
+    { step:2, key:'g2', fill:'var(--step-2)', name:'Ordinary income property',
+      org:'to a 50% limit organization' },
+    { step:3, key:'g3', fill:'var(--step-3)', name:'Cash or ordinary income property',
+      org:'to a private non-operating foundation' },
+    { step:4, key:'g4', fill:'var(--step-4)', name:'Capital gain property',
+      org:'to a 50% limit organization, at fair market value' },
+    { step:5, key:'g5', fill:'var(--step-5)', name:'Capital gain property',
+      org:'to a private non-operating foundation' }
+  ];
+
+  /* One sentence naming the limit that bound a row, in the statute's own
+     terms. Used by the legend and, for the worst row, by the rail. */
+  function whyText(row){
+    const b = bindingFor(row);
+    if (b === 'full')    return 'all of it deductible';
+    if (b === 'ceiling') return 'capped at ' + pctLabel(row.pct) + ' of AGI';
+    if (b === 'cross-cg')    return 'capped at 30% of AGI less the capital gain gifts';
+    if (b === 'cross-other') return 'capped at 30% of AGI less the other foundation gifts';
+    return 'the 50% pool was already spoken for';
+  }
+
+  const state = { agi:100000, g1:15000, g2:10000, g3:0, g4:30000, g5:0 };
+
+  const $ = function(id){ return document.getElementById(id); };
+  const els = {
+    liveResult:$('liveResult'),
+    agiSlider:$('agiSlider'), agiOut:$('agiOut'),
+    statDeducted:$('statDeducted'), statDeductedSub:$('statDeductedSub'),
+    statCarry:$('statCarry'), statCarrySub:$('statCarrySub'),
+    statBinding:$('statBinding'), statBindingSub:$('statBindingSub'),
+    chartLede:$('chartLede'), curve:$('curveChart'), curveDesc:$('curveDesc'),
+    ptwBar:$('ptwBar'), ptwLegend:$('ptwLegend'), ptwEnd:$('ptwEnd'), ptwDesc:$('ptwDesc'),
+    tooltip:$('tooltip')
+  };
+  CLASSES.forEach(function(c){
+    els[c.key + 'Slider'] = $(c.key + 'Slider');
+    els[c.key + 'Out']    = $(c.key + 'Out');
+  });
+
+  const NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs){
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+  function clear(node){ while (node.firstChild) node.removeChild(node.firstChild); }
+
+  const CEIL_STEPS = [1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+  function niceCeil(v){
+    if (v <= 0) return 10;
+    const mag = Math.pow(10, Math.floor(Math.log10(v)));
+    const r = v / mag;
+    for (let k = 0; k < CEIL_STEPS.length; k++) if (r <= CEIL_STEPS[k] + 1e-9) return CEIL_STEPS[k] * mag;
+    return 10 * mag;
+  }
+  function niceStep(range, target){
+    const raw = range / target;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const r = raw / mag;
+    return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10) * mag;
+  }
+  function ticksFrom0(max, target){
+    const step = niceStep(max, target);
+    const out = [];
+    for (let v = 0; v <= max + step * 0.001; v += step) out.push(v);
+    return out;
+  }
+
+  function showTip(x, y, html){
+    els.tooltip.innerHTML = html;
+    els.tooltip.style.left = x + 'px';
+    els.tooltip.style.top  = y + 'px';
+    els.tooltip.classList.add('show');
+  }
+  function hideTip(){ els.tooltip.classList.remove('show'); }
+
+  /* =============================== CHART =============================== */
+  const PAD = { l:66, r:24 };
+
+  /* The window runs from zero — the whole cascade unfolds out of the
+     origin — to a little past the AGI at which everything finally
+     deducts, so the last corner is always on screen. */
+  function domain(){
+    const sat = saturationAgi(state);
+    return { xMin: 0, xMax: Math.max(sat * 1.35, state.agi * 1.15, 10000) };
+  }
+
+  function renderCurve(r, dom, pts){
+    const svg = els.curve, W = 760, H = 330;
+    const x0 = PAD.l, x1 = W - PAD.r, y0 = 52, y1 = 262;
+    clear(svg);
+
+    const yMax = niceCeil(Math.max(r.gifts, 1) * 1.15);
+    const X = function(v){ return x0 + ((v - dom.xMin) / (dom.xMax - dom.xMin)) * (x1 - x0); };
+    const Y = function(v){ return y1 - (v / yMax) * (y1 - y0); };
+
+    /* --- zone labels, read off the drawn segments and nothing else --- */
+    const zones = [];
+    for (let k = 0; k < pts.length - 1; k++){
+      const a = pts[k], b = pts[k+1];
+      if (b.x <= a.x) continue;
+      const slope = (b.y - a.y) / (b.x - a.x);
+      let full, short;
+      if (slope < 1e-9){
+        if (r.gifts > 0 && b.y >= r.gifts - 1e-6){ full = 'All of it deductible'; short = 'all'; }
+        else { full = 'Pool used up'; short = 'stuck'; }
+      } else {
+        const cents = Math.round(slope * 100);
+        full = '+' + cents + '¢ of deduction per $1 of AGI';
+        short = '+' + cents + '¢';
+      }
+      const prev = zones[zones.length - 1];
+      if (prev && prev.full === full) prev.right = b.x;
+      else zones.push({ left:a.x, right:b.x, full:full, short:short });
+    }
+    zones.forEach(function(zn){
+      const w = X(zn.right) - X(zn.left);
+      const label = w > 176 ? zn.full : (w > 34 ? zn.short : null);
+      if (!label) return;
+      const t = svgEl('text',{ x:(X(zn.left)+X(zn.right))/2, y:38, 'text-anchor':'middle', class:'band-text' });
+      t.textContent = label;
+      svg.appendChild(t);
+    });
+
+    /* --- y gridlines --- */
+    ticksFrom0(yMax, 4).forEach(function(v){
+      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(v), y2:Y(v),
+        stroke: v === 0 ? 'var(--baseline)' : 'var(--gridline)', 'stroke-width':1 }));
+      const t = svgEl('text',{ x:x0-9, y:Y(v)+3.5, 'text-anchor':'end', class:'axis-text' });
+      t.textContent = abbr(v);
+      svg.appendChild(t);
+    });
+
+    /* --- the reference lines, and which of them is the limit right now.
+           The pool and the cash ceiling are rays out of the origin, so they
+           are clipped where they leave the plot box rather than allowed to
+           set the y scale: the y axis carries the deduction, not the
+           annotations. --- */
+    const roomBinds = r.rows.some(function(row){
+      const b = bindingFor(row);
+      return b === 'pool' || b === 'cross-cg' || b === 'cross-other';
+    });
+    const cashCapped = bindingFor(r.rows[0]) === 'ceiling';
+    const allIn = r.gifts > 0 && r.carry <= 1e-9;
+
+    /* Both rays end in the top-right corner — 0.6x and 0.5x converge there
+       once the plot is tall enough — so labelling either at its exit point
+       overprints it on the other. Each is labelled part-way ALONG its own
+       visible run instead, at a different fraction of it, which separates
+       the two in x and in y whatever window the inputs produce. The halo
+       keeps a label legible where it crosses the curve. */
+    function ray(slope, at, name, bind){
+      const xEnd = Math.min(dom.xMax, yMax / slope);
+      if (xEnd <= dom.xMin) return;
+      svg.appendChild(svgEl('line',{ x1:X(dom.xMin), y1:Y(0), x2:X(xEnd), y2:Y(slope * xEnd),
+        stroke: bind ? 'var(--ink-muted)' : 'var(--baseline)', 'stroke-width':1 }));
+      const text = name + (bind ? ' — the limit' : '');
+      /* Plex Mono advances 0.6em, so 10px text is 6px a character. Slide
+         the label back DOWN its own ray until it fits inside the plot,
+         rather than letting it run off the right edge — it has to stay on
+         the line it is labelling, so the x and the y move together. */
+      const w = text.length * 6;
+      const fits = dom.xMin + ((x1 - w - 4 - x0) / (x1 - x0)) * (dom.xMax - dom.xMin);
+      const lx = Math.max(0, Math.min(xEnd * at, fits));
+
+      /* The taxpayer's own marker label sits above the dot, and where the
+         pool is exactly binding the ray runs through the marker — the one
+         collision sliding along x cannot fix, because the label has to
+         stay on its line. Drop it below the line instead when it would
+         land in the marker's band. */
+      const mx = X(state.agi), my = Y(r.total) - 16;
+      const lpx = X(lx) + 4, above = Y(slope * lx) - 7;
+      const clash = Math.abs(above - my) < 15 && lpx < mx + 46 && lpx + w > mx - 46;
+
+      const t = svgEl('text',{ x:lpx, y: clash ? Y(slope * lx) + 13 : above,
+        'text-anchor':'start', class: (bind ? 'anno-text bind' : 'anno-text') + ' haloed' });
+      t.textContent = text;
+      svg.appendChild(t);
+    }
+    /* Nothing given means nothing for the rays to annotate, and a y axis
+       scaled to zero would put them both on top of the origin. */
+    if (r.gifts > 0){
+      if (state.g1 > 0) ray(0.60, 0.46, '60% of AGI, the cash ceiling', cashCapped);
+      ray(0.50, 0.78, '50% of AGI, the shared pool', roomBinds && !allIn);
+    }
+
+    if (r.gifts > 0 && r.gifts <= yMax){
+      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(r.gifts), y2:Y(r.gifts),
+        stroke: allIn ? 'var(--ink-muted)' : 'var(--baseline)', 'stroke-width':1 }));
+      const t = svgEl('text',{ x:x0 + 5, y:Y(r.gifts) - 6, 'text-anchor':'start',
+        class: allIn ? 'anno-text bind' : 'anno-text' });
+      t.textContent = 'everything you gave ' + usd0.format(r.gifts) + (allIn ? ' — the limit' : '');
+      svg.appendChild(t);
+    }
+
+    /* --- the curve --- */
+    let d = '';
+    pts.forEach(function(p){
+      d += (d ? 'L' : 'M') + X(p.x).toFixed(2) + ' ' + Y(p.y).toFixed(2);
+    });
+    svg.appendChild(svgEl('path',{ d:d, fill:'none', stroke:'var(--fill-strong)',
+      'stroke-width':2.5, 'stroke-linejoin':'round', 'stroke-linecap':'round' }));
+
+    /* --- this taxpayer --- */
+    if (state.agi >= dom.xMin && state.agi <= dom.xMax){
+      svg.appendChild(svgEl('line',{ x1:X(state.agi), x2:X(state.agi),
+        y1:Y(r.total), y2:y1, stroke:'var(--fill-strong)', 'stroke-width':1, opacity:0.35 }));
+      svg.appendChild(svgEl('circle',{ cx:X(state.agi), cy:Y(r.total), r:7,
+        fill:'var(--fill-strong)', stroke:'var(--tool-surface)', 'stroke-width':2.5 }));
+      const lbl = svgEl('text',{ x:X(state.agi), y:Y(r.total)-16,
+        'text-anchor':'middle', class:'marker-text' });
+      lbl.textContent = money(r.total);
+      svg.appendChild(lbl);
+    }
+
+    /* --- x axis --- */
+    ticksFrom0(dom.xMax, 6).forEach(function(v){
+      const px = X(v);
+      if (px < x0 - 1 || px > x1 + 1) return;
+      const t = svgEl('text',{ x:px, y:y1+17, 'text-anchor':'middle', class:'axis-text' });
+      t.textContent = abbr(v);
+      svg.appendChild(t);
+    });
+    const lbl1 = svgEl('text',{ x:(x0+x1)/2, y:y1+38, 'text-anchor':'middle', class:'axis-text' });
+    lbl1.textContent = 'Adjusted gross income — the contribution base every limit is a percentage of';
+    svg.appendChild(lbl1);
+
+    const yt = svgEl('text',{ x:x0-48, y:16, class:'axis-text' });
+    yt.textContent = 'Deducted this year';
+    svg.appendChild(yt);
+
+    /* --- hover --- */
+    const hit = svgEl('rect',{ x:x0, y:y0, width:x1-x0, height:y1-y0, fill:'transparent', style:'cursor:crosshair' });
+    const cross = svgEl('line',{ x1:0, x2:0, y1:y0, y2:y1, stroke:'var(--ink-muted)', 'stroke-width':1, opacity:0 });
+    const dot = svgEl('circle',{ r:5, fill:'var(--fill-strong)', stroke:'var(--tool-surface)', 'stroke-width':2, opacity:0 });
+    svg.appendChild(hit); svg.appendChild(cross); svg.appendChild(dot);
+
+    hit.addEventListener('pointermove', function(e){
+      const box = svg.getBoundingClientRect();
+      const vx = ((e.clientX - box.left) / box.width) * W;
+      const a = Math.max(dom.xMin, Math.min(dom.xMax,
+        dom.xMin + ((vx - x0) / (x1 - x0)) * (dom.xMax - dom.xMin)));
+      const m = model({ agi:a, g1:state.g1, g2:state.g2, g3:state.g3, g4:state.g4, g5:state.g5 });
+      cross.setAttribute('x1', X(a)); cross.setAttribute('x2', X(a)); cross.setAttribute('opacity', 0.45);
+      dot.setAttribute('cx', X(a)); dot.setAttribute('cy', Y(m.total)); dot.setAttribute('opacity', 1);
+      showTip(e.clientX, box.top + (Y(m.total) / H) * box.height,
+        'AGI <b>' + money(a) + '</b><br>' +
+        'deducted <b>' + money(m.total) + '</b><br>' +
+        'carried <b>' + money(m.carry) + '</b>');
+    });
+    hit.addEventListener('pointerleave', function(){
+      cross.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); hideTip();
+    });
+
+    /* --- the generated description, naming what the chart currently shows --- */
+    const sat = saturationAgi(state);
+    els.curveDesc.textContent =
+      'Line chart of the charitable deduction allowed this year against adjusted gross income, for ' +
+      'gifts totalling ' + money(r.gifts) + '. The horizontal axis is adjusted gross income from $0 to ' +
+      money(dom.xMax) + '; the vertical axis is the deduction from $0 to ' + money(yMax) + '. Two ' +
+      'reference rays rise from the origin: 50% of AGI, the pool every class after the first draws on, ' +
+      'and 60% of AGI, the ceiling on cash. A horizontal line marks everything given, ' + money(r.gifts) +
+      '. ' + zones.map(function(zn){
+        return zn.full + ' from ' + money(zn.left) + ' to ' + money(zn.right);
+      }).join('; ') + '. ' +
+      (r.gifts > 0
+        ? 'Every dollar given is deductible once AGI reaches ' + money(sat) + '. '
+        : '') +
+      'At an AGI of ' + money(state.agi) + ', ' + money(r.total) + ' is deducted and ' +
+      money(r.carry) + ' carries forward.';
+  }
+
+  /* ====================== EVERYTHING YOU GAVE, SPLIT ====================== */
+  function renderSplit(r){
+    clear(els.ptwBar); clear(els.ptwLegend);
+    els.ptwEnd.textContent = money(r.gifts);
+
+    if (r.gifts <= 0){
+      els.ptwDesc.textContent = 'Nothing given yet.';
+      return;
+    }
+
+    /* The bar carries only what has width. The legend carries every class
+       you gave to, INCLUDING the ones that got nothing this year: "step 4
+       deducted $0 because the pool was already gone" is the answer a
+       reader came for, and a segment of zero width cannot say it. */
+    const parts = [];
+    CLASSES.forEach(function(c, k){
+      const row = r.rows[k];
+      if (row.gift <= 0) return;
+      if (row.ded > 0){
+        const seg = document.createElement('div');
+        seg.style.cssText = 'flex-grow:' + row.ded + ';flex-basis:0;background:' + c.fill + ';';
+        els.ptwBar.appendChild(seg);
+      }
+      parts.push({ v:row.ded, color:c.fill,
+        name:'step ' + c.step + ', ' + c.name.toLowerCase() + ' ' + c.org,
+        why:whyText(row) + (row.carry > 1e-9 ? ' · ' + money(row.carry) + ' carried' : '') });
+    });
+    if (r.carry > 1e-9){
+      const seg = document.createElement('div');
+      seg.style.cssText = 'flex-grow:' + r.carry + ';flex-basis:0;background:var(--fill-neutral);';
+      els.ptwBar.appendChild(seg);
+      parts.push({ v:r.carry, color:'var(--fill-neutral)',
+        name:'carried forward to the next five years', why:'§170(d)(1)' });
+    }
+
+    parts.forEach(function(p){
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      const sw = document.createElement('span');
+      sw.className = 'legend-swatch';
+      sw.style.background = p.color;
+      const txt = document.createElement('span');
+      const b = document.createElement('b');
+      b.textContent = money(p.v);
+      const nm = document.createTextNode(p.name);
+      const why = document.createElement('span');
+      why.className = 'why';
+      why.textContent = p.why;
+      txt.appendChild(b); txt.appendChild(nm); txt.appendChild(why);
+      item.appendChild(sw); item.appendChild(txt);
+      els.ptwLegend.appendChild(item);
+    });
+
+    els.ptwDesc.textContent =
+      'Of ' + money(r.gifts) + ' given, ' + money(r.total) + ' is deducted this year and ' +
+      money(r.carry) + ' carries forward. ' +
+      parts.map(function(p){ return money(p.v) + ' ' + p.name + ', ' + p.why; }).join('. ') + '.';
+  }
+
+  /* =============================== RENDER =============================== */
+  function renderCore(){
+    const r = model(state);
+    const dom = domain();
+    const pts = curvePoints(state, dom.xMin, dom.xMax);
+    const b = overallBinding(r);
+
+    els.agiOut.textContent = money(state.agi);
+    CLASSES.forEach(function(c){ els[c.key + 'Out'].textContent = money(state[c.key]); });
+
+    els.statDeducted.textContent = money(r.total);
+    els.statDeductedSub.textContent = r.gifts > 0
+      ? pct0.format(r.total / r.gifts) + ' of the ' + money(r.gifts) + ' you gave'
+      : 'nothing given yet';
+
+    els.statCarry.textContent = money(r.carry);
+    els.statCarrySub.textContent = r.carry > 1e-9
+      ? 'to the next five years, §170(d)(1)'
+      : 'nothing left over';
+
+    els.statBinding.textContent =
+      b.key === 'none'    ? 'Nothing given yet' :
+      b.key === 'full'    ? 'Nothing — it all deducts' :
+      b.key === 'ceiling' ? 'The ' + pctLabel(b.pct) + ' ceiling on step ' + b.step :
+      b.key === 'cross-cg' || b.key === 'cross-other'
+                          ? 'The 30% cross-limit on step ' + b.step :
+                            'The 50% pool, spent on earlier gifts';
+
+    els.statBindingSub.textContent =
+      b.key === 'none'    ? 'move a gift slider to begin' :
+      b.key === 'full'    ? 'every gift clears its own ceiling and the pool' :
+      b.key === 'ceiling' ? 'step ' + b.step + ' alone cannot exceed ' + pctLabel(b.pct) + ' of AGI, so ' +
+                            money(b.carry) + ' of it waits' :
+      b.key === 'cross-cg'    ? 'step ' + b.step + ' is also held to 30% of AGI less the capital gain ' +
+                            'gifts, so ' + money(b.carry) + ' of it waits' :
+      b.key === 'cross-other' ? 'step ' + b.step + ' is also held to 30% of AGI less the other ' +
+                            'foundation gifts, so ' + money(b.carry) + ' of it waits' :
+                            'earlier steps used the pool first, leaving step ' + b.step + ' with too ' +
+                            'little room for ' + money(b.carry) + ' of it';
+
+    els.chartLede.textContent =
+      'AGI ' + money(state.agi) + ', gifts of ' + money(r.gifts) + '. Each class is allowed the smallest ' +
+      'of what you gave, its own percentage of AGI, and whatever is left of the 50% pool after the ' +
+      'steps above it. Raising AGI lifts every limit at once, so the curve climbs until the last ' +
+      'dollar given becomes deductible and then goes flat.';
+
+    renderCurve(r, dom, pts);
+    renderSplit(r);
+  }
+
+  /* =============================== WIRING =============================== */
+
+  /* slider id, state key, readout id. One table, so the value shown in the
+     rail and the value spoken by a screen reader cannot drift. */
+  const CONTROLS = [['agiSlider', 'agi', 'agiOut']].concat(
+    CLASSES.map(function(c){ return [c.key + 'Slider', c.key, c.key + 'Out']; }));
+
+  /* A range input announces its raw number, so each slider carries an
+     aria-valuetext holding the string the rail already shows. */
+  function valueText(c){ return els[c[2]].textContent; }
+
+  /* The answer is announced on `change`, never on `input`: `input` fires on
+     every frame of a drag and would talk over itself, while `change` fires
+     once on release and once per arrow key. Read back out of the rail
+     rather than recomputed, so there is only ever one version of it. */
+  function announce(){
+    els.liveResult.textContent =
+      'Deducted this year: ' + els.statDeducted.textContent + ', ' +
+      els.statDeductedSub.textContent + '. Carried forward: ' + els.statCarry.textContent +
+      '. What limits it: ' + els.statBinding.textContent + ', ' + els.statBindingSub.textContent + '.';
+  }
+
+  CONTROLS.forEach(function(c){
+    els[c[0]].addEventListener('input', function(){
+      state[c[1]] = +this.value;
+      render();
+      this.setAttribute('aria-valuetext', valueText(c));
+    });
+    els[c[0]].addEventListener('change', announce);
+  });
+
+  /* ===================== WORKPAPER LAYER =====================
+     Everything below only READS model(); the §170 arithmetic above is
+     untouched, so tests/verify-charitable-deduction-limits.mjs still covers
+     it. The shared pieces live in assets/js/workpaper.js and
+     assets/css/workpaper.css. */
+  const WP = window.Workpaper;
+  const NUMS = [['agiNum', 'agiSlider', 'agi']].concat(CLASSES.map(function(c){ return [c.key + 'Num', c.key + 'Slider', c.key]; }));
+  const SCENARIOS = {
+    tab:        { agi:100000, g1:15000, g2:10000, g3:0,     g4:30000, g5:0 },
+    cash:       { agi:100000, g1:70000, g2:0,     g3:0,     g4:0,     g5:0 },
+    pool:       { agi:100000, g1:40000, g2:20000, g3:0,     g4:30000, g5:0 },
+    foundation: { agi:100000, g1:10000, g2:0,     g3:20000, g4:0,     g5:15000 },
+    all:        { agi:400000, g1:50000, g2:20000, g3:10000, g4:40000, g5:15000 }
+  };
+  /* The subsection that sets each step's own ceiling; every one is in the source panel on this page. */
+  const CITES = { 1:'§170(b)(1)(G)', 2:'§170(b)(1)(A)', 3:'§170(b)(1)(B)', 4:'§170(b)(1)(C)', 5:'§170(b)(1)(D)' };
+
+  function syncControls(){
+    NUMS.forEach(function(n){
+      const sl = els[n[1]], v = state[n[2]];
+      if (v > +sl.max) sl.max = String(Math.ceil(v / +sl.step) * +sl.step);
+      sl.value = String(v);
+    });
+  }
+  function loadScenario(o){
+    Object.keys(o).forEach(function(k){ state[k] = o[k]; });
+    syncControls(); render(); announce();
+  }
+
+  /* what one more block of an input does, read straight off model() */
+  function leverText(key, amount, noun){
+    const next = {}; Object.keys(state).forEach(function(k){ next[k] = state[k]; });
+    next[key] = state[key] + amount;
+    const d = model(next).total - model(state).total;
+    if (Math.abs(d) < 0.5) return null;
+    return 'Each extra ' + money(amount) + ' of ' + noun + (d > 0 ? ' adds ' : ' removes ') + money(Math.abs(d)) + ' to this year\'s deduction.';
+  }
+
+  function insightsFor(r, b){
+    const out = [];
+    if (r.gifts <= 0) return [['info', 'Nothing given yet. Move a gift slider or load an example.']];
+    if (r.carry <= 1e-9){
+      out.push(['ok', 'Every gift fits: ' + money(r.total) + ' is deductible this year and nothing carries forward.']);
+    } else {
+      out.push(['warn', money(r.carry) + ' does not fit this year. It carries forward up to five years (§170(d)(1)), where it is used after that year\'s own gifts.']);
+      r.rows.forEach(function(row){
+        if (row.carry > 1e-9){
+          const c = CLASSES[row.step - 1];
+          out.push(['warn', 'Step ' + row.step + ' (' + c.name.toLowerCase() + '): ' + money(row.carry) + ' waits — ' + whyText(row) + '.']);
+        }
+      });
+      const sat = saturationAgi(state);
+      if (sat > state.agi) out.push(['info', 'At an AGI of ' + money(sat) + ' everything given this year would be deductible.']);
+    }
+    const big = [['agi', 10000, 'AGI'], ['g1', 10000, 'cash to a public charity'], ['g2', 10000, 'ordinary income property'],
+                 ['g3', 10000, 'gifts to a private non-operating foundation'], ['g4', 10000, 'capital gain property'], ['g5', 10000, 'capital gain property to a private foundation']];
+    big.forEach(function(l){ const t = leverText(l[0], l[1], l[2]); if (t) out.push(['info', t]); });
+    return out;
+  }
+
+  /* Pub. 526 Worksheet 2, as a table: one row per step, with the limit that held it back */
+  function renderRows(r){
+    const tb = $('wpRows'); clear(tb);
+    const why = { full:'Nothing: it all deducts', none:'No gift', ceiling:'Its own ceiling', 'cross-cg':'30% cross-limit (capital gain gifts)',
+                  'cross-other':'30% cross-limit (other foundation gifts)', pool:'The 50% pool, spent on earlier steps' };
+    function td(cls, text, sub){
+      const e = document.createElement('td'); if (cls) e.className = cls;
+      e.textContent = text;
+      if (sub){ const s = document.createElement('div'); s.className = 'subline'; s.textContent = sub; e.appendChild(s); }
+      return e;
+    }
+    r.rows.forEach(function(row){
+      const c = CLASSES[row.step - 1], tr = document.createElement('tr');
+      if (row.carry > 1e-9) tr.className = 'bind';
+      tr.appendChild(td('', 'Step ' + row.step + ' · ' + c.name, c.org + ' · ' + CITES[row.step]));
+      tr.appendChild(td('n', money(row.gift)));
+      tr.appendChild(td('n', money(row.ceiling), pctLabel(row.pct) + ' of AGI'));
+      tr.appendChild(td('n', row.room === Infinity ? 'no pool limit' : money(row.room)));
+      tr.appendChild(td('n', money(row.ded)));
+      tr.appendChild(td('n', money(row.carry)));
+      tr.appendChild(td('', bindingFor(row) === 'none' ? why.none : why[bindingFor(row)]));
+      tb.appendChild(tr);
+    });
+    const tot = document.createElement('tr'); tot.className = 'key';
+    tot.appendChild(td('', 'Total'));
+    tot.appendChild(td('n', money(r.gifts))); tot.appendChild(td('', '')); tot.appendChild(td('', ''));
+    tot.appendChild(td('n', money(r.total))); tot.appendChild(td('n', money(r.carry))); tot.appendChild(td('', ''));
+    tb.appendChild(tot);
+  }
+
+  function memoFor(r, b){
+    const hr = '------------------------------------------------------------', L = [];
+    L.push('IRC §170(b) — CHARITABLE CONTRIBUTION PERCENTAGE LIMITS', 'Prepared with TaxVisual (taxvisual.com) on ' + new Date().toISOString().slice(0, 10) + '. General information, not tax advice.', hr, 'FACTS');
+    L.push('  Adjusted gross income .................... ' + money(state.agi), '  Pool: 50% of AGI ......................... ' + money(r.pool), '  Cash ceiling: 60% of AGI ................. ' + money(r.cashCeiling));
+    CLASSES.forEach(function(c){ L.push('  Gift, step ' + c.step + ' ' + c.name.toLowerCase() + ' .... ' + money(state[c.key]) + '  (' + c.org + ')'); });
+    L.push(hr, 'COMPUTATION (each gift is allowed the least of what was given, its own ceiling, and the room left in the pool)');
+    r.rows.forEach(function(row){
+      const c = CLASSES[row.step - 1];
+      L.push('  Step ' + row.step + ' ' + c.name + ' [' + CITES[row.step] + ']',
+             '    gave ' + money(row.gift) + '   ceiling ' + money(row.ceiling) + ' (' + pctLabel(row.pct) + ')   room ' + (row.room === Infinity ? 'n/a' : money(row.room)),
+             '    deducted ' + money(row.ded) + '   carries forward ' + money(row.carry) + (row.carry > 1e-9 ? '   — ' + whyText(row) : ''));
+    });
+    L.push(hr, 'RESULT', '  Deducted this year ....................... ' + money(r.total) + (r.gifts > 0 ? '  (' + pct0.format(r.total / r.gifts) + ' of ' + money(r.gifts) + ' given)' : ''));
+    L.push('  Carried forward (§170(d)(1), 5 years) .... ' + money(r.carry), '  What limits it ........................... ' + els.statBinding.textContent);
+    L.push(hr, 'NOT MODELLED', '  Itemizing; substantiation and qualified-organization status; carryovers from earlier years; qualified conservation contributions;', '  the §170(b)(1)(C)(iii) election to deduct capital gain property at basis; the 0.5%-of-AGI floor in §170(b)(1)(I) (tax years after 2025).');
+    L.push('', 'SOURCES', '  26 U.S.C. §170(b), (d) and 26 C.F.R. §1.170A-8 (text on this page); IRS Publication 526, Worksheet 2. Verify before relying.');
+    return L.join('\n');
+  }
+
+  function extras(){
+    const r = model(state), b = overallBinding(r);
+    NUMS.forEach(function(n){
+      const input = $(n[0]);
+      if (document.activeElement !== input) input.value = WP.money(state[n[2]]).replace('$', '');
+    });
+
+    const chip = r.gifts <= 0 ? ['Nothing given yet', 'info']
+               : r.carry <= 1e-9 ? ['Everything deducts', 'ok']
+               : ['Partly deductible · ' + pct0.format(r.total / r.gifts), 'warn'];
+    $('wpChip').textContent = chip[0]; $('wpChip').className = 'wp-chip ' + chip[1];
+    $('wpWhy').textContent = r.gifts <= 0 ? 'Gifts of ' + money(0) + ' against an AGI of ' + money(state.agi) + '.'
+      : money(r.gifts) + ' given against an AGI of ' + money(state.agi) + '. ' + els.statBinding.textContent + (r.carry > 1e-9 ? ': ' + els.statBindingSub.textContent : '') + '.';
+
+    const base = WP.pin.get();
+    if (base){
+      els.statDeductedSub.textContent = els.statDeductedSub.textContent + ' · ' + WP.delta(r.total, base.total);
+      els.statCarrySub.textContent = els.statCarrySub.textContent + ' · ' + WP.delta(r.carry, base.carry);
+    }
+    $('wpPin').hidden = !!base; $('wpUnpin').hidden = !base;
+
+    WP.fillMsgs($('wpMsgs'), { block:[], warn:[
+      'Assumes you itemize, every gift is substantiated and to a qualified organization, and nothing carries in from an earlier year.',
+      'Not modelled: the 0.5%-of-AGI floor in §170(b)(1)(I) for tax years after 2025, conservation gifts, and the basis election in §170(b)(1)(C)(iii).'
+    ] });
+
+    WP.fillInsights($('wpInsights'), insightsFor(r, b));
+    renderRows(r);
+    $('wpMemo').textContent = memoFor(r, b);
+
+    WP.hash.save({ agi: state.agi, g1: state.g1, g2: state.g2, g3: state.g3, g4: state.g4, g5: state.g5 });
+  }
+
+  /* render() is the page's one entry point: the original render, then the workpaper layer */
+  function render(){ renderCore(); extras(); }
+
+  NUMS.forEach(function(n){
+    const input = $(n[0]);
+    input.addEventListener('input', function(){
+      const v = WP.parseMoney(input.value);
+      if (v === null) return;
+      state[n[2]] = v; syncControls(); render();
+    });
+    input.addEventListener('change', announce);
+    input.addEventListener('blur', function(){ input.value = WP.money(state[n[2]]).replace('$', ''); });
+  });
+  $('example').addEventListener('change', function(){ if (this.value) loadScenario(SCENARIOS[this.value]); this.value = ''; });
+  $('wpReset').addEventListener('click', function(){ WP.pin.clear(); loadScenario(SCENARIOS.tab); });
+  $('wpPin').addEventListener('click', function(){ const r = model(state); WP.pin.set({ total: r.total, carry: r.carry }); render(); });
+  $('wpUnpin').addEventListener('click', function(){ WP.pin.clear(); render(); });
+  WP.init({ memo: function(){ return $('wpMemo').textContent; } });
+
+  (function fromHash(){
+    const h = WP.hash.load();
+    if (!h || h.agi == null) return;
+    Object.keys(state).forEach(function(k){ const v = +h[k]; if (h[k] != null && h[k] !== '' && isFinite(v)) state[k] = v; });
+    syncControls();
+  })();
+
+  render();
+  CONTROLS.forEach(function(c){ els[c[0]].setAttribute('aria-valuetext', valueText(c)); });
+  window.addEventListener('resize', hideTip);
+})();
+</script>
+</body>
+</html>
