@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>How the review works | TaxVisual Return Review</title>
-  <meta name="description" content="The nine Form 1040 lines the review reads, the three questions it raises, and what it deliberately cannot establish.">
+  <title>How the 1040 view works | TaxVisual Return Review</title>
+  <meta name="description" content="How the 1040 view reads a return: a tree from Form 1040 down to its schedules and documents, how it recognises lines by their labels, the cross-checks it runs, the forms it reads, and what it cannot establish.">
   <link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
   <script>document.documentElement.classList.add('js');</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,52 +38,48 @@
   <main id="main">
     <div class="container page-header">
       <p class="eyebrow reveal"><a href="../index.html">Return review</a></p>
-      <h1 class="reveal">What the review reads, and what it cannot</h1>
-      <p class="reveal">A filed Form 1040 runs to well over a hundred boxes, and on most returns nearly all of them are zero. Nine carry the story. This is which nine, what gets built out of them, and the questions they can and cannot settle.</p>
+      <h1 class="reveal">How the 1040 view works</h1>
+      <p class="reveal">A filed return is a stack of forms that each show a total and hide the path to it. The view draws the path: Form 1040 at the top, the schedules that feed each line under it, and the documents that feed the schedules at the bottom. This is how it is built, how it reads a return you give it, the checks it runs, and what it cannot tell you.</p>
     </div>
 
     <div class="container page-body">
       <div class="prose reveal">
 
-        <h2>The nine lines</h2>
-        <p>Taken from Form 1040 for tax year 2024, with the labels as the form prints them.</p>
-        <ul>
-          <li><strong>Line 1z</strong> &mdash; wages, salaries and tips (&ldquo;Add lines 1a through 1h&rdquo;)</li>
-          <li><strong>Line 2b</strong> &mdash; taxable interest</li>
-          <li><strong>Line 11</strong> &mdash; adjusted gross income</li>
-          <li><strong>Line 12</strong> &mdash; standard deduction or itemized deductions</li>
-          <li><strong>Line 15</strong> &mdash; taxable income</li>
-          <li><strong>Line 21</strong> &mdash; total credits (&ldquo;Add lines 19 and 20&rdquo;)</li>
-          <li><strong>Line 24</strong> &mdash; total tax</li>
-          <li><strong>Line 25d</strong> &mdash; federal income tax withheld</li>
-          <li><strong>Line 35a</strong> &mdash; the refund claimed</li>
-        </ul>
-        <p>Those line numbers are specific to 2024. The IRS renumbered Form 1040 for tax year 2025 &mdash; adjusted gross income moved to line 11a and the deduction to line 12e &mdash; so a 2025 return will not line up, and the text extractor will mis-read it. Supporting 2025 is one of the things still to be built.</p>
+        <h2>The tree</h2>
+        <p>Form 1040 page 1 and page 2 are the roots. Open a line to see the schedule lines that flow into it &mdash; line 8 from Schedule 1, line 13 from Form 8995, line 19 from Schedule 8812 &mdash; and open those to reach what feeds <em>them</em>: Schedule C under Schedule 1, Form 4562 under Schedule C, the W-2s and the 83(b) election under wages. Select a line or a document and the page unfolds it in place, with the form or document itself, so you can read the figure where it was printed. Several can stay open at once. If you would rather have a pop-up, there is a switch for that.</p>
+        <p>The built-in sample is a fictional married-filing-jointly 2025 return, with replica source documents behind it. The board header shows its filing status and dependents.</p>
 
-        <h2>What gets built out of them</h2>
-        <p>Four identities, displayed rather than solved. The review does not recompute your tax and has no opinion on whether the figures on the return are right:</p>
+        <h2>Reading your own return</h2>
+        <p>Below the sample there is a place to choose a <strong>text-based PDF of a filed return</strong> &mdash; Form 1040 and its schedules, exported from your tax software. Redact it first: names, Social Security numbers, employer numbers, addresses, bank numbers and the preparer&rsquo;s details are not needed, and the page stops and asks if it still sees something that looks like an identifier.</p>
         <ul>
-          <li><strong>Your effective rate</strong> &mdash; total tax over adjusted gross income. Almost always lower than the bracket people quote, because a bracket is the rate on the last dollar only.</li>
-          <li><strong>Where the money narrowed</strong> &mdash; income, then taxable income, then tax, each drawn as a share of adjusted gross income. The deduction is the visible gap between the first two.</li>
-          <li><strong>Where your payments went</strong> &mdash; withholding and credits split into the part kept as tax and the part coming back. When the return owes instead, it splits the tax into what was covered and what is still due.</li>
+          <li><strong>Lines are recognised by their label, not their number.</strong> The form prints &ldquo;This is your adjusted gross income&rdquo; on line 11 in 2024 and on line 11a in 2025. The page looks for the label, finds the printed line-number box that goes with it, reads the amount beside that box, and shows you the number the form printed.</li>
+          <li><strong>The tree is built from what it found.</strong> Each schedule line is placed under the Form 1040 line it feeds, following the form instructions. A blank line with nothing beneath it is left out.</li>
+          <li><strong>Your pages are the documents.</strong> Each line opens the page of your own PDF it was read from, drawn in your browser. Pages the page recognises but does not read, and pages it does not recognise, are listed so you can still look at them.</li>
         </ul>
 
-        <h2>The three questions</h2>
-        <p>Always the same three, worded from whatever figures are present, each citing the line it came from.</p>
-        <h3>Cash flow &mdash; lines 24, 25d and 35a</h3>
-        <p>Whether you overpaid or underpaid across the year. A large refund is not a win; it is money that sat with the IRS instead of in your pay packet. This is a cash-flow observation and not a tax saving &mdash; the tax is the same either way.</p>
-        <h3>Deduction &mdash; line 12</h3>
-        <p>Which deduction you took, against the standard deduction for your filing status. For 2024 that was $14,600 single and married filing separately, $29,200 married filing jointly and qualifying surviving spouse, and $21,900 head of household, with additions for age 65 and blindness.</p>
-        <h3>Credits &mdash; lines 19 to 21</h3>
-        <p>What was claimed, and the categories most often missed. An empty line 21 is not evidence that nothing was available &mdash; only that nothing was claimed.</p>
+        <h2>The cross-checks</h2>
+        <p>A line that one form carries to another must be the same number on both. With a return read, the page makes every comparison it can:</p>
+        <ul>
+          <li><strong>Carried lines</strong> &mdash; Form 1040 line 8 against Schedule 1 line 10, line 10 against Schedule 1 line 26, line 13 against Form 8995, line 19 against Schedule 8812, line 23 against Schedule 2 line 21, and the links beneath them: Schedule C into Schedule 1 and Schedule SE, Schedule SE into Schedules 1 and 2, Form 4797 into Schedule D and Schedule 1, Form 8960 into Schedule 2.</li>
+          <li><strong>The arithmetic of Form 1040</strong> &mdash; total income is the sum of the income lines, adjusted gross income is total income less adjustments, taxable income is AGI less the deductions, total tax is tax after credits plus other taxes, and the refund or the amount owed follows from payments.</li>
+          <li><strong>Schedule D</strong> &mdash; the net is short-term plus long-term.</li>
+        </ul>
+        <p>Differences within one dollar are treated as rounding. A difference is flagged on the line and listed above the tree, and it is a <em>question</em>, not a conclusion: it can be a rounding, a page missing from the file, two Schedule Cs where the page compares one, or a line the page has read differently from your software. When everything ties, that proves only that these lines are consistent with each other.</p>
+
+        <h2>The forms it reads</h2>
+        <ul>
+          <li><strong>Read for amounts</strong> &mdash; Form 1040 (both pages), Schedules 1, 2, A, C, D and SE, and Forms 4562, 4797, 8812, 8960 and 8995.</li>
+          <li><strong>Recognised, not read</strong> &mdash; Form 8949, Schedules B, E and 3, Forms 8582 and 8959, and W-2s. They appear as pages you can open.</li>
+          <li><strong>Everything else</strong> &mdash; state returns, worksheets, e-file authorisations and the like are listed as other pages.</li>
+        </ul>
 
         <h2>What it cannot establish</h2>
         <p>Worth being blunt about, because these are the limits that matter:</p>
         <ul>
-          <li><strong>It cannot tell you that you qualify for anything.</strong> Eligibility for every credit and most deductions turns on facts that never appear on Form 1040.</li>
-          <li><strong>It cannot see the documents behind the return</strong> &mdash; no W-2s, no 1099s, no Schedule A, no schedules at all. It reads the summary lines and nothing under them.</li>
-          <li><strong>It does not check the return for errors</strong> or recompute the liability. If a figure on the return is wrong, everything downstream of it here is wrong too.</li>
-          <li><strong>Reading a PDF is imperfect.</strong> It misses amounts and can pick up the wrong ones, which is why the preview shows every extracted figure in an editable field and asks you to check each one. Scanned returns have no selectable text and produce nothing at all.</li>
+          <li><strong>It cannot tell you that anything is right.</strong> It reads what the return says and checks that it is consistent with itself. It does not recompute the tax and cannot see the documents behind a return that does not include them. A wrong figure that is wrong everywhere agrees with itself.</li>
+          <li><strong>It cannot tell you that you qualify for anything.</strong> Eligibility for credits and most deductions turns on facts that never appear on the forms.</li>
+          <li><strong>Reading a PDF is imperfect.</strong> It was built and tested on a 2024 return, where it read every line it covers. Other years are expected to read because lines are found by label, but they have only been tested on synthetic pages, and a PDF written by different software can split its text differently. A misread can show up as a false difference, which is why differences are worded as questions. Scanned returns have no selectable text and are refused.</li>
+          <li><strong>It does not see names or addresses.</strong> Redacting them is up to you.</li>
           <li><strong>It is not tax advice</strong>, and nothing it says should drive a filing decision on its own.</li>
         </ul>
 
@@ -91,16 +87,16 @@
 
       <div class="placeholder reveal">
         <p class="eyebrow">To be built</p>
-        <p>Tax year 2025 support, more than the nine summary lines, and the schedules behind them. If there is a line you keep wanting it to read, that is useful to know.</p>
+        <p>Reading the totals on Form 8949, Schedules B and E and Form 8582, and a second tax year tested on a real return. If there is a form or a line you keep wanting it to read, that is useful to know.</p>
         <p><a href="../../contact/index.html">Tell us what it should read next</a></p>
       </div>
 
       <div class="cta-band reveal" style="margin-top: var(--space-7)">
         <div>
           <h2>Try it on the sample</h2>
-          <p>A complete 2024 single-filer return is built in, so you can see exactly what the review produces before putting your own figures anywhere.</p>
+          <p>A fictional 2025 return is built in, so you can see exactly what the view does before you choose a file of your own.</p>
         </div>
-        <a class="btn btn-primary" href="../1040/index.html">Open the preview</a>
+        <a class="btn btn-primary" href="../1040/index.html">Open the 1040 view</a>
       </div>
     </div>
   </main>

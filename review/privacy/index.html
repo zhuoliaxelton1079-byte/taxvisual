@@ -55,13 +55,17 @@
           <li><strong>No form submission.</strong> The fields are not part of a form that posts anywhere.</li>
         </ul>
 
+        <h2>What it reads, and what it refuses</h2>
+        <p>The page reads the text of each page, recognises lines by their printed labels, and keeps only line numbers, labels and amounts. It draws your own pages back to you from the same file, in memory, so you can see where each figure came from; those images are released when you press <strong>Remove my return</strong> or leave the page.</p>
+        <p><strong>It asks you to redact first.</strong> Names, Social Security numbers, employer numbers, addresses and account numbers are not needed. If the text still contains something that looks like a Social Security number, an employer number or a long account number, the page stops before showing the return and asks you to redact it and choose the file again. A checkbox lets a fictional sample or practice return through. This guard cannot see names or addresses, so redacting them is your job.</p>
+
         <h2>The one exception</h2>
-        <p>Reading a PDF needs a PDF parser, and writing one by hand is not realistic. The preview uses <a href="https://mozilla.github.io/pdf.js/" target="_blank" rel="noopener">pdf.js</a>, fetched from a public CDN <strong>only if you actually choose a PDF file</strong>. If you use the sample, paste text, type figures in, or upload a <code>.txt</code> file, no third-party code is ever fetched.</p>
+        <p>Reading a PDF needs a PDF parser, and writing one by hand is not realistic. The preview uses <a href="https://mozilla.github.io/pdf.js/" target="_blank" rel="noopener">pdf.js</a>, fetched from a public CDN <strong>only if you actually choose a PDF file</strong>. If you only use the built-in sample, no third-party code is ever fetched.</p>
         <p>When it is fetched, it is pinned and verified before any of it runs:</p>
         <ul>
           <li>The library is loaded with <strong>subresource integrity</strong> &mdash; the browser itself refuses to execute it unless its SHA-384 digest matches the one written into the page.</li>
           <li>Its worker file is fetched, hashed in the page with the browser's own crypto, and compared against a second pinned digest. It only runs if it matches.</li>
-          <li>If either check cannot be performed &mdash; CDN blocked, hashing unavailable, digest mismatch &mdash; the PDF path <strong>refuses to run</strong> rather than executing unverified code over your return, and tells you to paste the text instead.</li>
+          <li>If either check cannot be performed &mdash; CDN blocked, hashing unavailable, digest mismatch &mdash; the PDF path <strong>refuses to run</strong> rather than executing unverified code over your return, and tells you what went wrong. The sample keeps working.</li>
         </ul>
         <p>That code runs entirely on your machine and reads the PDF locally. The request that fetches it carries no information about your return; it asks for a fixed file at a fixed version, exactly as it would for any visitor.</p>
         <p>Like every other page on this site, the preview also loads its typefaces from Google Fonts. Fonts receive no data about the page's contents.</p>
@@ -82,7 +86,7 @@
       <div class="cta-band reveal" style="margin-top: var(--space-7)">
         <div>
           <h2>Start with the sample</h2>
-          <p>A built-in 2024 return lets you see exactly what the preview does before it ever touches yours.</p>
+          <p>A built-in fictional 2025 return lets you see exactly what the preview does before it ever touches yours.</p>
         </div>
         <a class="btn btn-primary" href="../1040/index.html">Open the preview</a>
       </div>

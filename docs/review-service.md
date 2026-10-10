@@ -2,6 +2,65 @@
 
 *The `/review/` pages: a free, browser-only return preview and the three pages that explain it. This documents the preview at `review/1040/index.html` — also the "1040 preview" tab on `/tools/` — and the section around it.*
 
+> **Superseded 10 October 2026 for `review/1040/`.** That page is no longer the
+> workbook formula map described under "The preview" below, and the PDF reader
+> described under "The PDF reader" has been rebuilt. What it is now:
+>
+> - **A tree.** Form 1040 page 1 and page 2 at the top; under each line the schedule
+>   lines that feed it; under those, the documents that feed the schedules. Selecting
+>   a node unfolds the documents behind it in place (tabs when there are several,
+>   several open at once); "Open documents in a pop-up instead" switches to a native
+>   `<dialog>`. `?show=p1/l7/...` opens a branch and unfolds a node (a document leaf
+>   is `d:<id>`).
+> - **A sample.** Learner, 2025 (ACCTG 410 Tax Project #2): fictional, built from
+>   classroom replica source documents in `review/1040/tp2-docs/`. The board header
+>   shows filing status and dependents. Tax Project #3 was taken off the page on
+>   10 October because it is built from a course solution key; its data is kept in
+>   `Pressbook/IRS form replica/review-case-tp3.js`.
+> - **Analyze your own return.** The user chooses a text-based PDF of a redacted
+>   return. The page loads pdf.js 3.11.174 (script by subresource integrity, worker
+>   hashed in the page before use; the digests are asserted by the harness),
+>   reads each page's text with positions, and **recognises lines by their printed
+>   label, not their number**, so renumbered years read; it reports the number the
+>   form printed. It builds the same tree from what it read, draws the user's own
+>   pages (rendered in memory, released on "Remove my return") as the documents, and
+>   runs cross-checks: a line carried from one form to another must be equal (1040
+>   line 8 = Schedule 1 line 10, and twelve more), Form 1040's own arithmetic, and
+>   Schedule D's. Differences are flagged on the tree and listed as questions.
+>   An uploaded return with identifier-like text (SSN, EIN, nine-digit or long
+>   account-style numbers) is stopped until the user confirms it is fictional; a
+>   scan with no text, a non-PDF, over 25 MB or over 150 pages is refused with a
+>   reason. Nothing is stored, posted or logged.
+> - **How the reader works** (`rdAnalyze`, `rdBuildReturn`, `rdCrossChecks`, in the
+>   `READER:BEGIN/END` block of the page). Rows are clustered by height; a page is
+>   classified by its title text near the top (or the running head of a second page);
+>   each wanted line is found by a label regex, paired with the printed line-number
+>   box that carries the same number as the label's margin number (or, for a lone
+>   letter like the "b" of 18b, the box ending in that letter), and its amount is the
+>   number to the right of that box on the box's row. A box or amount beside a
+>   different line's number is never borrowed. Forms read: 1040, Schedules 1, 2, A,
+>   C, D, SE, Forms 4797, 8812, 8995, 8960, 4562. Forms recognised but not read
+>   (8949, Schedules B, E, 3, Forms 8582, 8959, W-2) and unrecognised pages are listed
+>   so they can still be looked at.
+> - **What was tested.** The reader was run with the real pdf.js against a real
+>   2024 return (a TaxSlayer practice return, 39 pages): all 43 lines read, 24
+>   cross-checks tie. That return is a course solution and is not committed, so
+>   `tests/verify-return-review.mjs` (151 checks) uses synthetic pages laid out like
+>   an IRS form instead (2025 numbering, blanks, wrapped labels, inner-column amounts,
+>   sub-lines, negatives, identifiers, an injected mismatch, the pinned digests and
+>   the "no other network call, no storage" design). **2025 and earlier layouts are
+>   untested on a real PDF**, and a PDF written by a different tool can split text
+>   differently; a misread line can produce a false "difference", which is why the
+>   page words findings as questions.
+> - **Surrounding pages.** `review/how-it-works/`, `review/index.html`,
+>   `review/privacy/` and the blurb above the embedded view on `/tools/` were
+>   rewritten on 10 October to match (they had described the older nine-figure
+>   reader). `review/flow-map/` is a separate fictional reviewer view and was not
+>   touched.
+>
+> Everything below about the fourteen boxes, the model and extraction describes the
+> old page and the `/review/flow-map/` reviewer view; rewrite it before relying on it.
+
 Adapted from the ClearLedger Tax Review prototype
 (`clearledger-tax-review.barrettlian12345.chatgpt.site`, a React/Next single page),
 rebuilt as one hand-authored file on the site's own tokens, chrome and conventions.
