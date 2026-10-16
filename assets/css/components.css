@@ -245,6 +245,10 @@
   gap: var(--space-4);
 }
 
+.tool-grid + .section-head {
+  margin-top: var(--space-7);
+}
+
 .tool-card {
   display: flex;
   flex-direction: column;

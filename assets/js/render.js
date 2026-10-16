@@ -235,15 +235,16 @@
 
     mountEl.appendChild(panel);
 
-    if (pending.length) {
-      var names = pending.map(function (t) { return t.title; });
-      var joined = names.length > 1
-        ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1]
-        : names[0];
+    var others = live.length - 1;
+    if (others > 0 || pending.length) {
+      var text = others > 0
+        ? others + ' more ' + (others > 1 ? 'tools are' : 'tool is') + ' live'
+          + (pending.length ? ', and ' + pending.length + ' in development. ' : '. ')
+        : pending.length + (pending.length > 1 ? ' more tools are' : ' more tool is') + ' in development. ';
 
       var note = document.createElement('p');
       note.className = 'upcoming';
-      note.appendChild(document.createTextNode(joined + (names.length > 1 ? ' are' : ' is') + ' in development. '));
+      note.appendChild(document.createTextNode(text));
       var dirLink = document.createElement('a');
       dirLink.href = basePath + 'tools/index.html';
       dirLink.textContent = 'See all tools';
