@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Real Marginal Rate in Retirement | TaxVisual</title>
+  <meta name="description" content="A sample explorable tax memo: how Social Security taxation, the senior deduction phase-out and Medicare premium tiers push a retiree's real marginal rate above their bracket, and what that means for a Roth conversion. Tax year 2026.">
+  <link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+  <script>document.documentElement.classList.add('js');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <style>
+    /* Series colours: the three parts of the real marginal rate. Validated
+       with the dataviz palette checker against both surfaces (light: aqua
+       sits below 3:1, so every value is also printed in the legend and the
+       segment table). */
+    .memo {
+      --s1: #2a78d6;  /* bracket rate */
+      --s2: #eb6834;  /* Social Security inclusion */
+      --s3: #1baf7a;  /* senior deduction phase-out */
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:where(:not([data-theme="light"])) .memo { --s1: #3987e5; --s2: #d95926; --s3: #199e70; }
+    }
+    :root[data-theme="dark"] .memo { --s1: #3987e5; --s2: #d95926; --s3: #199e70; }
+
+    .memo-meta {
+      margin-top: var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      letter-spacing: var(--tracking-wide);
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .memo-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+      gap: var(--space-7);
+      align-items: start;
+    }
+
+    /* ---- Facts rail ---- */
+    .facts {
+      position: sticky;
+      top: var(--space-4);
+      padding: var(--space-5);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+    }
+    .facts h2 {
+      font-size: var(--text-lg);
+      margin-bottom: var(--space-1);
+    }
+    .facts .hint { font-size: var(--text-xs); color: var(--muted); margin-bottom: var(--space-4); }
+    .field { margin-top: var(--space-4); }
+    .field label, .field legend {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--ink);
+    }
+    .field output { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .field input[type="range"] { width: 100%; margin-top: var(--space-2); accent-color: var(--accent); }
+    .field select { width: 100%; margin-top: var(--space-2); font: inherit; font-size: var(--text-sm); padding: var(--space-1) var(--space-2); border: 1px solid var(--rule); border-radius: var(--radius-sm); background: var(--paper); color: var(--ink); }
+    .seg { display: flex; gap: 0; margin-top: var(--space-2); border: 1px solid var(--rule); border-radius: var(--radius-sm); overflow: hidden; }
+    .seg label { flex: 1; justify-content: center; padding: var(--space-1) var(--space-2); cursor: pointer; font-size: var(--text-xs); }
+    .seg input { position: absolute; opacity: 0; pointer-events: none; }
+    .seg label:has(input:checked) { background: var(--accent); color: var(--on-accent); }
+    .seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+    fieldset.field { border: 0; padding: 0; margin-inline: 0; }
+
+    .readouts { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--rule); display: grid; gap: var(--space-3); }
+    .readout dt { font-size: var(--text-xs); color: var(--muted); }
+    .readout dd { margin: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--text-xl); color: var(--ink); }
+    .readout dd small { font-size: var(--text-xs); color: var(--muted); font-family: var(--font-sans); }
+    .facts-actions { margin-top: var(--space-5); display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .facts-actions .btn { font-size: var(--text-xs); padding: var(--space-2) var(--space-3); }
+
+    /* ---- Memo body ---- */
+    .memo-body > section + section { margin-top: var(--space-7); padding-top: var(--space-5); border-top: 1px solid var(--rule); }
+    .memo-body h2 { font-size: var(--text-xl); margin-bottom: var(--space-3); }
+    .memo-body h2 .tag { display: block; margin-bottom: var(--space-2); font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--accent); font-weight: var(--weight-medium); }
+    .memo-body p, .memo-body li { color: var(--muted); max-width: var(--measure); }
+    .memo-body p + p { margin-top: var(--space-3); }
+    .memo-body ul { padding-left: var(--space-5); }
+    .memo-body li + li { margin-top: var(--space-2); }
+    .memo-body strong, .memo-body .num { color: var(--ink); }
+    .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.95em; }
+    .answer { padding: var(--space-4) var(--space-5); border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+    .answer p { color: var(--ink); }
+
+    /* Part-to-whole bar for the marginal rate */
+    .stackbar { display: flex; gap: 2px; height: 28px; margin-top: var(--space-4); max-width: 640px; }
+    .stackbar span { display: block; height: 100%; border-radius: 2px; transition: flex-grow var(--transition); }
+    .stackbar .rest { background: var(--rule); }
+    .legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin-top: var(--space-3); font-size: var(--text-sm); color: var(--muted); }
+    .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: var(--space-2); vertical-align: baseline; }
+    .legend b { font-family: var(--font-mono); font-weight: var(--weight-medium); color: var(--ink); }
+
+    /* Chart */
+    .chart-wrap { position: relative; margin-top: var(--space-4); }
+    .chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .chart-wrap .axis text, .chart-wrap .lbl { font-family: var(--font-mono); font-size: 11px; fill: var(--muted); }
+    .chart-wrap .grid line { stroke: var(--rule); stroke-width: 1; }
+    .chart-wrap .cliff { stroke: var(--muted); stroke-width: 1; }
+    .chart-wrap .you { stroke: var(--ink); stroke-width: 2; }
+    .chart-wrap .you-lbl { font-family: var(--font-sans); font-size: 12px; fill: var(--ink); font-weight: 500; }
+    .chart-wrap .cross { stroke: var(--ink); stroke-width: 1; opacity: .5; }
+    .tip { position: absolute; pointer-events: none; padding: var(--space-2) var(--space-3); background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-sm); box-shadow: var(--shadow-md); font-size: var(--text-xs); color: var(--ink); white-space: nowrap; opacity: 0; transition: opacity 120ms; }
+    .tip.show { opacity: 1; }
+    .tip b { font-family: var(--font-mono); font-weight: var(--weight-medium); }
+
+    /* Tables */
+    .tbl { width: 100%; max-width: 720px; margin-top: var(--space-4); border-collapse: collapse; font-size: var(--text-sm); }
+    .tbl th, .tbl td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--rule); text-align: right; }
+    .tbl th:first-child, .tbl td:first-child { text-align: left; }
+    .tbl th { font-weight: var(--weight-medium); color: var(--muted); font-size: var(--text-xs); }
+    .tbl td { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+    .tbl tr.is-you td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+    .tbl-scroll { overflow-x: auto; }
+
+    details.law { margin-top: var(--space-3); max-width: var(--measure); border: 1px solid var(--rule); border-radius: var(--radius-sm); background: var(--surface); }
+    details.law summary { cursor: pointer; padding: var(--space-3) var(--space-4); font-size: var(--text-sm); color: var(--ink); }
+    details.law > div { padding: 0 var(--space-4) var(--space-4); }
+    details.law p { font-size: var(--text-sm); }
+    .cite { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--muted); }
+
+    .print-only { display: none; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 900px) {
+      .memo-layout { grid-template-columns: minmax(0, 1fr); }
+      .facts { position: static; }
+    }
+
+    @media print {
+      .facts .field, .facts-actions, .chart-hint { display: none; }
+      .print-only { display: block; }
+      .memo-layout { grid-template-columns: minmax(0, 1fr); }
+      .facts { position: static; border: 0; padding: 0; }
+      details.law { border: 0; }
+      details.law > div { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../../index.html" aria-label="TaxVisual home">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="20" width="20" height="1.3" rx=".65"/><path d="M2 20V14.7Q2 13.2 3.5 13.2H5.5Q7 13.2 7 14.7V20Z"/><path d="M9.5 20V10.1Q9.5 8.6 11 8.6H13Q14.5 8.6 14.5 10.1V20Z"/><rect x="17" y="9.3" width="5" height="10.7"/><path d="M17 8.7V5Q17 3.5 18.5 3.5H20.5Q22 3.5 22 5V8.7Z" fill-opacity=".45"/></svg>
+        <span>TaxVisual</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../services/index.html">Services</a></li>
+          <li><a href="../../samples/index.html" aria-current="true">Samples</a></li>
+          <li><a href="../../tools/index.html">Tools</a></li>
+          <li><a href="../../resources/index.html">Resources</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="container page-header">
+      <p class="eyebrow reveal"><a href="../index.html">Samples</a> &middot; Explorable memo</p>
+      <h1 class="reveal">Your real marginal rate in retirement</h1>
+      <p class="reveal">Why the next dollar of a retiree&rsquo;s income can cost far more than their tax bracket says &mdash; and what that means for a Roth conversion this year.</p>
+      <p class="memo-meta reveal">Fictional case &middot; Tax year 2026 &middot; Federal income tax and Medicare premiums &middot; Every figure recalculates as the facts change</p>
+    </div>
+
+    <div class="container page-body memo">
+      <div class="memo-layout">
+
+        <aside class="facts" aria-labelledby="facts-title">
+          <h2 id="facts-title">Facts</h2>
+          <p class="hint">A fictional retired couple, both over 65 and on Medicare. Change any fact; the memo follows.</p>
+
+          <fieldset class="field">
+            <legend>Filing status</legend>
+            <div class="seg">
+              <label><input type="radio" name="status" value="joint" checked> Married, joint</label>
+              <label><input type="radio" name="status" value="single"> Single</label>
+            </div>
+          </fieldset>
+
+          <div class="field">
+            <label for="f-ss">Social Security benefits <output id="o-ss" for="f-ss"></output></label>
+            <input id="f-ss" type="range" min="0" max="100000" step="500">
+          </div>
+          <div class="field">
+            <label for="f-other">Pension, IRA and other income <output id="o-other" for="f-other"></output></label>
+            <input id="f-other" type="range" min="0" max="300000" step="1000">
+          </div>
+          <div class="field">
+            <label for="f-exempt">Tax-exempt interest <output id="o-exempt" for="f-exempt"></output></label>
+            <input id="f-exempt" type="range" min="0" max="50000" step="500">
+          </div>
+          <div class="field">
+            <label for="f-conv">Proposed Roth conversion <output id="o-conv" for="f-conv"></output></label>
+            <input id="f-conv" type="range" min="0" max="300000" step="1000">
+          </div>
+          <div class="field">
+            <label for="f-future">Expected tax rate when the money is used later</label>
+            <select id="f-future">
+              <option value="0.10">10%</option>
+              <option value="0.12">12%</option>
+              <option value="0.22">22%</option>
+              <option value="0.24">24%</option>
+              <option value="0.32">32%</option>
+              <option value="0.35">35%</option>
+              <option value="0.37">37%</option>
+            </select>
+          </div>
+
+          <dl class="print-only" id="facts-print"></dl>
+
+          <dl class="readouts">
+            <div class="readout"><dt>Real marginal rate on the next dollar</dt><dd id="r-marg"></dd></div>
+            <div class="readout"><dt>Average federal tax on the proposed conversion</dt><dd id="r-avg"></dd></div>
+            <div class="readout"><dt>Medicare premium change, two years later</dt><dd id="r-irmaa"></dd></div>
+          </dl>
+
+          <div class="facts-actions">
+            <button class="btn btn-outline" type="button" id="copy-link">Copy link to this scenario</button>
+            <button class="btn btn-outline" type="button" id="print">Print / save as PDF</button>
+          </div>
+          <p class="hint" id="copy-status" role="status" aria-live="polite" style="margin: var(--space-2) 0 0"></p>
+        </aside>
+
+        <div class="memo-body">
+          <section aria-labelledby="issue-title">
+            <h2 id="issue-title"><span class="tag">Issue</span>What does the next dollar of income really cost?</h2>
+            <p>The couple are considering converting part of a traditional IRA to a Roth IRA this year. The conversion is taxed as ordinary income. The question is not just which bracket they are in, but what each extra dollar actually costs once every rule that keys off their income is counted &mdash; and whether converting now beats paying tax on the same money later.</p>
+          </section>
+
+          <section aria-labelledby="answer-title">
+            <h2 id="answer-title"><span class="tag">Short answer</span>The bracket understates the cost</h2>
+            <div class="answer"><p id="short-answer"></p></div>
+          </section>
+
+          <section aria-labelledby="law-title">
+            <h2 id="law-title"><span class="tag">Law</span>Four rules key off the same income</h2>
+            <p>Each rule is simple on its own. The cost comes from their overlap: a single extra dollar of IRA income can move all four at once.</p>
+
+            <details class="law">
+              <summary>1. Brackets and the standard deduction</summary>
+              <div>
+                <p>Ordinary income above the standard deduction is taxed at 10% to 37%. For 2026 the standard deduction is <span class="num">$32,200</span> for a joint return and <span class="num">$16,100</span> for a single filer, plus <span class="num">$1,650</span> for each spouse aged 65 or older on a joint return (<span class="num">$2,050</span> for a single filer).</p>
+                <p class="cite">IRC &sect;1(j), &sect;63(c), &sect;63(f); Rev. Proc. 2025-32</p>
+              </div>
+            </details>
+            <details class="law">
+              <summary>2. Taxation of Social Security benefits</summary>
+              <div>
+                <p>Provisional income is other income plus tax-exempt interest plus half the benefits. Above <span class="num">$32,000</span> (joint) or <span class="num">$25,000</span> (single), each extra dollar makes 50&cent; of benefits taxable; above <span class="num">$44,000</span> or <span class="num">$34,000</span>, 85&cent; &mdash; until 85% of the benefits are taxable. These thresholds have never been indexed for inflation. In the 85&cent; zone one extra dollar of IRA income adds $1.85 of taxable income.</p>
+                <p class="cite">IRC &sect;86</p>
+              </div>
+            </details>
+            <details class="law">
+              <summary>3. The senior deduction and its phase-out (2025&ndash;2028)</summary>
+              <div>
+                <p>Each taxpayer aged 65 or older gets an extra deduction of up to <span class="num">$6,000</span>, reduced by 6% of modified adjusted gross income above <span class="num">$150,000</span> (joint) or <span class="num">$75,000</span> (single). For a couple who both qualify, each dollar in the phase-out range removes 12&cent; of deduction. It is scheduled to expire after 2028.</p>
+                <p class="cite">IRC &sect;151(d)(5)(C), added by Pub. L. 119-21 &sect;70103</p>
+              </div>
+            </details>
+            <details class="law">
+              <summary>4. Medicare premium surcharges (IRMAA)</summary>
+              <div>
+                <p>Medicare Part B and Part D premiums rise in steps once modified adjusted gross income (adjusted gross income plus tax-exempt interest) passes <span class="num">$218,000</span> (joint) or <span class="num">$109,000</span> (single). The steps are cliffs: one dollar over a threshold raises the surcharge for the whole year, for each enrolled spouse. Premiums are set from income two years earlier, so 2026 income sets 2028 premiums; this memo uses the 2026 tiers as the best available estimate.</p>
+                <p class="cite">42 U.S.C. &sect;1395r(i); 42 CFR &sect;418.115; CMS 2026 premium announcement; SSA POMS HI 01101.020</p>
+              </div>
+            </details>
+          </section>
+
+          <section aria-labelledby="analysis-title">
+            <h2 id="analysis-title"><span class="tag">Analysis</span>Where the next dollar goes</h2>
+            <p id="analysis-text"></p>
+
+            <div class="stackbar" id="stackbar" role="img" aria-labelledby="stackbar-legend"></div>
+            <div class="legend" id="stackbar-legend"></div>
+
+            <h3 style="margin-top: var(--space-6); font-size: var(--text-lg)">The real marginal rate across the conversion</h3>
+            <p class="chart-hint">Each band is one rule&rsquo;s contribution to the tax on the next dollar, at every conversion amount from zero up. Vertical rules mark the Medicare premium cliffs. Hover or tap the chart for the figures.</p>
+            <div class="chart-wrap" id="chart-wrap">
+              <svg id="chart" role="img" aria-labelledby="chart-desc"></svg>
+              <p class="sr-only" id="chart-desc">Stacked step chart of the real marginal tax rate against the size of the Roth conversion. The full figures are in the table under Sensitivity.</p>
+              <div class="tip" id="tip"></div>
+            </div>
+          </section>
+
+          <section aria-labelledby="sens-title">
+            <h2 id="sens-title"><span class="tag">Sensitivity</span>Where the answer changes</h2>
+            <p id="sens-text"></p>
+            <div class="tbl-scroll">
+              <table class="tbl" id="seg-table">
+                <caption class="sr-only">Real marginal rate by range of conversion</caption>
+                <thead><tr><th scope="col">Conversion range</th><th scope="col">Bracket</th><th scope="col">Social Security</th><th scope="col">Senior deduction</th><th scope="col">Real rate</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="tbl-scroll">
+              <table class="tbl" id="cliff-table">
+                <caption class="sr-only">Medicare premium cliffs</caption>
+                <thead><tr><th scope="col">Medicare cliff at a conversion of</th><th scope="col">Tier</th><th scope="col">Extra premium a year</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section aria-labelledby="concl-title">
+            <h2 id="concl-title"><span class="tag">Conclusion</span>What to do this year</h2>
+            <div class="answer"><p id="conclusion"></p></div>
+            <p style="margin-top: var(--space-4)">This memo answers one question &mdash; what converting costs <em>now</em>. A full recommendation also weighs the future rate more carefully (required distributions, a surviving spouse filing single, heirs&rsquo; brackets), where the tax on the conversion is paid from, and state tax.</p>
+          </section>
+
+          <section aria-labelledby="limits-title">
+            <h2 id="limits-title"><span class="tag">Assumptions</span>What this memo leaves out</h2>
+            <ul>
+              <li>Federal tax only, for tax year 2026. No state income tax.</li>
+              <li>All other income is ordinary (pensions, IRA distributions, interest). Qualified dividends and capital gains, which stack differently, are not modelled.</li>
+              <li>Both spouses are 65 or older and enrolled in Medicare Parts B and D; the single filer likewise.</li>
+              <li>Standard deduction, no itemizing. No credits, and no net investment income tax (IRA income is not investment income, though it raises the income that tax keys off).</li>
+              <li>Medicare surcharges use the 2026 tiers for income that will be measured for 2028 premiums.</li>
+            </ul>
+          </section>
+
+          <section aria-labelledby="src-title">
+            <h2 id="src-title"><span class="tag">Sources</span>Research and authority</h2>
+            <ul>
+              <li>William Reichenstein and William Meyer, &ldquo;Understanding the Tax Torpedo and Its Implications for Various Retirees,&rdquo; <em>Journal of Financial Planning</em>, July 2018.</li>
+              <li>William Reichenstein and William Meyer, research on Roth conversions and income-related Medicare premiums, Financial Planning Association, February 2020.</li>
+              <li>Alex Rees-Jones and Dmitry Taubinsky, &ldquo;Measuring &lsquo;Schmeduling&rsquo;,&rdquo; <em>Review of Economic Studies</em>, 2020 &mdash; on how often people mistake their average rate for their marginal rate.</li>
+              <li>IRS Rev. Proc. 2025-32 (2026 inflation adjustments); IRC &sect;&sect;1, 63, 86, 151(d)(5)(C); Pub. L. 119-21.</li>
+              <li>CMS 2026 Medicare Parts B and D premiums; SSA POMS HI 01101.020 (2026 income-related monthly adjustment amounts).</li>
+            </ul>
+            <p style="margin-top: var(--space-4)">Educational sample on a fictional case; not tax advice. The model is checked by <code>tests/verify-real-marginal-rate.mjs</code> against hand-worked cases before publication. <a href="../../services/planning/index.html">How planning packages work &rarr;</a></p>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav aria-label="Footer">
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h2>Services</h2>
+            <ul>
+              <li><a href="../../services/index.html">Services overview</a></li>
+              <li><a href="../../services/walkthrough/index.html">Return walkthroughs</a></li>
+              <li><a href="../../services/planning/index.html">Planning packages</a></li>
+              <li><a href="../../services/training/index.html">Firm training &amp; custom tools</a></li>
+              <li><a href="../../services/index.html#preparers">Working with your preparer</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Samples</h2>
+            <ul>
+              <li><a href="../../samples/index.html">All samples</a></li>
+              <li><a href="../../samples/real-marginal-rate/index.html" aria-current="page">Sample planning memo</a></li>
+              <li><a href="../../review/1040/index.html">Sample return walkthrough</a></li>
+              <li><a href="../../review/flow-map/index.html">Return flow map</a></li>
+              <li><a href="../../review/how-it-works/index.html">How the walkthrough works</a></li>
+              <li><a href="../../review/privacy/index.html">Privacy</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Tools</h2>
+            <ul>
+              <li><a href="../../tools/index.html">All tools</a></li>
+              <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+              <li><a href="../../tools/comprehensive-tax-calculation/index.html">Comprehensive Tax Calculation</a></li>
+              <li><a href="../../tools/qbi-deduction/index.html">QBI Deduction</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Resources</h2>
+            <ul>
+              <li><a href="../../resources/index.html">Resources</a></li>
+              <li><a href="../../dashboard/index.html">IRS data dashboard</a></li>
+              <li><a href="../../methodology/index.html">Methodology</a></li>
+              <li><a href="../../sitemap/index.html">Site map</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>About</h2>
+            <ul>
+              <li><a href="../../about/index.html">About TaxVisual</a></li>
+              <li><a href="../../contact/index.html">Contact</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual builds return walkthroughs, explorable planning memos and client-ready visuals for tax and wealth professionals. We do not prepare returns. The public tools and samples are educational and are not tax advice.</p>
+        <p class="footer-note"><a href="../../contact/index.html">Start an enquiry</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  (function () {
+    /* ==================================================================
+       MODEL. Pure functions only; tests/verify-real-marginal-rate.mjs
+       extracts them from this file by name and runs them.
+       ================================================================== */
+
+    function law2026(){
+      return {
+        brackets: {
+          joint:  [[24800, 0.10], [100800, 0.12], [211400, 0.22], [403550, 0.24], [512450, 0.32], [768700, 0.35], [Infinity, 0.37]],
+          single: [[12400, 0.10], [50400, 0.12], [105700, 0.22], [201775, 0.24], [256225, 0.32], [640600, 0.35], [Infinity, 0.37]]
+        },
+        stdDed: { joint: 32200, single: 16100 },
+        aged:   { joint: 1650,  single: 2050 },
+        senior: { amount: 6000, rate: 0.06, start: { joint: 150000, single: 75000 } },
+        ss:     { joint: { lo: 32000, up: 44000 }, single: { lo: 25000, up: 34000 } },
+        irmaa:  {
+          joint:  [218000, 274000, 342000, 410000, 750000],
+          single: [109000, 137000, 171000, 205000, 500000],
+          partB:  [0, 81.20, 202.90, 324.60, 446.30, 487.00],
+          partD:  [0, 14.50, 37.50, 60.40, 83.30, 91.00]
+        }
+      };
+    }
+
+    /* Taxable Social Security, IRC §86. `other` is every other item of
+       provisional income: AGI before benefits plus tax-exempt interest.
+       Same formula as tools/social-security-inclusion. */
+    function ssTaxable(benefits, other, lo, up){
+      const half  = benefits * 0.5;
+      const pi    = other + half;
+      const lower = Math.max(Math.min(half, (pi - lo) * 0.5), 0);
+      const upper = Math.max(0, Math.min(pi - up, benefits)) * 0.85;
+      const carry = Math.min(lower, (up - lo) * 0.5);
+      return Math.min(upper + carry, benefits * 0.85);
+    }
+
+    function taxOn(ti, br){
+      let tax = 0, prev = 0;
+      for (const [top, r] of br){
+        if (ti > prev) tax += (Math.min(ti, top) - prev) * r;
+        if (ti <= top) break;
+        prev = top;
+      }
+      return tax;
+    }
+
+    /* Rate on the next dollar of taxable income. */
+    function rateAt(ti, br){
+      for (const [top, r] of br) if (ti < top) return r;
+      return br[br.length - 1][1];
+    }
+
+    /* Number of IRMAA tiers passed. Lower tiers start above the threshold;
+       the top tier starts at it. */
+    function irmaaTier(magi, th){
+      let t = 0;
+      for (let i = 0; i < th.length; i++){
+        const top = i === th.length - 1;
+        if (top ? magi >= th[i] : magi > th[i]) t = i + 1;
+      }
+      return t;
+    }
+
+    function compute(f, extra){
+      const L = law2026(), st = f.status, n = st === 'joint' ? 2 : 1;
+      const ord   = f.other + extra;
+      const th    = L.ss[st];
+      const ssTax = ssTaxable(f.ss, ord + f.exempt, th.lo, th.up);
+      const agi   = ord + ssTax;
+      const std   = L.stdDed[st] + L.aged[st] * n;
+      const seniorEach = Math.max(0, L.senior.amount - L.senior.rate * Math.max(0, agi - L.senior.start[st]));
+      const senior = seniorEach * n;
+      const room  = agi - std - senior;
+      const ti    = Math.max(0, room);
+      const br    = L.brackets[st];
+      const tax   = taxOn(ti, br);
+      const tier  = irmaaTier(agi + f.exempt, L.irmaa[st]);
+      const irmaa = (L.irmaa.partB[tier] + L.irmaa.partD[tier]) * 12 * n;
+      return { n, ord, ssTax, agi, std, seniorEach, senior, ti, room, tax, tier, irmaa, bracket: rateAt(ti, br) };
+    }
+
+    /* The tax on the next dollar, split by the rule that causes it:
+         bracket          b
+         SS inclusion     b·s            (s = 0, 0.5 or 0.85 extra taxable per dollar)
+         senior phase-out b·(1+s)·p      (p = 0.06 per qualifying person in the phase-out)
+       Their sum, b(1+s)(1+p), equals the finite-difference marginal rate
+       everywhere except exactly on a kink. */
+    function decompose(f, x){
+      const L = law2026();
+      const a = compute(f, x), c = compute(f, x + 1);
+      const s = Math.round((c.ssTax - a.ssTax) * 1e6) / 1e6;
+      const p = (a.seniorEach > 0 && a.agi > L.senior.start[f.status]) ? L.senior.rate * a.n : 0;
+      const b = a.room >= 0 ? a.bracket : 0;
+      const base = b, ss = b * s, senior = b * (1 + s) * p;
+      return { b, s, p, base, ss, senior, total: base + ss + senior };
+    }
+
+    /* Ranges of conversion over which the real marginal rate is constant,
+       with exact (to $1) boundaries found by bisection. */
+    function segments(f, xMax){
+      const step = 250, same = (u, v) => Math.abs(u - v) < 1e-9;
+      const rate = x => decompose(f, x).total;
+      const cuts = [0];
+      for (let x = 0; x < xMax; x += step){
+        const x2 = Math.min(x + step, xMax);
+        if (!same(rate(x), rate(x2))){
+          let lo = x, hi = x2;
+          while (hi - lo > 1){ const m = Math.floor((lo + hi) / 2); if (same(rate(m), rate(lo))) lo = m; else hi = m; }
+          cuts.push(hi);
+        }
+      }
+      cuts.push(xMax);
+      const out = [];
+      for (let i = 0; i < cuts.length - 1; i++){
+        if (cuts[i + 1] <= cuts[i]) continue;
+        const d = decompose(f, (cuts[i] + cuts[i + 1] - 1) / 2);
+        const last = out[out.length - 1];
+        if (last && same(last.d.total, d.total)) last.to = cuts[i + 1];
+        else out.push({ from: cuts[i], to: cuts[i + 1], d });
+      }
+      return out;
+    }
+
+    /* Conversion amounts at which a Medicare premium tier is crossed. */
+    function cliffs(f, xMax){
+      const step = 250, out = [];
+      const tier = x => compute(f, x);
+      for (let x = 0; x < xMax; x += step){
+        const a = tier(x), z = tier(Math.min(x + step, xMax));
+        if (z.tier > a.tier){
+          let lo = x, hi = Math.min(x + step, xMax);
+          while (hi - lo > 1){ const m = Math.floor((lo + hi) / 2); if (tier(m).tier > a.tier) hi = m; else lo = m; }
+          const c = tier(hi);
+          out.push({ x: hi, tier: c.tier, increase: c.irmaa - tier(lo).irmaa });
+        }
+      }
+      return out;
+    }
+
+    /* The conversion that saves the most against paying `hurdle` later on
+       the same dollars: hurdle·x − extra tax now − extra Medicare surcharge.
+       Searched on a $100 grid plus every kink and the dollar below every
+       cliff, so the optimum is exact. Ties keep the smaller conversion. */
+    function best(f, hurdle, xMax){
+      const t0 = compute(f, 0);
+      const value = x => { const c = compute(f, x); return hurdle * x - (c.tax - t0.tax) - (c.irmaa - t0.irmaa); };
+      const cand = new Set();
+      for (let x = 0; x <= xMax; x += 100) cand.add(x);
+      for (const sg of segments(f, xMax)){ cand.add(sg.from); cand.add(sg.to); }
+      for (const c of cliffs(f, xMax)) cand.add(c.x - 1);
+      let bx = 0, bv = 0;
+      for (const x of [...cand].sort((a, b) => a - b)){
+        const v = value(x);
+        if (v > bv + 1e-6){ bv = v; bx = x; }
+      }
+      return { x: bx, saving: bv, value };
+    }
+
+    /* ==================================================================
+       VIEW
+       ================================================================== */
+    const $ = id => document.getElementById(id);
+    const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+    const pct = v => (Math.round(v * 1000) / 10).toFixed(1).replace(/\.0$/, '') + '%';
+    const XMAX = 300000;
+
+    const DEFAULTS = { status: 'joint', ss: 52000, other: 40000, exempt: 0, conv: 30000, future: 0.22 };
+    const f = Object.assign({}, DEFAULTS);
+
+    /* Scenario lives in the URL so a link opens exactly this case. */
+    (function readUrl(){
+      const q = new URLSearchParams(location.search);
+      const num = (k, min, max) => { const v = Number(q.get(k)); return q.has(k) && isFinite(v) ? Math.min(max, Math.max(min, v)) : undefined; };
+      if (q.get('st') === 'single' || q.get('st') === 'joint') f.status = q.get('st');
+      const map = { ss: ['ss', 0, 100000], oth: ['other', 0, 300000], ex: ['exempt', 0, 50000], cv: ['conv', 0, 300000] };
+      for (const k in map){ const v = num(k, map[k][1], map[k][2]); if (v !== undefined) f[map[k][0]] = v; }
+      const fr = num('fr', 0.10, 0.37); if (fr !== undefined && [0.10,0.12,0.22,0.24,0.32,0.35,0.37].some(r => Math.abs(r - fr) < 1e-9)) f.future = fr;
+    })();
+
+    function writeUrl(){
+      const q = new URLSearchParams({ st: f.status, ss: f.ss, oth: f.other, ex: f.exempt, cv: f.conv, fr: f.future });
+      history.replaceState(null, '', location.pathname + '?' + q.toString());
+    }
+
+    const inputs = { ss: $('f-ss'), other: $('f-other'), exempt: $('f-exempt'), conv: $('f-conv') };
+    const outs   = { ss: $('o-ss'), other: $('o-other'), exempt: $('o-exempt'), conv: $('o-conv') };
+    for (const k in inputs){
+      inputs[k].value = f[k];
+      inputs[k].addEventListener('input', () => { f[k] = Number(inputs[k].value); update(); });
+    }
+    document.querySelectorAll('input[name="status"]').forEach(r => {
+      r.checked = r.value === f.status;
+      r.addEventListener('change', () => { if (r.checked){ f.status = r.value; update(); } });
+    });
+    $('f-future').value = f.future.toFixed(2);
+    $('f-future').addEventListener('change', () => { f.future = Number($('f-future').value); update(); });
+
+    $('print').addEventListener('click', () => window.print());
+    $('copy-link').addEventListener('click', () => {
+      const done = ok => { $('copy-status').textContent = ok ? 'Link copied.' : 'Copy the address bar to share this scenario.'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(location.href).then(() => done(true), () => done(false));
+      else done(false);
+    });
+
+    const PARTS = [
+      ['base',   'Bracket rate',            'var(--s1)'],
+      ['ss',     'Social Security taxation', 'var(--s2)'],
+      ['senior', 'Senior deduction phase-out','var(--s3)']
+    ];
+
+    function update(){
+      for (const k in outs) outs[k].textContent = usd.format(f[k]);
+      writeUrl();
+
+      const who = f.status === 'joint' ? 'the couple' : 'the client';
+      const Who = who.charAt(0).toUpperCase() + who.slice(1);
+      const at0 = compute(f, 0), atC = compute(f, f.conv);
+      const d   = decompose(f, f.conv);
+      const avg = f.conv > 0 ? (atC.tax - at0.tax) / f.conv : d.total;
+      const dIrmaa = atC.irmaa - at0.irmaa;
+      const segs = segments(f, XMAX), cl = cliffs(f, XMAX);
+      const opt = best(f, f.future, XMAX);
+      const expects = f.status === 'joint' ? 'expect' : 'expects';
+      const above = segs.filter(sg => sg.d.total > sg.d.base + 1e-9);
+      const hump = above.filter(sg => sg.from < f.conv);
+
+      // Readouts
+      $('r-marg').innerHTML = pct(d.total) + ' <small>bracket ' + pct(d.b) + '</small>';
+      $('r-avg').innerHTML  = f.conv > 0 ? pct(avg) + ' <small>' + usd.format(atC.tax - at0.tax) + '</small>' : '&mdash;';
+      $('r-irmaa').innerHTML = dIrmaa > 0 ? '+' + usd.format(dIrmaa) + ' <small>a year</small>' : usd.format(0);
+
+      // Short answer
+      const gap = d.total - d.b;
+      $('short-answer').innerHTML = f.conv > 0
+        ? 'Converting <span class="num">' + usd.format(f.conv) + '</span> adds <span class="num">' + usd.format(atC.tax - at0.tax) + '</span> of federal income tax &mdash; an average of <span class="num">' + pct(avg) + '</span> on every converted dollar' +
+          (dIrmaa > 0 ? ', plus <span class="num">' + usd.format(dIrmaa) + '</span> a year of Medicare surcharges' : '') +
+          '. At that point the next dollar costs <span class="num">' + pct(d.total) + '</span>' + (gap > 1e-9 ? ', although ' + who + '&rsquo;s bracket is only <span class="num">' + pct(d.b) + '</span>.' : ', the same as the bracket.')
+        + (hump.length && Math.max(...hump.map(sg => sg.d.total)) > d.total + 1e-9 ? ' Along the way, part of the conversion is taxed at up to <span class="num">' + pct(Math.max(...hump.map(sg => sg.d.total))) + '</span> while the bracket says <span class="num">' + pct(hump.reduce((a, sg) => sg.d.total > a.d.total ? sg : a).d.base) + '</span>.' : '')
+        : 'With no conversion, the next dollar of income costs <span class="num">' + pct(d.total) + '</span>' + (gap > 1e-9 ? ' although the bracket is <span class="num">' + pct(d.b) + '</span>.' : ', the same as the bracket.');
+
+      // Analysis text
+      const parts = [];
+      if (d.ss > 1e-9) parts.push('each extra dollar also makes <span class="num">' + (d.s === 0.85 ? '85&cent;' : '50&cent;') + '</span> of Social Security taxable, adding <span class="num">' + pct(d.ss) + '</span>');
+      if (d.senior > 1e-9) parts.push('it shrinks the senior deduction by <span class="num">' + Math.round(d.p * 100) + '&cent;</span> per dollar of income, adding <span class="num">' + pct(d.senior) + '</span>');
+      $('analysis-text').innerHTML =
+        'At a conversion of <span class="num">' + usd.format(f.conv) + '</span>, ' + who + '&rsquo;s adjusted gross income is <span class="num">' + usd.format(atC.agi) +
+        '</span> (including <span class="num">' + usd.format(atC.ssTax) + '</span> of taxable Social Security) and taxable income is <span class="num">' + usd.format(atC.ti) + '</span>. ' +
+        (d.b === 0 ? 'Their deductions still cover the next dollar, so it is tax-free.' :
+          'The next dollar is taxed at the <span class="num">' + pct(d.b) + '</span> bracket rate' + (parts.length ? ', but ' + parts.join(', and ') + '.' : ', and nothing else applies.') +
+          ' Total: <span class="num">' + pct(d.total) + '</span>.');
+
+      // Stack bar
+      const bar = $('stackbar'); bar.innerHTML = '';
+      const maxScale = Math.max(0.5, d.total);
+      for (const [k, , col] of PARTS){
+        if (d[k] <= 1e-9) continue;
+        const s = document.createElement('span'); s.style.background = col; s.style.flexGrow = d[k]; bar.appendChild(s);
+      }
+      const rest = document.createElement('span'); rest.className = 'rest'; rest.style.flexGrow = Math.max(0, maxScale - d.total); bar.appendChild(rest);
+      $('stackbar-legend').innerHTML = PARTS.map(([k, label, col]) => '<span><i style="background:' + col + '"></i>' + label + ' <b>' + pct(d[k]) + '</b></span>').join('') +
+        '<span>Total <b>' + pct(d.total) + '</b></span>';
+
+      // Sensitivity
+      const tb = $('seg-table').tBodies[0]; tb.innerHTML = '';
+      for (const s of segs){
+        const you = f.conv >= s.from && f.conv < s.to || (f.conv === XMAX && s.to === XMAX);
+        const tr = document.createElement('tr'); if (you) tr.className = 'is-you';
+        tr.innerHTML = '<td>' + usd.format(s.from) + ' &ndash; ' + (s.to >= XMAX ? usd.format(XMAX) + '+' : usd.format(s.to)) + (you ? ' &larr;' : '') + '</td><td>' + pct(s.d.base) + '</td><td>' + (s.d.ss ? '+' + pct(s.d.ss) : '&mdash;') + '</td><td>' + (s.d.senior ? '+' + pct(s.d.senior) : '&mdash;') + '</td><td>' + pct(s.d.total) + '</td>';
+        tb.appendChild(tr);
+      }
+      const cb = $('cliff-table').tBodies[0]; cb.innerHTML = '';
+      if (!cl.length) cb.innerHTML = '<tr><td colspan="3">No Medicare cliff below a conversion of ' + usd.format(XMAX) + '.</td></tr>';
+      for (const c of cl){
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + usd.format(c.x) + '</td><td>' + c.tier + '</td><td>+' + usd.format(c.increase) + '</td>';
+        cb.appendChild(tr);
+      }
+      const ranges = [];
+      for (const sg of above){
+        const last = ranges[ranges.length - 1];
+        if (last && last.to === sg.from) last.to = sg.to; else ranges.push({ from: sg.from, to: sg.to });
+      }
+      const fmtRange = r => '<span class="num">' + usd.format(r.from) + '</span>&ndash;<span class="num">' + (r.to >= XMAX ? usd.format(XMAX) + '+' : usd.format(r.to)) + '</span>';
+      $('sens-text').innerHTML =
+        (ranges.length ? 'The real rate runs above the bracket rate for conversions of ' + ranges.map(fmtRange).join(' and ') + '. ' : 'Across this range the real rate equals the bracket rate. ') +
+        (cl.length ? 'The first Medicare cliff is at a conversion of <span class="num">' + usd.format(cl[0].x) + '</span>. ' : '') +
+        'The table gives the rate on each range; the conclusion weighs them all against the <span class="num">' + pct(f.future) + '</span> ' + who + ' ' + expects + ' to pay later.';
+
+      // Conclusion
+      const vConv = opt.value(f.conv);
+      $('conclusion').innerHTML =
+        (opt.x > 0
+          ? 'Converting about <span class="num">' + usd.format(opt.x) + '</span> saves the most: <span class="num">' + usd.format(opt.saving) + '</span> less tax' + (atC.irmaa || at0.irmaa ? ', after Medicare surcharges,' : '') + ' than paying <span class="num">' + pct(f.future) + '</span> later on the same dollars.' +
+            (above.some(sg => sg.from < opt.x && sg.d.total > f.future + 1e-9) ? ' That includes converting through the stretch taxed above the bracket, because the cheaper dollars beyond it more than make up for it.' : '')
+          : 'At a <span class="num">' + pct(f.future) + '</span> expected rate later, converting this year does not pay: every amount costs more now than it saves.') +
+        (f.conv > 0 && Math.abs(f.conv - opt.x) > 500 ? ' The proposed <span class="num">' + usd.format(f.conv) + '</span> ' + (vConv >= 0 ? 'saves <span class="num">' + usd.format(vConv) + '</span>.' : 'costs <span class="num">' + usd.format(-vConv) + '</span> more than paying later.') : '');
+
+      // Print summary of facts
+      $('facts-print').innerHTML = '<dt>Facts</dt><dd>' + (f.status === 'joint' ? 'Married filing jointly' : 'Single') + '; Social Security ' + usd.format(f.ss) + '; other income ' + usd.format(f.other) +
+        '; tax-exempt interest ' + usd.format(f.exempt) + '; proposed conversion ' + usd.format(f.conv) + '; expected later rate ' + pct(f.future) + '.</dd>';
+
+      drawChart(segs, cl);
+    }
+
+    /* ---- Chart: stacked step areas of the three parts ---------------- */
+    const svgNS = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs, parent){ const e = document.createElementNS(svgNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+    let lastSegs = [], lastCliffs = [], geom = null;
+
+    function drawChart(segs, cl){
+      lastSegs = segs; lastCliffs = cl;
+      const svg = $('chart'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+      const W = Math.max(320, $('chart-wrap').clientWidth), H = Math.round(Math.min(360, Math.max(240, W * 0.5)));
+      const m = { l: 44, r: 12, t: 44, b: 34 };
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      const maxRate = Math.max(...segs.map(s => s.d.total), f.future);
+      const yMax = Math.max(0.2, Math.ceil(maxRate * 10 + 0.001) / 10);
+      const xs = v => m.l + (v / XMAX) * (W - m.l - m.r);
+      const ys = v => H - m.b - (v / yMax) * (H - m.t - m.b);
+      geom = { xs, ys, m, W, H };
+
+      const grid = el('g', { class: 'grid' }, svg), axis = el('g', { class: 'axis' }, svg);
+      for (let v = 0; v <= yMax + 1e-9; v += 0.1){
+        el('line', { x1: m.l, x2: W - m.r, y1: ys(v), y2: ys(v) }, grid);
+        el('text', { x: m.l - 6, y: ys(v) + 4, 'text-anchor': 'end' }, axis).textContent = Math.round(v * 100) + '%';
+      }
+      const xStep = W < 520 ? 100000 : 50000;
+      for (let v = 0; v <= XMAX; v += xStep){
+        el('text', { x: xs(v), y: H - m.b + 16, 'text-anchor': 'middle' }, axis).textContent = v === 0 ? '$0' : '$' + (v / 1000) + 'k';
+      }
+      el('text', { x: W - m.r, y: H - 4, 'text-anchor': 'end', class: 'lbl' }, svg).textContent = 'Roth conversion →';
+
+      // Stacked layers, bottom up; each layer's top edge carries a 2px surface rule.
+      const layers = el('g', {}, svg);
+      for (let li = 0; li < PARTS.length; li++){
+        const key = PARTS[li][0];
+        let top = '', bottom = [];
+        for (const s of segs){
+          const below = PARTS.slice(0, li).reduce((a, p) => a + s.d[p[0]], 0), y0 = below, y1 = below + s.d[key];
+          top += (top ? 'L' : 'M') + xs(s.from) + ',' + ys(y1) + 'L' + xs(s.to) + ',' + ys(y1);
+          bottom.unshift('L' + xs(s.to) + ',' + ys(y0) + 'L' + xs(s.from) + ',' + ys(y0));
+        }
+        el('path', { d: top + bottom.join('') + 'Z', fill: PARTS[li][2], stroke: 'var(--paper)', 'stroke-width': 1.5, 'stroke-linejoin': 'round' }, layers);
+      }
+
+      // Medicare cliffs
+      cl.forEach((c, i) => {
+        el('line', { class: 'cliff', x1: xs(c.x), x2: xs(c.x), y1: m.t - 30 + (i % 3) * 11 + 3, y2: H - m.b }, svg);
+        const right = xs(c.x) > W * 0.7;
+        el('text', { class: 'lbl', x: xs(c.x) + (right ? -3 : 3), y: m.t - 30 + (i % 3) * 11, 'text-anchor': right ? 'end' : 'start' }, svg).textContent = 'Medicare +' + usd.format(c.increase);
+      });
+
+      // The proposed conversion
+      const xc = xs(f.conv);
+      el('line', { class: 'you', x1: xc, x2: xc, y1: m.t, y2: H - m.b }, svg);
+      const lab = el('text', { class: 'you-lbl', x: xc + (f.conv > XMAX * 0.7 ? -6 : 6), y: m.t + 12, 'text-anchor': f.conv > XMAX * 0.7 ? 'end' : 'start' }, svg);
+      lab.textContent = 'Proposed ' + usd.format(f.conv);
+
+      el('line', { class: 'cross', id: 'cross', x1: 0, x2: 0, y1: m.t, y2: H - m.b, visibility: 'hidden' }, svg);
+      el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent', id: 'hit' }, svg);
+    }
+
+    function hover(ev){
+      if (!geom) return;
+      const svg = $('chart'), r = svg.getBoundingClientRect();
+      const scale = geom.W / r.width;
+      const px = (ev.clientX - r.left) * scale;
+      const x = Math.min(XMAX, Math.max(0, (px - geom.m.l) / (geom.W - geom.m.l - geom.m.r) * XMAX));
+      const s = lastSegs.find(s => x >= s.from && x < s.to) || lastSegs[lastSegs.length - 1];
+      if (!s) return;
+      const cross = $('cross'); cross.setAttribute('x1', geom.xs(x)); cross.setAttribute('x2', geom.xs(x)); cross.setAttribute('visibility', 'visible');
+      const tip = $('tip');
+      tip.innerHTML = 'Conversion <b>' + usd.format(Math.round(x / 1000) * 1000) + '</b><br>' +
+        PARTS.filter(p => s.d[p[0]] > 1e-9).map(p => p[1] + ' <b>' + pct(s.d[p[0]]) + '</b>').join('<br>') +
+        '<br>Real rate <b>' + pct(s.d.total) + '</b>';
+      const left = (geom.xs(x) / scale);
+      tip.style.left = Math.min(r.width - 190, Math.max(0, left + 12)) + 'px';
+      tip.style.top = '8px';
+      tip.classList.add('show');
+    }
+    $('chart-wrap').addEventListener('pointermove', hover);
+    $('chart-wrap').addEventListener('pointerdown', hover);
+    $('chart-wrap').addEventListener('pointerleave', () => { $('tip').classList.remove('show'); const c = $('cross'); if (c) c.setAttribute('visibility', 'hidden'); });
+    let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => drawChart(lastSegs, lastCliffs), 120); });
+
+    update();
+  })();
+  </script>
+  <script src="../../assets/js/reveal.js"></script>
+</body>
+</html>
