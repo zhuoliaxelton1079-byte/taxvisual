@@ -1,8 +1,13 @@
 # Verification harnesses
 
-Eleven of them. Nine are **one per tool**: each extracts the model functions out of
+Twelve of them. Nine are **one per tool**: each extracts the model functions out of
 the shipped `index.html` by brace-matching and runs them against the check
 figures in the ACCTG 410 workbook tab the tool was ported from.
+
+The twelfth, `verify-real-marginal-rate.mjs`, checks the sample memo at
+`samples/real-marginal-rate/` against hand-worked cases built from the 2026
+figures (Rev. Proc. 2025-32, IRC §86 and §151(d)(5)(C), the 2026 IRMAA tables);
+see `docs/tools/real-marginal-rate.md`.
 
 Extracting from the built file rather than a copy is the whole point: a
 transcription can pass while the page itself is broken.
@@ -38,6 +43,7 @@ node tests/verify-comprehensive-tax-calculation.mjs tools/comprehensive-tax-calc
 node tests/verify-section-121-exclusion.mjs     tools/section-121-exclusion/index.html
 node tests/verify-return-review.mjs             review/1040/index.html
 node tests/verify-return-flow-map.mjs           review/flow-map/index.html
+node tests/verify-real-marginal-rate.mjs        samples/real-marginal-rate/index.html
 node tests/verify-workpaper-kit.mjs            # the shared kit, run from repo root
 node tests/verify-links.mjs                     # whole site, run from repo root
 ```
