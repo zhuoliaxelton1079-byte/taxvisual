@@ -57,7 +57,7 @@ material: see `_source/` below.
     /_starter               copy this folder to start a new tool
     /<tool-slug>            one folder per live/in-progress tool
 
-  /dashboard                the IRS data report — the Dashboard tab
+  /dashboard                the IRS data report — sits UNDER Resources
     index.html              one page: the IRS SOI explorer, hosted in a
                             same-origin iframe, sized to its content by script
                             and falling back to a CSS height under file://,
@@ -81,36 +81,45 @@ material: see `_source/` below.
                             via EMBEDS, and robots.txt disallows it so it is
                             not indexed as an orphan beside /dashboard/.
 
-  /review                   the return review pages — sit UNDER Tools
-    index.html              overview of the preview and the pages below
-    /1040                   the preview itself. Also embedded as the "1040
+  /services                 the commercial hub — the Services tab
+    index.html              the three offers, who we work with, how an
+                            engagement works, engagement terms
+    /walkthrough            return walkthroughs (recorded, white-labelled)
+    /planning               planning packages built from explorable memos
+    /training               firm training and custom tools
+
+  /samples                  portfolio hub — the Samples tab: the sample
+                            walkthrough, the explorable memo in preparation,
+                            and the models behind the work
+
+  /review                   the sample return walkthrough — sits UNDER Samples
+    index.html              overview of the sample and the pages below
+    /1040                   the walkthrough itself. Also embedded as the "1040
                             preview" tab on /tools/, via ?embed=1, which hides
                             its topbar and footer so the host page's chrome is
                             not drawn twice. Visited directly it is unchanged.
-    /flow-map               reviewer view of a sample return, as a flow map
+    /flow-map               the same sample return, as a flow map
     /how-it-works           what it reads and what it cannot
-    /privacy                data handling for the preview
+    /privacy                data handling for the public sample
 
-  /learn                    free-resource hub
-    /textbook               the visualized tax guide — to be built
+  /resources                reference hub — the Resources tab: dashboard,
+                            methodology, and links out for tax policy
+  /learn                    sits UNDER Resources
     /guides                 concept guides — to be built
     /glossary               to be built
 
-  /consulting               commercial hub — the Consulting tab
-    index.html              hub over planning + all three training formats
-    /planning               one-on-one tax planning — to be built
-
-  /training                 training sub-hub — sits UNDER Consulting
-    /team                   to be built
-    /workshops              to be built
-    /on-demand              to be built
-
   /about
-    /team                   to be built
+    /team                   to be built — names and credentials
   /methodology              sourcing/assumptions/update-cadence policy
-  /contact                  general enquiry — footer only, no nav tab
+  /contact                  "Start an enquiry" — footer and every CTA
   /updates                  changelog — to be built
-  /community                to be built
+
+  Redirect stubs (retired URLs, kept so old links land; no chrome, noindex):
+  /consulting/              → /services/
+  /consulting/planning/     → /services/planning/
+  /training/ and /training/{team,workshops,on-demand}/  → /services/training/
+  /learn/, /learn/textbook/ → /resources/
+  /community/               → /contact/
   /sitemap                  human-readable index of every page
 
   /docs
@@ -134,38 +143,35 @@ material: see `_source/` below.
 
 Every page is a `<dir>/index.html`. That gives clean public URLs (`taxvisual.com/about/`) with no server configuration, while links stay written as `about/index.html` so double-click `file://` preview keeps working.
 
-The structure follows the hub-and-spoke shape used by Storytelling with Data: a small nav, one hub page per section, and a footer that doubles as a site map. The split that matters is **free vs premium** — Learn, Tools and the Dashboard's return review preview are the free surface area that earns an audience, Consulting is the commercial layer.
+The site is organised around a service model. Its audience is tax and wealth professionals — CPAs, enrolled agents, financial advisors — who might engage TaxVisual for return walkthroughs, planning packages built from explorable memos, or firm training. The public tools and samples are the proof of the work, not the product; tax policy is out of scope and is linked out from `/resources/`.
 
-There is no CTA button in the nav. Consulting *is* the commercial call to action, sitting in the tab order like everything else; `/contact/` is reachable from the footer's Connect column and from the calls to action on the pages that need it.
+There is no CTA button in the nav. Services is the commercial call to action, first in the tab order; `/contact/` ("Start an enquiry") is reachable from the footer and from the call to action at the end of every service page.
 
 ```
-NAV:  Learn   Tools   Dashboard   Consulting   About
+NAV:  Services   Samples   Tools   Resources   About
 
-/                          Home
-/learn/                    Free-resource hub
-/learn/textbook/           Visualized tax guide       — to be built
-/learn/guides/             Concept guides            — to be built
-/learn/glossary/           Glossary                  — to be built
+/                          Home — pitch, services, the explorable memo, cases
+/services/                 Commercial hub
+/services/walkthrough/     Return walkthroughs
+/services/planning/        Planning packages
+/services/training/        Firm training & custom tools
+/samples/                  Portfolio hub
+/review/                   Sample walkthrough overview — under Samples
+/review/1040/              The sample walkthrough — also a Tools tab
+/review/flow-map/          The sample return as a flow map
+/review/how-it-works/      What it reads, what it cannot
+/review/privacy/           Data handling for the public sample
 /tools/                    Catalog + the "1040 preview" tab
 /tools/<slug>/             One folder per tool
-/dashboard/                The IRS SOI data report    — one page
-/review/                   Return review overview     — under Tools
-/review/1040/              The preview — also the Tools tab
-/review/flow-map/          Reviewer view of a sample return
-/review/how-it-works/      What it reads, what it cannot
-/review/privacy/           Data handling for the preview
-/consulting/               Commercial hub
-/consulting/planning/      One-on-one tax planning    — to be built
-/training/                 Training sub-hub           — under Consulting
-/training/team/            Team training             — to be built
-/training/workshops/       Public workshops          — to be built
-/training/on-demand/       Self-paced course         — to be built
-/about/                    About the project
-/about/team/               Who builds it             — to be built
+/resources/                Reference hub
+/dashboard/                The IRS SOI data report    — under Resources
+/learn/guides/             Concept guides            — to be built
+/learn/glossary/           Glossary                  — to be built
+/about/                    About the practice
+/about/team/               Names and credentials     — to be built
 /methodology/              Sourcing and update policy
-/contact/                  General enquiry            — footer only
+/contact/                  Start an enquiry
 /updates/                  Changelog                 — to be built
-/community/                                          — to be built
 /sitemap/                  Human-readable page index
 
 Not indexed
@@ -173,22 +179,20 @@ Not indexed
 /dashboard/irs-soi/        Generated embed. Disallow-ed in robots.txt, in
                            neither sitemap, and exempt from verify-links.mjs
                            via EMBEDS — see "Embedded artifacts" below.
+Redirect stubs             see the folder layout above. verify-links.mjs
+                           checks each lands on a real page (section 7).
 ```
 
-### Two tabs whose folder is named something else
-
-`Tools` and `Consulting` each own a folder that is not named after them, and in both cases the live URLs were kept rather than broken:
+### Tabs whose folders are named something else
 
 | Tab | Its own folder | Also lives under it |
 |---|---|---|
-| Tools | `/tools/` | `/review/*` — the 1040 preview and its supporting pages |
-| Consulting | `/consulting/` | `/training/*` — the three training formats |
+| Samples | `/samples/` | `/review/*` — the sample return walkthrough and its supporting pages |
+| Resources | `/resources/` | `/dashboard/`, `/learn/*` |
 
-`/review/*` sits under Tools because the 1040 preview is a tab on the Tools page: the preview is a tool, and the flow map, "How it works" and "Your data" explain that tool. It sat under Dashboard while the Dashboard was the return-review hub; the Dashboard is now a single page carrying the IRS SOI explorer and owns nothing below it.
+The live URLs were kept rather than moved, so a page's first path segment does not always name its section: pages under `/review/` take `aria-current="true"` on **Samples**, and `/dashboard/` and `/learn/*` take it on **Resources**. `SECTION_OF` in `tests/verify-links.mjs` is the source of truth for that mapping.
 
-This costs one thing and buys one thing. It costs the rule that a page's first path segment names its section, so the nav marker cannot be derived from the URL alone: pages under `/review/` take `aria-current="true"` on **Tools**, and pages under `/training/` take it on **Consulting**. It buys never 404-ing a URL that is already published and linked — GitHub Pages serves static files with no redirect layer, so a moved folder is a dead link forever.
-
-If either folder is ever renamed to match its tab, the same commit has to add the redirect mechanism first (a stub `index.html` at the old path with a `<meta http-equiv="refresh">` and a `<link rel="canonical">` is the only option without a server).
+When a URL does have to move, leave a redirect stub at the old path: an `index.html` with `<meta http-equiv="refresh">`, a `<link rel="canonical">` and `noindex`. GitHub Pages has no server-side redirects, so that is the only option.
 
 ### The "to be built" convention
 
@@ -296,8 +300,8 @@ Dark mode follows the OS by default. A page can pin itself with `data-theme="lig
 All asset and nav links are **relative**, not root-relative (`../assets/...`, not `/assets/...`), so any page can still be opened directly in a browser (double-click, no server) before it's deployed. Depth-by-depth:
 
 - Root pages (`index.html`): `assets/...`
-- One level deep (`tools/`, `learn/`, `dashboard/`, `consulting/`, `review/`, `training/`, `about/`, …): `../assets/...`
-- Two levels deep (`tools/<slug>/`, `learn/textbook/`, `review/1040/`, `consulting/planning/`, `training/team/`, …): `../../assets/...`
+- One level deep (`services/`, `samples/`, `tools/`, `resources/`, `dashboard/`, `review/`, `about/`, …): `../assets/...`
+- Two levels deep (`tools/<slug>/`, `services/planning/`, `review/1040/`, `learn/guides/`, …): `../../assets/...`
 
 `tools/_starter/index.html` already has the correct `../../` depth filled in — copy it rather than recomputing paths by hand.
 
