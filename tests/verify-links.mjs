@@ -16,7 +16,7 @@ import path from 'path';
    goes for the "to be built" convention, whose three rules live in three
    different files and drift apart quietly.
 
-   Six classes of invariant:
+   Seven classes of invariant:
 
      1. links      — every internal href/src resolves to a file on disk
      2. nav        — every page carries the same five tabs, in order
@@ -26,6 +26,7 @@ import path from 'path';
      5. sitemap    — every URL in sitemap.xml exists, and no noindex page
                      is listed there (rule 2 of the convention)
      6. backlog    — every noindex stub is listed on /sitemap/ (rule 3)
+     7. redirects  — every retired URL's stub lands on a real page
 
    Run from the repo root, no argument:
 
@@ -36,16 +37,17 @@ const ROOT = process.argv[2] ? path.resolve(process.argv[2]) : process.cwd();
 
 /* The nav, as the partial defines it. Changing the nav means changing this
    line too — which is the point: the diff makes the change reviewable. */
-const TABS = ['Learn', 'Tools', 'Dashboard', 'Consulting', 'About'];
+const TABS = ['Services', 'Samples', 'Tools', 'Resources', 'About'];
 
-/* Two tabs own a folder that is not named after them: the 1040 preview is a
-   tab on /tools/, so /review/* sits under Tools, and /training/* under
-   Consulting. See "Two tabs whose folder is named something else" in
+/* Two tabs own folders that are not named after them: /review/* is the
+   sample return walkthrough, so it sits under Samples, and /dashboard/ and
+   /learn/* are reference material under Resources. See
    docs/site-architecture.md. */
 const SECTION_OF = {
-  learn: 'Learn', tools: 'Tools', review: 'Tools',
-  dashboard: 'Dashboard',
-  consulting: 'Consulting', training: 'Consulting',
+  services: 'Services',
+  samples: 'Samples', review: 'Samples',
+  tools: 'Tools',
+  resources: 'Resources', dashboard: 'Resources', learn: 'Resources',
   about: 'About',
 };
 
@@ -76,11 +78,18 @@ function walk(dir, out = []) {
   return out;
 }
 
-const pages = walk(ROOT)
+const all = walk(ROOT)
   .map(p => path.relative(ROOT, p).split(path.sep).join('/'))
   .filter(p => !p.startsWith('assets/partials/'))   // reference copies, not pages
   .filter(p => !EMBEDS.has(p))                      // iframed artifacts, not pages
   .sort();
+
+/* Retired URLs kept as meta-refresh stubs so old links still land. They carry
+   no chrome by design, so they are checked separately (section 7) rather
+   than as pages. */
+const isRedirect = p => /http-equiv="refresh"/.test(fs.readFileSync(path.join(ROOT, p), 'utf8'));
+const redirects = all.filter(isRedirect);
+const pages = all.filter(p => !redirects.includes(p));
 
 let fail = 0;
 const ok = (cond, label, got, want) => {
@@ -199,6 +208,20 @@ for (const p of unlisted) console.log('             not listed on /sitemap/: ' +
 for (const p of unannotated) console.log('             listed but not marked "to be built": ' + p);
 ok(unlisted.length === 0, backlog.length + ' stubs are listed on /sitemap/', unlisted.length + ' missing', 0);
 ok(unannotated.length === 0, 'each is annotated "to be built"', unannotated.length + ' unmarked', 0);
+
+/* ---- 7. every redirect stub lands on a real page, and is not listed ---- */
+console.log('\nRedirect stubs:');
+const badTarget = [], listedRedirect = [];
+for (const r of redirects) {
+  const m = read(r).match(/http-equiv="refresh" content="0; url=([^"]+)"/);
+  const target = m && path.relative(ROOT, path.resolve(path.dirname(path.join(ROOT, r)), m[1])).split(path.sep).join('/');
+  if (!target || !pages.includes(target)) badTarget.push(r + '  ->  ' + (m ? m[1] : '(no url)'));
+  if (locs.map(pageFor).includes(r)) listedRedirect.push(r);
+}
+for (const b of badTarget) console.log('             ' + b);
+for (const r of listedRedirect) console.log('             redirect listed in sitemap.xml: ' + r);
+ok(badTarget.length === 0, redirects.length + ' redirects land on a page', badTarget.length + ' bad', 0);
+ok(listedRedirect.length === 0, 'no redirect is listed in sitemap.xml', listedRedirect.length, 0);
 
 console.log('\n' + (fail === 0
   ? 'All checks passed.'

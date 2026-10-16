@@ -1,6 +1,6 @@
 # TaxVisual
 
-Interactive tax policy tools and classroom simulations, published at [taxvisual.com](https://taxvisual.com).
+Tax visualization for tax and wealth professionals — return walkthroughs, explorable planning memos and the public models behind them — published at [taxvisual.com](https://taxvisual.com).
 
 A hand-authored static site — no build step, no framework, no npm. Every page is a plain HTML file; shared CSS/JS live under `/assets` and are pulled in with plain `<link>`/`<script src>` tags. See `docs/site-architecture.md` for the full folder layout and the tool-registry schema.
 

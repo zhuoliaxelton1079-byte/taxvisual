@@ -2,6 +2,23 @@
 
 *Where TaxVisual stands, what is unfinished, and what to pick up next. Current as of 27 September 2026.*
 
+## October 2026: reorganised around services
+
+The site now targets tax and wealth professionals as clients rather than
+students and policy readers. The nav is **Services · Samples · Tools ·
+Resources · About**. New pages: `/services/` (with `walkthrough/`, `planning/`,
+`training/`), `/samples/` and `/resources/`. The homepage, About, Contact and
+the site map were rewritten. `/review/*` sits under Samples; `/dashboard/` and
+`/learn/*` under Resources. `/consulting/`, `/training/*`, `/learn/`,
+`/learn/textbook/` and `/community/` are now redirect stubs, which
+`tests/verify-links.mjs` checks. `docs/site-architecture.md` is current;
+sections below that describe the old Learn/Dashboard/Consulting nav are history.
+
+Open items: the first sample explorable memo (capital gain stacking, built on
+`tools/comprehensive-tax-calculation/`), a recorded sample walkthrough video,
+names and credentials on `/about/team/`, and a secure file portal to link from
+the contact page.
+
 ## Read first: nothing is committed
 
 The whole working tree is uncommitted on `main` against `a89a787`. Decide how it

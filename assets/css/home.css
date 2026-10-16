@@ -216,3 +216,81 @@
     width: 100%;
   }
 }
+
+/* ---- Service-model homepage ---------------------------------------------
+   The hero carries a sample of the work beside the pitch: a few lines of
+   the fictional Learner return as the walkthrough draws them. */
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: var(--space-7);
+  align-items: center;
+}
+
+.hero-card {
+  padding: var(--space-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.hero-card .eyebrow {
+  margin-bottom: var(--space-4);
+}
+
+.tree {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.tree li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.tree .ln {
+  flex: 0 0 2.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--muted);
+}
+
+.tree .label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tree .src {
+  display: block;
+  font-size: var(--text-2xs);
+  color: var(--muted);
+}
+
+.tree .amt {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tree .is-total .label,
+.tree .is-total .amt {
+  font-weight: var(--weight-semibold);
+}
+
+.hero-card-foot {
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+}

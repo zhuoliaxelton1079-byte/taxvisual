@@ -6,12 +6,15 @@
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://taxvisual.com/</loc></url>
+  <url><loc>https://taxvisual.com/services/</loc></url>
+  <url><loc>https://taxvisual.com/services/walkthrough/</loc></url>
+  <url><loc>https://taxvisual.com/services/planning/</loc></url>
+  <url><loc>https://taxvisual.com/services/training/</loc></url>
+  <url><loc>https://taxvisual.com/samples/</loc></url>
   <url><loc>https://taxvisual.com/tools/</loc></url>
   <url><loc>https://taxvisual.com/tools/tax-bracket-ledger/</loc></url>
-  <url><loc>https://taxvisual.com/learn/</loc></url>
+  <url><loc>https://taxvisual.com/resources/</loc></url>
   <url><loc>https://taxvisual.com/dashboard/</loc></url>
-  <url><loc>https://taxvisual.com/consulting/</loc></url>
-  <url><loc>https://taxvisual.com/training/</loc></url>
   <url><loc>https://taxvisual.com/about/</loc></url>
   <url><loc>https://taxvisual.com/methodology/</loc></url>
   <url><loc>https://taxvisual.com/contact/</loc></url>
