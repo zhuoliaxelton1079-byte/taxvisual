@@ -324,6 +324,7 @@
   body.embed .skip-link{ display:none; }
   body.embed .app{ padding-top: var(--space-4); }
 </style>
+<link rel="stylesheet" href="../../assets/css/tool-scope.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -360,6 +361,16 @@
         return, analyze a redacted PDF of your own below: it is read in your browser and never uploaded.
       </p>
     </div>
+
+    <section class="tool-scope" aria-labelledby="model-scope-title">
+      <h2 id="model-scope-title">Model scope</h2>
+      <dl>
+        <div><dt>Tax year</dt><dd>2025 fictional sample; PDF analysis uses your document</dd></div>
+        <div><dt>Supported situations</dt><dd>A source-document tree for a fictional married-filing-jointly return, plus local analysis of a redacted PDF. The sample year does not validate the tax year or treatment in your PDF.</dd></div>
+        <div><dt>Exclusions</dt><dd>A complete return calculation, verification of every imported figure, and confirmation that a filed return is correct.</dd></div>
+        <div><dt>Last scope review</dt><dd><time datetime="2026-10-17">October 17, 2026</time> &mdash; checked against the model and its documentation; not a tax-law update.</dd></div>
+      </dl>
+    </section>
 
     <section class="upload" id="uploadSec" aria-labelledby="upTitle">
       <h2 id="upTitle">Analyze your own return</h2>

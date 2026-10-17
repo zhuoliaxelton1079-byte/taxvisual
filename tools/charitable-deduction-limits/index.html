@@ -336,6 +336,7 @@
   }
   @media (prefers-reduced-motion: reduce){ .app *, .tooltip{ transition:none !important; } }
 </style>
+<link rel="stylesheet" href="../../assets/css/tool-scope.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -382,6 +383,16 @@
         <span class="wp-status" id="wp-status" role="status"></span>
       </div>
     </div>
+
+    <section class="tool-scope" aria-labelledby="model-scope-title">
+      <h2 id="model-scope-title">Model scope</h2>
+      <dl>
+        <div><dt>Tax year</dt><dd>2025 mechanics - not a complete 2026 calculation</dd></div>
+        <div><dt>Supported situations</dt><dd>Five gift classes and their AGI percentage limits for an itemizer, assuming qualified, substantiated gifts and no incoming carryovers.</dd></div>
+        <div><dt>Exclusions</dt><dd>The 2026 0.5%-of-AGI floor, incoming carryovers, conservation contributions, and the capital-gain-property basis election. Carryover shown is not a multi-year projection.</dd></div>
+        <div><dt>Last scope review</dt><dd><time datetime="2026-10-17">October 17, 2026</time> &mdash; checked against the model and its documentation; not a tax-law update.</dd></div>
+      </dl>
+    </section>
 
     <section class="wp-result" aria-label="Result">
       <div class="wp-verdict">
@@ -945,7 +956,7 @@
           </div>
 
           <p class="footnote">
-            Educational simulation, not tax advice. A date-neutral model of the percentage limits only:
+            Educational simulation, not tax advice. A model of the 2025 percentage-limit mechanics only:
             it assumes you itemize, that every gift is substantiated and to a qualified organization,
             and that you carry nothing in from an earlier year &mdash; the worksheet it is ported from
             says not to use it when you do. It leaves out qualified conservation contributions, the

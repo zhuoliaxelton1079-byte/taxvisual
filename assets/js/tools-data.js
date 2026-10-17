@@ -13,6 +13,7 @@ window.CATEGORIES = [
 window.TOOLS = [
   {
     slug: 'tax-bracket-ledger',
+    taxYear: '2025',
     title: 'Income Tax Ledger',
     description: 'Explore progressive bracket mechanics for 2025 single filers with a per-bracket tax breakdown, effective rate, and curve tracing.',
     category: 'individual-income-tax',
@@ -50,6 +51,7 @@ window.TOOLS = [
   },
   {
     slug: 'social-security-inclusion',
+    taxYear: '2025 / 2026 (reviewed)',
     title: 'Social Security Benefit Inclusion',
     description: 'See how much of a Social Security benefit becomes taxable as other income rises — the two thresholds, the 50% and 85% zones, and the ceiling that caps it.',
     category: 'individual-income-tax',
@@ -66,6 +68,7 @@ window.TOOLS = [
   },
   {
     slug: 'tax-benefit-rule',
+    taxYear: 'No year selected - user-supplied amounts',
     title: 'The Tax Benefit Rule',
     description: 'See when a state tax refund is taxable — and how three limits in sequence decide how much of it you actually include in income.',
     category: 'individual-income-tax',
@@ -77,11 +80,12 @@ window.TOOLS = [
       { label: 'Authority', value: 'IRC §111' },
       { label: 'Jurisdiction', value: 'US federal' },
       { label: 'Limits', value: '3, in sequence' },
-      { label: 'Model', value: 'Date-neutral' }
+      { label: 'Model', value: 'User-supplied amounts; no year selected' }
     ]
   },
   {
     slug: 'annuity-exclusion-ratio',
+    taxYear: 'No year selected - user-supplied life expectancy',
     title: 'Annuity Payments and the Exclusion Ratio',
     description: 'See how each annuity payment splits into tax-free return of your own investment and taxable income — and why the payments turn fully taxable partway through.',
     category: 'individual-income-tax',
@@ -93,11 +97,12 @@ window.TOOLS = [
       { label: 'Authority', value: 'IRC §72(b)' },
       { label: 'Jurisdiction', value: 'US federal' },
       { label: 'Splits', value: 'Fixed exclusion ratio' },
-      { label: 'Model', value: 'Date-neutral' }
+      { label: 'Model', value: 'User-supplied amounts; no year selected' }
     ]
   },
   {
     slug: 'charitable-deduction-limits',
+    taxYear: '2025 mechanics - not a complete 2026 calculation',
     title: 'Charitable Deduction Limits',
     description: 'See why a charitable deduction is not capped by one percentage — five classes of gift, each with its own ceiling, all drawing on one 50%-of-AGI pool in a fixed order, and what carries forward.',
     category: 'individual-income-tax',
@@ -114,6 +119,7 @@ window.TOOLS = [
   },
   {
     slug: 'qbi-deduction',
+    taxYear: 'No year selected - opens on 2024 worksheet defaults',
     title: 'The QBI Deduction',
     description: 'See what happens to the 20% qualified business income deduction at the taxable-income threshold — a wage-and-property ceiling phasing in for an ordinary business, the income itself phasing out for a service business.',
     category: 'individual-income-tax',
@@ -125,11 +131,12 @@ window.TOOLS = [
       { label: 'Authority', value: 'IRC §199A' },
       { label: 'Jurisdiction', value: 'US federal' },
       { label: 'Limits', value: 'Wage/property, SSTB, 20% of TI' },
-      { label: 'Model', value: 'Date-neutral' }
+      { label: 'Model', value: 'User-supplied amounts; no year selected' }
     ]
   },
   {
     slug: 'comprehensive-tax-calculation',
+    taxYear: '2025',
     title: 'Comprehensive Tax Calculation',
     description: 'See why taxable income is stacked rather than pooled — ordinary income fills the brackets from the bottom, each class of capital gain sits on top of it, and every slice pays the lower of its ordinary rate and its own preferential ceiling.',
     category: 'individual-income-tax',
@@ -146,6 +153,7 @@ window.TOOLS = [
   },
   {
     slug: 'section-121-exclusion',
+    taxYear: 'Date-based model - no annual tax table',
     title: 'Home-Sale Exclusion',
     description: 'Walk a home sale through the tests for excluding up to $250,000 ($500,000 joint) of gain — ownership, use, the two-year look-back — and see the reduced exclusion shrink in proportion to the shortest period out of 24 months, with the tree and the chart moving together.',
     category: 'property-transactions',
@@ -157,7 +165,7 @@ window.TOOLS = [
       { label: 'Authority', value: 'IRC §121; Treas. Reg. §1.121-1, -3' },
       { label: 'Jurisdiction', value: 'US federal' },
       { label: 'Limits', value: '$250,000 / $500,000' },
-      { label: 'Model', value: 'Date-neutral' }
+      { label: 'Model', value: 'Date-based; no annual tax table' }
     ]
   }
 ];

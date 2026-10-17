@@ -253,6 +253,7 @@
   }
   @media (prefers-reduced-motion: reduce){ .app *, .tooltip{ transition:none !important; } }
 </style>
+<link rel="stylesheet" href="../../assets/css/tool-scope.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -287,6 +288,16 @@
         From the next payment on, the whole thing is taxable.
       </p>
     </div>
+
+    <section class="tool-scope" aria-labelledby="model-scope-title">
+      <h2 id="model-scope-title">Model scope</h2>
+      <dl>
+        <div><dt>Tax year</dt><dd>No year selected - user-supplied life expectancy</dd></div>
+        <div><dt>Supported situations</dt><dd>A fixed monthly lifetime annuity: tax-free recovery of investment and taxable payments after recovery. Life expectancy is an editable assumption, not an official table lookup.</dd></div>
+        <div><dt>Exclusions</dt><dd>Refund and period-certain features, and the deduction for investment left unrecovered at death.</dd></div>
+        <div><dt>Last scope review</dt><dd><time datetime="2026-10-17">October 17, 2026</time> &mdash; checked against the model and its documentation; not a tax-law update.</dd></div>
+      </dl>
+    </section>
 
     <div class="layout">
 
@@ -436,7 +447,7 @@
           </div>
 
           <p class="footnote">
-            Educational simulation, not tax advice. A date-neutral model: the expected-return multiple
+            Educational simulation, not tax advice. No tax year is selected: the expected-return multiple
             is an editable assumption rather than a table lookup for a named person or year. Assumes a
             fixed monthly payment for life with no refund or period-certain feature, and ignores the
             deduction allowed under &sect;72(b)(3) for investment left unrecovered at death. Source

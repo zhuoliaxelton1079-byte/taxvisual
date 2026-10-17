@@ -300,8 +300,124 @@
     overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
   }
 
+
+  /* Guided exploration uses the same model and chart as the free controls. */
+  .experiment { margin-bottom:24px; border-left:3px solid var(--tool-accent); }
+  .experiment h2 { font:600 21px/1.3 var(--font-serif); margin:6px 0 10px; }
+  .experiment p { font-size:14px; line-height:1.6; color:var(--ink-soft); margin:8px 0; }
+  .experiment .experiment-question { color:var(--tool-ink); }
+  .experiment-actions, .boundary-actions { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+  .explore-btn { font:500 13px/1.4 var(--font-sans); padding:9px 12px; min-height:40px; border:1px solid var(--border); border-radius:6px; background:var(--tool-surface); color:var(--tool-ink); cursor:pointer; }
+  .explore-btn.primary { background:var(--tool-accent); border-color:var(--tool-accent); color:white; }
+  .explore-btn:hover:not(:disabled) { outline:1px solid var(--tool-accent); }
+  .explore-btn:focus-visible, .exact-input:focus-visible, .boundary-select:focus-visible { outline:2px solid var(--tool-accent); outline-offset:3px; }
+  .explore-btn:disabled { opacity:.5; cursor:default; }
+  .experiment .compare-result { font-size:16px; font-weight:500; color:var(--tool-ink); }
+  .experiment .experiment-note { font-size:12px; }
+  .exact-label { display:block; margin:7px 0 3px; font-size:11px; color:var(--ink-muted); }
+  .exact-input, .boundary-select { width:100%; min-width:0; min-height:40px; border:1px solid var(--border); border-radius:6px; padding:7px 9px; font:13px var(--font-mono); background:var(--page); color:var(--tool-ink); }
+  .exact-input:invalid { outline:2px solid var(--tool-accent); }
+  .boundary-select { font-family:var(--font-sans); margin-top:5px; }
+  .boundary-controls { border-top:1px solid var(--border); padding-top:18px; margin-top:20px; }
+  .boundary-controls > label { font-size:12px; color:var(--ink-soft); }
+  .boundary-actions { gap:5px; margin:8px 0; }
+  .boundary-actions .explore-btn { flex:1; padding:8px 5px; }
+  .boundary-note { font-size:11.5px; color:var(--ink-muted); line-height:1.5; margin:8px 0 0; }
+  .chart-key { display:flex; flex-wrap:wrap; gap:8px 20px; font-size:12px; color:var(--ink-soft); margin-top:10px; }
+  .chart-key span { display:inline-flex; gap:6px; align-items:center; }
+  .key-current, .key-baseline { width:10px; height:10px; border:2px solid var(--tool-accent); display:inline-block; border-radius:50%; }
+  .key-current { background:var(--tool-accent); }
+  .key-baseline { border-color:var(--ink-soft); border-radius:0; transform:rotate(45deg); }
+  .experiment .rule-link { color:var(--tool-accent); text-underline-offset:3px; }
+  .statute p:target { outline:2px solid var(--tool-accent); outline-offset:4px; scroll-margin-top:100px; }
+  @media (max-width:600px) {
+    .experiment { padding:16px; }
+    .experiment-actions .explore-btn { flex:1 1 140px; }
+  }
+
+
+  /* Facts live on their chart dimensions; the purple answer is attached to the point. */
+  :root { --fact-ink:#1c579e; --answer:#6d28d9; --answer-wash:#f4f0ff; }
+  @media (prefers-color-scheme:dark) { :root:not([data-theme="light"]) { --fact-ink:#8bbcf3; --answer:#c4b5fd; --answer-wash:#252033; } }
+  :root[data-theme="dark"] { --fact-ink:#8bbcf3; --answer:#c4b5fd; --answer-wash:#252033; }
+  .wrap { max-width:1200px; }
+  .masthead { margin-bottom:20px; padding-bottom:16px; }
+  .reading-layout { display:block; }
+  .tax-workspace { margin:0 0 24px; padding:24px; }
+  .chart-context { display:flex; flex-wrap:wrap; align-items:baseline; gap:16px 28px; margin-bottom:20px; }
+  .chart-context h2 { font:600 20px/1.35 var(--font-serif); margin:0; }
+  .context-facts { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:13px; }
+  .fact-label, .answer-label { font:600 11px/1.5 var(--font-sans); letter-spacing:.045em; text-transform:uppercase; }
+  .fact-label { color:var(--fact-ink); }
+  .inline-choice { display:inline-block; max-width:100%; border-bottom:2px solid var(--tool-accent); background:color-mix(in srgb,var(--tool-accent) 7%,var(--tool-surface)); border-radius:4px; }
+  .inline-choice select { max-width:100%; min-height:38px; border:0; padding:4px 6px; font:500 13px var(--font-sans); color:var(--tool-ink); background:transparent; }
+  .inline-choice option { background:var(--tool-surface); color:var(--tool-ink); }
+  .chart-scene { position:relative; min-width:0; }
+  .chart-fact { position:absolute; z-index:2; }
+  .benefit-fact { top:6px; left:66px; width:230px; }
+  .benefit-fact > label { display:block; margin-bottom:6px; }
+  .inline-amount { display:inline-flex; max-width:100%; width:196px; vertical-align:middle; padding:1px 4px; border-bottom:2px solid var(--tool-accent); border-radius:4px; background:color-mix(in srgb,var(--tool-accent) 7%,var(--tool-surface)); }
+  .amount-editor { display:flex; width:100%; align-items:center; gap:3px; }
+  .amount-editor > span { font-size:16px; }
+  .amount-step { flex:none; width:34px; height:38px; padding:0; border:0; border-radius:4px; font-size:20px; color:var(--fact-ink); background:transparent; cursor:pointer; }
+  .amount-step:disabled { opacity:.4; cursor:default; }
+  .inline-number { width:100%; min-width:0; border:0; border-radius:3px; padding:5px 0; background:transparent; color:var(--tool-ink); font:500 16px var(--font-mono); appearance:textfield; }
+  .inline-number::-webkit-inner-spin-button, .inline-number::-webkit-outer-spin-button { appearance:none; margin:0; }
+  .inline-range { display:block; height:24px; margin:3px 0 0 !important; appearance:none; background:transparent; cursor:pointer; }
+  .inline-range::-webkit-slider-runnable-track { height:4px; border-radius:2px; background:linear-gradient(to right,var(--tool-accent) 0 var(--range-progress,0%),var(--gridline) var(--range-progress,0%) 100%); }
+  .inline-range::-webkit-slider-thumb { appearance:none; width:16px; height:16px; margin-top:-6px; border:0; border-radius:50%; background:var(--tool-accent); }
+  .inline-range::-moz-range-track { height:4px; border-radius:2px; background:var(--gridline); }
+  .inline-range::-moz-range-progress { height:4px; border-radius:2px; background:var(--tool-accent); }
+  .inline-range::-moz-range-thumb { width:16px; height:16px; border:0; border-radius:50%; background:var(--tool-accent); }
+  .income-fact { left:66px; right:24px; top:382px; }
+  .income-editor { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; }
+  .income-fact > .inline-range { width:calc(100% + 16px); margin-top:8px !important; margin-left:-8px !important; }
+  .inline-choice:focus-within, .inline-amount:focus-within, [data-control].is-linked { outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .chart-fact.is-linked { outline:none; }
+  .chart-fact.is-linked .inline-amount { outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .amount-step:focus-visible, .inline-number:focus-visible, .inline-choice select:focus-visible, .inline-range:focus-visible { outline:2px solid var(--tool-accent); outline-offset:1px; }
+  .inline-number:invalid { outline:2px solid var(--tool-accent); }
+  .chart-answer { position:absolute; z-index:3; width:244px; padding:12px 14px; border-left:3px solid var(--answer); background:var(--answer-wash); color:var(--tool-ink); overflow-wrap:anywhere; }
+  .answer-label { display:block; color:var(--answer); }
+  #statTaxable { display:block; margin:3px 0; color:var(--answer); font:600 32px/1.15 var(--font-mono); }
+  .answer-caption { display:block; font-size:12px; color:var(--ink-soft); }
+  #mechanismStory { font-size:13px; line-height:1.5; color:var(--tool-ink); margin:8px 0; }
+  .chart-answer .rule-link { color:var(--answer); font-size:12px; text-underline-offset:2px; }
+  .answer-caveat { display:block; font-size:11px; line-height:1.5; color:var(--ink-soft); margin-top:6px; }
+  .chart-shell { min-width:0; }
+  .chart-scroll { overflow:visible; }
+  .chart-scroll:focus-visible { outline-offset:4px; }
+  .workspace-caption { color:var(--ink-soft); }
+  .link-hint { min-height:3em; margin:0 0 8px; font-size:12px; line-height:1.5; color:var(--ink-soft); }
+  .key-current { background:var(--answer); border-color:var(--answer); }
+  .reading-layout[data-highlight="benefits"] [data-linked~="benefits"],
+  .reading-layout[data-highlight="agi"] [data-linked~="agi"],
+  .reading-layout[data-highlight="status"] [data-linked~="status"] { stroke:var(--tool-accent); stroke-width:3px; }
+  .reading-layout[data-highlight="benefits"] text[data-linked~="benefits"],
+  .reading-layout[data-highlight="agi"] text[data-linked~="agi"],
+  .reading-layout[data-highlight="status"] text[data-linked~="status"] { stroke:none; fill:var(--fact-ink); font-weight:600; text-decoration:underline; }
+  .answer-axis { fill:var(--answer); font-weight:600; }
+  .calculation-detail { margin-top:18px; font-size:13px; color:var(--ink-soft); }
+  .calculation-detail p { margin:8px 0; line-height:1.6; }
+  .experiment > summary, .exploration-details > summary, .scope-details > summary, .update-log > summary { cursor:pointer; font:600 16px/1.5 var(--font-sans); color:var(--tool-ink); }
+  .experiment > summary:focus-visible, .exploration-details > summary:focus-visible, .scope-details > summary:focus-visible, .update-log > summary:focus-visible { outline:2px solid var(--tool-accent); outline-offset:4px; }
+  .experiment[open] > summary, .exploration-details[open] > summary, .update-log[open] > summary { margin-bottom:16px; }
+  .scope-details { margin-bottom:22px; }
+  .exploration-details .boundary-controls { border-top:0; margin:0; padding:0; max-width:480px; }
+  .update-log ol { padding-left:20px; margin:0; }
+  .update-log li { font-size:13px; line-height:1.7; color:var(--ink-soft); margin:12px 0; }
+  .update-log a { color:var(--tool-accent); }
+  @media (max-width:600px) {
+    .tax-workspace { padding:14px; }
+    .chart-context { margin-bottom:16px; gap:12px; }
+    .context-facts > .fact-label { flex-basis:100%; }
+    .chart-answer { padding:10px 12px; }
+    #statTaxable { font-size:29px; }
+  }
+
   @media (prefers-reduced-motion: reduce){ .app *, .tooltip{ transition:none !important; } }
 </style>
+<link rel="stylesheet" href="../../assets/css/tool-scope.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -326,63 +442,95 @@
 
 <div class="app" id="main">
   <div class="wrap">
-
     <div class="masthead">
-      <div class="kicker">Gross income · Simulation</div>
+      <div class="kicker">Gross income &middot; Explorable explanation</div>
       <h1>How Social Security Benefits Become Taxable</h1>
-      <p class="standfirst">
-        Social Security is not taxed like ordinary income. Below a threshold none of it counts;
-        above it, each extra dollar of <em>other</em> income drags part of the benefit into
-        taxable income — until a hard ceiling stops it at 85% of the benefit. Move the sliders
-        to see where a taxpayer sits.
-      </p>
+      <p class="standfirst">Adjust the blue facts directly on the chart. The purple answer shows how much of your benefit becomes taxable.</p>
     </div>
-
-    <div class="layout">
-
-      <aside class="rail">
-        <h2>Filing status</h2>
-        <div class="seg" id="statusSeg" role="group" aria-label="Filing status">
-          <button type="button" data-status="joint"  aria-pressed="true">Married joint</button>
-          <button type="button" data-status="single" aria-pressed="false">Single</button>
+    <figure class="panel reading-layout tax-workspace" id="readingLayout" aria-labelledby="workspace-title">
+      <header class="chart-context">
+        <h2 id="workspace-title">Change a fact. See the answer.</h2>
+        <div class="context-facts"><span class="fact-label">Facts</span>
+          <label for="taxYearSelect">Tax year</label><span class="inline-choice" data-control="status"><select id="taxYearSelect" aria-describedby="yearNote"><option value="2025">2025 - most recent</option><option value="2026">2026 - upcoming</option></select></span>
+          <label for="statusSelect">Filing status</label><span class="inline-choice" data-control="status"><select id="statusSelect"><option value="joint">Married filing jointly</option><option value="single">Single</option></select></span>
         </div>
-
-        <div class="field">
-          <label for="benefitsSlider">Social Security benefits</label>
-          <div class="amount" id="benefitsOut">$12,400</div>
-          <input type="range" id="benefitsSlider" min="0" max="60000" step="200" value="12400">
-          <div class="range-ends"><span>$0</span><span>$60k</span></div>
+      </header>
+      <div class="chart-scene" id="chartScene">
+        <div class="benefit-fact chart-fact" id="benefitFact" data-control="benefits">
+          <label class="fact-label" for="benefitsExact">Fact &middot; Annual Social Security benefits</label>
+          <span class="inline-amount" role="group" aria-label="Annual Social Security benefits"><span class="amount-editor"><button type="button" class="amount-step" data-adjust="benefits" data-delta="-1000" aria-label="Decrease annual social security benefits by 1000 dollars">&minus;</button><span aria-hidden="true">$</span><input class="inline-number" id="benefitsExact" type="number" inputmode="decimal" min="0" max="60000" step="any" value="12400" aria-label="Annual Social Security benefits, exact dollars"><button type="button" class="amount-step" data-adjust="benefits" data-delta="1000" aria-label="Increase annual social security benefits by 1000 dollars">+</button></span></span>
+          <input class="inline-range" type="range" id="benefitsSlider" min="0" max="60000" step="any" value="12400" aria-label="Annual Social Security benefits, slider">
         </div>
-
-        <div class="field">
-          <label for="agiSlider">Income excluding Social Security</label>
-          <div class="amount" id="agiOut">$36,000</div>
-          <input type="range" id="agiSlider" min="0" max="120000" step="500" value="36000">
-          <div class="range-ends"><span>$0</span><span>$120k</span></div>
+        <div class="chart-scroll" tabindex="0" role="region" aria-label="Interactive chart. Use left and right arrow keys to change other income by 1000 dollars.">
+          <div class="chart-shell"><svg id="curveChart" viewBox="0 0 1000 570" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="curveDesc"></svg><p class="sr-only" id="curveDesc"></p></div>
         </div>
-
-        <div class="stats">
-          <div class="stat">
-            <div class="label">Taxable benefits</div>
-            <div class="value accent" id="statTaxable">$0</div>
-            <div class="sub" id="statTaxableSub">&nbsp;</div>
+        <div class="income-fact chart-fact" id="incomeFact" data-control="agi">
+          <div class="income-editor"><label class="fact-label" for="agiExact">Fact &middot; Other annual income</label><span class="inline-amount" role="group" aria-label="Other annual income"><span class="amount-editor"><button type="button" class="amount-step" data-adjust="agi" data-delta="-1000" aria-label="Decrease other annual income by 1000 dollars">&minus;</button><span aria-hidden="true">$</span><input class="inline-number" id="agiExact" type="number" inputmode="decimal" min="0" max="120000" step="any" value="36000" aria-label="Other annual income, exact dollars"><button type="button" class="amount-step" data-adjust="agi" data-delta="1000" aria-label="Increase other annual income by 1000 dollars">+</button></span></span></div>
+          <input class="inline-range" type="range" id="agiSlider" min="0" max="120000" step="any" value="36000" aria-label="Other annual income, slider aligned to the chart's horizontal axis">
+          <div class="range-ends"><span>$0</span><span>$120,000</span></div>
+        </div>
+        <div class="chart-answer" id="chartAnswer" role="group" aria-label="Answer for the purple point">
+          <span class="answer-label">Answer &middot; Taxable benefits</span>
+          <strong id="statTaxable">$5,100</strong>
+          <span class="answer-caption" id="statTaxableSub">41% of the $12,400 benefit</span>
+          <p id="mechanismStory">The next $1 includes $0.50 more of the benefit.</p>
+          <a class="rule-link" id="applicableRule" href="#ss-rule-lower">Why? Section 86(a)(1)</a>
+          <span class="answer-caveat">Included in income, not tax owed.</span>
+        </div>
+      </div>
+      <figcaption class="workspace-caption">
+        <p class="link-hint" id="linkHint">Blue controls are your facts. The purple point and label are the calculated answer. Click the chart to try another income.</p>
+        <p class="sr-only" id="chartLede"></p>
+        <div class="chart-key"><span><i class="key-current" aria-hidden="true"></i>Answer for your facts</span><span><i class="key-baseline" aria-hidden="true"></i>Pinned comparison</span></div>
+        <div class="split"><h4>Your benefit, accounted for</h4><div class="ptw" id="ptwBar" role="img" aria-labelledby="ptwDesc"></div><p class="sr-only" id="ptwDesc"></p><div class="ptw-scale"><span>$0</span><span id="ptwEnd">$0</span></div><div class="legend" id="ptwLegend"></div></div>
+        <details class="calculation-detail"><summary>Calculation and tax-year notes</summary>
+          <p>Provisional income: <strong id="statPI">$42,200</strong></p><p id="statPISub"></p>
+          <p>The next $1 of other income includes <strong id="statMarginal">$0.50</strong> more of the benefit.</p><p class="year-note" id="yearNote">2025 is the most recent tax year; 2026 is the upcoming tax year.</p>
+          <p class="footnote">This model assumes no tax-exempt interest or foreign earned income exclusion. It calculates benefit inclusion, not total income tax. The statutory thresholds are not indexed for inflation.</p>
+        </details>
+      </figcaption>
+      <span class="sr-only" id="benefitsOut">$12,400</span><span class="sr-only" id="agiOut">$36,000</span><p class="sr-only" id="liveResult" role="status" aria-live="polite"></p>
+    </figure>
+        <details class="panel experiment" id="comparisonPanel"><summary>Try an experiment and compare scenarios</summary>
+      <div class="kicker">Try a small experiment</div>
+      <h2 id="experiment-title">What happens when other income rises by $1,000?</h2>
+      <p class="experiment-question">Predict it first: will all, part, or none of that increase make more of the Social Security benefit taxable?</p>
+      <p id="experimentIntro">Start with a $12,400 annual benefit and $36,000 of other income on a joint return. Keep the benefit fixed and try $1,000 more income.</p>
+      <div class="experiment-actions" role="group" aria-label="Guided experiment">
+        <button type="button" class="explore-btn primary" id="tryIncrease">Try $1,000 more income</button>
+        <button type="button" class="explore-btn" id="pinComparison">Pin current as baseline</button>
+        <button type="button" class="explore-btn" id="restoreComparison">Return to baseline</button>
+        <button type="button" class="explore-btn" id="restartExperiment">Restart example</button>
+      </div>
+      <p class="compare-result" id="comparisonResult">The starting point stays on the chart while you change other income.</p>
+      <p class="experiment-note" id="comparisonNote">Changing benefits or filing status starts a new comparison. Use the blue controls on the chart to explore freely.</p>
+    </details>
+    <details class="panel exploration-details"><summary>Explore the turning points</summary>
+            <div class="boundary-controls">
+          <label for="boundarySelect">Explore a change in the curve</label>
+          <select class="boundary-select" id="boundarySelect"></select>
+          <div class="boundary-actions" role="group" aria-label="Position around selected boundary">
+            <button type="button" class="explore-btn" id="boundaryBelow">$1 below</button>
+            <button type="button" class="explore-btn" id="boundaryAt">At boundary</button>
+            <button type="button" class="explore-btn" id="boundaryAbove">$1 above</button>
           </div>
-          <div class="stat">
-            <div class="label">Next $1 of other income</div>
-            <div class="value small" id="statMarginal">$0.00</div>
-            <div class="sub">more of the benefit becomes taxable</div>
-          </div>
-          <div class="stat">
-            <div class="label">Provisional income</div>
-            <div class="value small" id="statPI">$0</div>
-            <div class="sub" id="statPISub">&nbsp;</div>
-          </div>
+          <button type="button" class="explore-btn" id="nextBoundary">Next change in the curve</button>
+          <p class="boundary-note" id="boundaryNote">Boundary positions follow the benefit amount and filing status you select.</p>
         </div>
-        <p class="sr-only" id="liveResult" role="status" aria-live="polite"></p>
-      </aside>
 
-      <div>
-        <details class="panel sources">
+    </details>
+    <details class="scope-details"><summary>Model scope and assumptions</summary>
+        <section class="tool-scope" aria-labelledby="model-scope-title">
+      <h2 id="model-scope-title">Model scope</h2>
+      <dl>
+        <div><dt>Tax year</dt><dd>2025 / 2026 (reviewed)</dd></div>
+        <div><dt>Supported situations</dt><dd>Taxable Social Security benefits for single and married-filing-jointly scenarios. The same section 86 inclusion thresholds apply to both supported years.</dd></div>
+        <div><dt>Exclusions</dt><dd>Tax-exempt interest and foreign earned income exclusion adjustments, other filing statuses, and the income tax due on the taxable benefit.</dd></div>
+        <div><dt>Last scope review</dt><dd><time datetime="2026-10-17">October 17, 2026</time> &mdash; inclusion thresholds checked against IRS Publication 915 (2025) and current section 86. This is not a full income-tax calculation.</dd></div>
+      </dl>
+    </section>
+    </details>
+            <details class="panel sources" id="sourceRules">
           <summary>
             The source rules
             <span class="summary-hint">26 U.S.C. &sect;86, full text &mdash; optional</span>
@@ -401,7 +549,7 @@
           <div class="lv lv-0">
             <p><span class="lv-n">(a)</span> <span class="lv-h">In general</span></p>
             <div class="lv lv-1">
-              <p><span class="lv-n">(1)</span> <span class="lv-h">In general</span> <span class="lv-t">Except as provided in paragraph (2), gross income for the taxable year of any taxpayer described in subsection (b) (notwithstanding section 207 of the Social Security Act) includes social security benefits in an amount equal to the lesser of—</span></p>
+              <p id="ss-rule-lower"><span class="lv-n">(1)</span> <span class="lv-h">In general</span> <span class="lv-t">Except as provided in paragraph (2), gross income for the taxable year of any taxpayer described in subsection (b) (notwithstanding section 207 of the Social Security Act) includes social security benefits in an amount equal to the lesser of—</span></p>
               <div class="lv lv-2">
                 <p><span class="lv-n">(A)</span> <span class="lv-t">one-half of the social security benefits received during the taxable year, or</span></p>
               </div>
@@ -410,7 +558,7 @@
               </div>
             </div>
             <div class="lv lv-1">
-              <p><span class="lv-n">(2)</span> <span class="lv-h">Additional amount</span> <span class="lv-t">In the case of a taxpayer with respect to whom the amount determined under subsection (b)(1)(A) exceeds the adjusted base amount, the amount included in gross income under this section shall be equal to the lesser of—</span></p>
+              <p id="ss-rule-upper"><span class="lv-n">(2)</span> <span class="lv-h">Additional amount</span> <span class="lv-t">In the case of a taxpayer with respect to whom the amount determined under subsection (b)(1)(A) exceeds the adjusted base amount, the amount included in gross income under this section shall be equal to the lesser of—</span></p>
               <div class="lv lv-2">
                 <p><span class="lv-n">(A)</span> <span class="lv-t">the sum of—</span></p>
                 <div class="lv lv-3">
@@ -566,42 +714,15 @@
             </p>
           </div>
         </details>
-
-        <section class="panel">
-          <h3>Taxable benefits as other income rises</h3>
-          <p class="lede" id="chartLede"></p>
-
-          <div class="chart-scroll" tabindex="0" role="region"
-               aria-label="Chart: taxable benefits as other income rises">
-            <div class="chart-shell">
-              <svg id="curveChart" viewBox="0 0 760 330" preserveAspectRatio="xMidYMid meet"
-                   role="img" aria-labelledby="curveDesc"></svg>
-              <p class="sr-only" id="curveDesc"></p>
-            </div>
-          </div>
-
-          <div class="split">
-            <h4>The benefit, split</h4>
-            <div class="ptw" id="ptwBar" role="img" aria-labelledby="ptwDesc"></div>
-            <p class="sr-only" id="ptwDesc"></p>
-            <div class="ptw-scale">
-              <span>$0</span>
-              <span id="ptwEnd">$0</span>
-            </div>
-            <div class="legend" id="ptwLegend"></div>
-          </div>
-
-          <p class="footnote">
-            Educational simulation, not tax advice. Thresholds are the statutory provisional-income
-            figures &mdash; $32,000 / $44,000 for married filing jointly, $25,000 / $34,000 for single &mdash;
-            which are not indexed for inflation. Assumes no tax-exempt interest or foreign earned
-            income exclusion. Source model: ACCTG 410 Individual Taxation Toolbox, &ldquo;Social Security&rdquo; tab.
-          </p>
-        </section>
-
-
-      </div>
-    </div>
+    <details class="panel update-log" id="updateLog"><summary>Update log &middot; last updated October 17, 2026</summary>
+      <ol>
+        <li><time datetime="2026-10-17">October 17, 2026</time> &mdash; Integrated blue fact editors into the chart dimensions and added a purple answer annotation connected to the plotted point. The income slider and chart now share a fixed $0&ndash;$120,000 scale.</li>
+        <li><time datetime="2026-10-17">October 17, 2026</time> &mdash; Combined the editable facts and linked chart in one panel, with the facts above the chart.</li>
+        <li><time datetime="2026-10-17">October 17, 2026</time> &mdash; Moved filing status and dollar controls into the explanation, added up/down adjustments and linked chart highlights, and made the chart fit small screens.</li>
+        <li><time datetime="2026-10-17">October 17, 2026</time> &mdash; Added 2025 (most recent) and 2026 (upcoming). Both use the same inclusion thresholds. Reviewed <a href="https://www.irs.gov/publications/p915" target="_blank" rel="noopener">IRS Publication 915 (2025)</a> and <a href="https://www.law.cornell.edu/uscode/text/26/86" target="_blank" rel="noopener">current IRC section 86</a>. The 2026 setting uses enacted rules, not a claim that a final 2026 publication is available.</li>
+        <li><time datetime="2026-10-17">October 17, 2026</time> &mdash; Added the guided experiment, pinned comparisons, boundary controls and exact dollar inputs. Verified zero benefits, flat regions and fractional-dollar boundaries.</li>
+      </ol>
+    </details>
   </div>
 </div>
 
@@ -740,6 +861,37 @@
   }
 
 
+  function explorationBreaks(b, lo, up){
+    if (b <= 0) return [];
+    const pts = curvePoints(b, lo, up, 240000);
+    const out = [];
+    for (let k = 1; k < pts.length - 1; k++){
+      const a = pts[k-1], p = pts[k], z = pts[k+1];
+      const before = (p.y-a.y)/(p.x-a.x), after = (z.y-p.y)/(z.x-p.x);
+      const agi = p.x-b*0.5;
+      if (Math.abs(before-after) < 1e-8 || agi < 0 || agi > 120000) continue;
+      const label = after < 1e-8
+        ? (p.y >= b*MAX_PCT-1e-8 ? '85% ceiling reached' : '50% benefit plateau begins')
+        : after > 0.8 ? '85-cent inclusion region begins' : 'Benefits start becoming taxable';
+      out.push({ agi:agi, label:label, before:before, after:after });
+    }
+    return out;
+  }
+
+  function inclusionStory(i){
+    const r = model(i);
+    const pts = curvePoints(i.benefits, i.lo, i.up, 240000);
+    const slope = marginalAt(pts, r.pi+1e-7);
+    const next = Math.min(i.agi+1000, 120000);
+    const nextTaxable = model({ benefits:i.benefits, agi:next, lo:i.lo, up:i.up }).taxable;
+    const cap = i.benefits*MAX_PCT;
+    const zone = i.benefits === 0 ? 'empty' : r.taxable >= cap-1e-7 ? 'cap'
+      : slope > 0.8 ? 'upper' : slope > 0.4 ? 'lower' : r.taxable > 0 ? 'plateau' : 'none';
+    return { taxable:r.taxable, pi:r.pi, slope:slope, zone:zone, increment:next-i.agi,
+      extraBenefits:Math.max(0,nextTaxable-r.taxable), cap:cap,
+      nextDollar:Math.max(0,model({benefits:i.benefits,agi:Math.min(i.agi+1,120000),lo:i.lo,up:i.up}).taxable-r.taxable) };
+  }
+
   /* ============================== FORMATTING ============================== */
   const usd0 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', maximumFractionDigits:0 });
   const usd2 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 });
@@ -757,12 +909,30 @@
     single: { lo: 25000, up: 34000, label: 'single' }
   };
 
-  const state = { benefits: 12400, agi: 36000, status: 'joint' };
+  const YEAR_RULES = {
+    2025: { joint:{lo:32000,up:44000}, single:{lo:25000,up:34000} },
+    2026: { joint:{lo:32000,up:44000}, single:{lo:25000,up:34000} }
+  };
+  function taxYearChoices(calendarYear){
+    return [calendarYear-1,calendarYear].map(function(year,k){
+      return { year:year, label:k===0?'most recent':'upcoming', reviewed:!!YEAR_RULES[year] };
+    });
+  }
+  function thresholdsFor(year,status){
+    if (!YEAR_RULES[year] || !YEAR_RULES[year][status]) throw new RangeError('Tax year or filing status not reviewed');
+    return YEAR_RULES[year][status];
+  }
+  const yearChoices=taxYearChoices(new Date().getFullYear());
+  const initialYear=yearChoices.find(function(y){return y.reviewed;});
+  const state = { benefits:12400, agi:36000, status:'joint', year:initialYear?initialYear.year:2026 };
+
+  let baseline = { ...state };
+  let selectedBoundary = 0;
 
   const $ = function(id){ return document.getElementById(id); };
   const els = {
     liveResult:$('liveResult'),
-    statusSeg:$('statusSeg'),
+    statusSeg:$('statusSelect'),
     benefitsSlider:$('benefitsSlider'), benefitsOut:$('benefitsOut'),
     agiSlider:$('agiSlider'), agiOut:$('agiOut'),
     statTaxable:$('statTaxable'), statTaxableSub:$('statTaxableSub'),
@@ -810,191 +980,104 @@
   const PAD = { l: 66, r: 24 };
 
   function renderCurve(r, th, xMax, pts){
-    const svg = els.curve, W = 760, H = 330;
-    const x0 = PAD.l, x1 = W - PAD.r, y0 = 52, y1 = 248;
-    clear(svg);
+    const svg=els.curve, W=Math.max(240,svg.parentElement.clientWidth || 760), small=W<600;
+    let H=small?800:580, y0=small?340:132, y1=small?566:350;
+    const x0=small?44:66, x1=W-(small?12:24);
+    svg.setAttribute('viewBox','0 0 '+W+' '+H); clear(svg);
+    const b=state.benefits, half=b*.5, cap=b*MAX_PCT;
+    const yMax=niceCeil(Math.max(cap*1.12,1000));
+    const X=v=>x0+(v/xMax)*(x1-x0), Y=v=>y1-(v/yMax)*(y1-y0);
+    const toX=pi=>pi-half;
+    const benefit=$('benefitFact'), income=$('incomeFact'), answer=$('chartAnswer');
+    benefit.style.left=x0+'px'; benefit.style.width=Math.min(230,x1-x0)+'px';
+    income.style.left=x0+'px'; income.style.right=(W-x1)+'px'; income.style.top=(y1+34)+'px';
+    answer.style.width=Math.min(244,x1-x0)+'px';
+    // HTML controls are in reserved bands; only the answer annotates the plotted point.
+    const answerW=answer.offsetWidth, answerH=answer.offsetHeight;
+    const answerTop=benefit.offsetTop+benefit.offsetHeight+12;
+    if(small){y0=Math.max(340,answerTop+answerH+60);y1=y0+226;}
+    else {y0=Math.max(132,benefit.offsetTop+benefit.offsetHeight+52);y1=y0+250;}
+    income.style.top=(y1+34)+'px';
+    const piY=y1+Math.max(small?165:153,34+income.offsetHeight+32);
+    H=piY+55;svg.setAttribute('viewBox','0 0 '+W+' '+H);
+    const px=X(state.agi), py=Y(r.taxable);
+    const boxX=small?x0:Math.max(x0,Math.min(x1-answerW,px<(x0+x1)/2?px+22:px-answerW-22));
+    const boxY=small?answerTop:Math.max(y0+12,Math.min(y1-answerH-12,py-answerH*.5));
+    answer.style.left=boxX+'px'; answer.style.top=boxY+'px';
 
-    const b = state.benefits, half = b * 0.5, cap = b * MAX_PCT;
-    const yMax = niceCeil(Math.max(cap * 1.12, 1000));
-    /* x is OTHER income: provisional income minus half the benefit. */
-    const toX = function(pi){ return pi - half; };
-    const X = function(v){ return x0 + (v / xMax) * (x1 - x0); };
-    const Y = function(v){ return y1 - (v / yMax) * (y1 - y0); };
+    niceTicks(yMax,4).forEach(function(v){
+      svg.appendChild(svgEl('line',{x1:x0,x2:x1,y1:Y(v),y2:Y(v),stroke:v===0?'var(--baseline)':'var(--gridline)','stroke-width':1}));
+      const text=svgEl('text',{x:x0-8,y:Y(v)+4,'text-anchor':'end',class:'axis-text'});text.textContent=abbr(v);svg.appendChild(text);
+    });
+    const axisLabel=svgEl('text',{x:x0,y:y0-33,class:'axis-text answer-axis'});axisLabel.textContent='Taxable benefits';svg.appendChild(axisLabel);
 
-    /* --- zone labels, read off the drawn segments so they can't drift.
-           No alternating stripes: the threshold rules and the labels already
-           divide the plot, and shading every other segment just added noise. --- */
-    const zones = [];
-    for (let k = 0; k < pts.length - 1; k++){
-      const a = pts[k], z = pts[k+1];
-      const ax = toX(a.x), zx = toX(z.x);
-      if (zx <= 0 || zx <= ax) continue;
-      const left = Math.max(0, ax), right = Math.min(xMax, zx);
-      if (right <= left) continue;
-      const slope = (z.y - a.y) / (z.x - a.x);
-
-      let full, short;
-      if (slope < 0.001){
-        if (a.y < 0.005){ full = 'None taxable'; short = 'none'; }
-        else if (cap > 0 && a.y >= cap - 0.005){ full = 'Maximum reached'; short = 'max'; }
-        else { full = 'No further increase'; short = 'flat'; }
-      } else if (slope > 0.8){ full = '85¢ per $1'; short = '85¢'; }
-      else { full = '50¢ per $1'; short = '50¢'; }
-
-      /* The ceiling splits the flat top into two polyline segments; without
-         merging, that stretch would be labelled twice. */
-      const prev = zones[zones.length - 1];
-      if (prev && prev.full === full) prev.right = right;
-      else zones.push({ left: left, right: right, full: full, short: short });
+    const zones=[];
+    for(let k=0;k<pts.length-1;k++){
+      const a=pts[k],z=pts[k+1],left=Math.max(0,toX(a.x)),right=Math.min(xMax,toX(z.x));
+      if(right<=left)continue;
+      const slope=(z.y-a.y)/(z.x-a.x);
+      const full=slope>.8?'85 cents per $1':slope>.4?'50 cents per $1':a.y>=cap-1e-8&&cap>0?'85% ceiling':a.y>0?'Flat stretch':'None taxable';
+      const short=slope>.8?'85c':slope>.4?'50c':a.y>=cap-1e-8&&cap>0?'Ceiling':a.y>0?'Flat':'None';
+      const prev=zones[zones.length-1];if(prev&&prev.full===full)prev.right=right;else zones.push({left,right,full,short});
     }
-    zones.forEach(function(zn){
-      const w = X(zn.right) - X(zn.left);
-      const label = w > 76 ? zn.full : (w > 26 ? zn.short : null);
-      if (!label) return;
-      const t = svgEl('text',{ x:(X(zn.left)+X(zn.right))/2, y:38, 'text-anchor':'middle', class:'band-text' });
-      t.textContent = label;
-      svg.appendChild(t);
+    zones.forEach(function(zone){
+      const width=X(zone.right)-X(zone.left), label=width>125?zone.full:width>32?zone.short:null;
+      if(!label)return;const text=svgEl('text',{x:(X(zone.left)+X(zone.right))/2,y:y0-12,'text-anchor':'middle',class:'band-text'});text.textContent=label;svg.appendChild(text);
     });
-
-    /* --- y gridlines --- */
-    niceTicks(yMax, 4).forEach(function(v){
-      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(v), y2:Y(v),
-        stroke: v === 0 ? 'var(--baseline)' : 'var(--gridline)', 'stroke-width':1 }));
-      const t = svgEl('text',{ x:x0-9, y:Y(v)+3.5, 'text-anchor':'end', class:'axis-text' });
-      t.textContent = abbr(v);
-      svg.appendChild(t);
+    [th.lo,th.up].forEach(function(pi){const ox=toX(pi);if(ox<0||ox>xMax)return;
+      svg.appendChild(svgEl('line',{x1:X(ox),x2:X(ox),y1:y0,y2:y1,stroke:'var(--baseline)','stroke-width':1,'data-linked':'status'}));
     });
-
-    /* --- threshold rules. These sit at fixed PROVISIONAL-income amounts, so on
-           this axis they slide left as the benefit grows: half the benefit is
-           already counted before the first dollar of other income arrives. The
-           value is not written here — it is carried by both axis rows below,
-           where the same vertical position reads $25,800 of other income and
-           $32,000 of provisional income at once. --- */
-    [th.lo, th.up].forEach(function(pi){
-      const ox = toX(pi);
-      if (ox < 0 || ox > xMax) return;
-      svg.appendChild(svgEl('line',{ x1:X(ox), x2:X(ox), y1:y0-4, y2:y1,
-        stroke:'var(--baseline)', 'stroke-width':1 }));
-    });
-
-    /* --- the ceiling --- */
-    if (cap > 0){
-      svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:Y(cap), y2:Y(cap),
-        stroke:'var(--ink-muted)', 'stroke-width':1 }));
-      const t = svgEl('text',{ x:x1, y:Y(cap)-7, 'text-anchor':'end', class:'anno-text' });
-      t.textContent = '85% ceiling · ' + usd0.format(cap);
-      svg.appendChild(t);
+    if(cap>0){
+      svg.appendChild(svgEl('line',{x1:x0,x2:x1,y1:Y(cap),y2:Y(cap),stroke:'var(--tool-accent)','stroke-width':1,'stroke-dasharray':'3 4','data-linked':'benefits'}));
+      const label=svgEl('text',{x:x1,y:Y(cap)-7,'text-anchor':'end',class:'anno-text','data-linked':'benefits'});label.textContent='85% of benefits = '+money(cap);svg.appendChild(label);
     }
-
-    /* --- the curve --- */
-    let d = '';
-    pts.forEach(function(p){
-      const ox = toX(p.x);
-      if (ox < -1) return;
-      d += (d ? 'L' : 'M') + X(Math.max(0, ox)).toFixed(2) + ' ' + Y(p.y).toFixed(2);
-    });
-    svg.appendChild(svgEl('path',{ d:d, fill:'none', stroke:'var(--fill-strong)',
-      'stroke-width':2.5, 'stroke-linejoin':'round', 'stroke-linecap':'round' }));
-
-    /* --- the taxpayer's own point, directly labelled --- */
-    if (state.agi <= xMax){
-      svg.appendChild(svgEl('line',{ x1:X(state.agi), x2:X(state.agi), y1:Y(r.taxable), y2:y1,
-        stroke:'var(--fill-strong)', 'stroke-width':1, opacity:0.35 }));
-      svg.appendChild(svgEl('circle',{ cx:X(state.agi), cy:Y(r.taxable), r:7,
-        fill:'var(--fill-strong)', stroke:'var(--tool-surface)', 'stroke-width':2.5 }));
-      const lbl = svgEl('text',{ x:X(state.agi), y:Y(r.taxable)-16, 'text-anchor':'middle', class:'marker-text' });
-      lbl.textContent = money(r.taxable);
-      svg.appendChild(lbl);
+    const origin=model({benefits:b,agi:0,lo:th.lo,up:th.up}).taxable;
+    const visible=[{x:half,y:origin}].concat(pts.filter(p=>p.x>half));
+    const path=visible.map((point,k)=>(k?'L':'M')+X(toX(point.x)).toFixed(2)+' '+Y(point.y).toFixed(2)).join('');
+    svg.appendChild(svgEl('path',{d:path,fill:'none',stroke:'var(--ink-soft)','stroke-width':2.5,'stroke-linejoin':'round','data-curve':'inclusion'}));
+    for(let k=0;k<pts.length-1;k++){
+      const a=pts[k],z=pts[k+1];if(r.pi+1e-7>=a.x&&r.pi+1e-7<z.x){
+        svg.appendChild(svgEl('line',{x1:X(Math.max(0,toX(a.x))),x2:X(Math.min(xMax,toX(z.x))),y1:Y(toX(a.x)<0?origin:a.y),y2:Y(z.y),stroke:'var(--answer)','stroke-width':5,opacity:.4,'data-segment':'active'}));break;
+      }
     }
+    const br=model({benefits:b,agi:baseline.agi,lo:th.lo,up:th.up}),bx=X(baseline.agi),by=Y(br.taxable);
+    svg.appendChild(svgEl('path',{d:'M'+bx+' '+(by-9)+' L'+(bx+9)+' '+by+' L'+bx+' '+(by+9)+' L'+(bx-9)+' '+by+' Z',fill:'var(--tool-surface)',stroke:'var(--ink-soft)','stroke-width':1.5,'data-marker':'baseline'}));
+    svg.appendChild(svgEl('line',{x1:px,x2:px,y1:py,y2:y1,stroke:'var(--tool-accent)','stroke-width':1.5,'stroke-dasharray':'3 3','data-linked':'agi'}));
+    svg.appendChild(svgEl('line',{x1:x0,x2:px,y1:py,y2:py,stroke:'var(--answer)','stroke-width':1.5,'stroke-dasharray':'3 3','data-answer':'horizontal-guide'}));
+    const targetX=small?Math.max(boxX+12,Math.min(boxX+answerW-12,px)):boxX>px?boxX:boxX+answerW;
+    const targetY=small?boxY+answerH:Math.max(boxY+14,Math.min(boxY+answerH-14,py));
+    svg.appendChild(svgEl('line',{x1:px,x2:targetX,y1:py,y2:targetY,stroke:'var(--answer)','stroke-width':1.5,opacity:.8,'data-answer':'connector'}));
+    svg.appendChild(svgEl('circle',{cx:px,cy:py,r:7,fill:'var(--answer)',stroke:'var(--tool-surface)','stroke-width':2.5,'data-answer':'point'}));
 
-    /* --- two scales on one axis. Not a dual-axis chart: this is one axis in
-           two units, like °C and °F on the same line. The lower row is
-           provisional income, which is simply the upper row plus half the
-           benefit — so the offset between the two rows of ticks IS the half
-           benefit, drawn to scale. Reading a threshold down the page gives the
-           statutory figure and the ordinary-income figure it lands at. --- */
-    const OTHER_Y = y1 + 17, PI_Y = y1 + 53;
-
-    function axisRow(ticks, yTick, place, emphasis){
-      const taken = [];
-      emphasis.forEach(function(v){
-        const px = place(v);
-        if (px < x0 - 1 || px > x1 + 1) return;
-        const t = svgEl('text',{ x:px, y:yTick, 'text-anchor':'middle', class:'axis-text emph' });
-        t.textContent = usd0.format(v);
-        svg.appendChild(t);
-        taken.push(px);
-      });
-      ticks.forEach(function(v){
-        const px = place(v);
-        if (px < x0 - 1 || px > x1 + 1) return;
-        /* a generic tick yields to a threshold label rather than collide */
-        for (let k = 0; k < taken.length; k++) if (Math.abs(taken[k] - px) < 42) return;
-        const t = svgEl('text',{ x:px, y:yTick, 'text-anchor':'middle', class:'axis-text' });
-        t.textContent = abbr(v);
-        svg.appendChild(t);
-      });
-    }
-
-    axisRow(niceTicks(xMax, 6), OTHER_Y,
-            function(v){ return X(v); },
-            [th.lo, th.up].map(toX).filter(function(v){ return v >= 0; }));
-
-    const lbl1 = svgEl('text',{ x:(x0+x1)/2, y:y1+31, 'text-anchor':'middle', class:'axis-text' });
-    lbl1.textContent = 'Income excluding Social Security benefits';
-    svg.appendChild(lbl1);
-
-    svg.appendChild(svgEl('line',{ x1:x0, x2:x1, y1:y1+41, y2:y1+41,
-      stroke:'var(--baseline)', 'stroke-width':1 }));
-
-    axisRow(niceTicks(xMax + half, 6).filter(function(v){ return v >= half - 1; }), PI_Y,
-            function(v){ return X(v - half); },
-            [th.lo, th.up]);
-
-    const lbl2 = svgEl('text',{ x:(x0+x1)/2, y:y1+67, 'text-anchor':'middle', class:'axis-text' });
-    lbl2.textContent = half > 0
-      ? 'Provisional income \u2014 the same income plus half the benefit (' + usd0.format(half) + ')'
-      : 'Provisional income \u2014 identical here, because there is no benefit to half';
-    svg.appendChild(lbl2);
-
-    const yt = svgEl('text',{ x:x0-48, y:16, class:'axis-text' });
-    yt.textContent = 'Taxable benefits';
-    svg.appendChild(yt);
-
-    /* --- hover --- */
-    const hit = svgEl('rect',{ x:x0, y:y0, width:x1-x0, height:y1-y0, fill:'transparent', style:'cursor:crosshair' });
-    const cross = svgEl('line',{ x1:0, x2:0, y1:y0, y2:y1, stroke:'var(--ink-muted)', 'stroke-width':1, opacity:0 });
-    const dot = svgEl('circle',{ r:5, fill:'var(--fill-strong)', stroke:'var(--tool-surface)', 'stroke-width':2, opacity:0 });
-    svg.appendChild(hit); svg.appendChild(cross); svg.appendChild(dot);
-
-    hit.addEventListener('pointermove', function(e){
-      const box = svg.getBoundingClientRect();
-      const vx = ((e.clientX - box.left) / box.width) * W;
-      const other = Math.max(0, Math.min(xMax, ((vx - x0) / (x1 - x0)) * xMax));
-      const y = Math.min(uncapped(other + half, b, th.lo, th.up), cap);
-      cross.setAttribute('x1', X(other)); cross.setAttribute('x2', X(other)); cross.setAttribute('opacity', 0.45);
-      dot.setAttribute('cx', X(other)); dot.setAttribute('cy', Y(y)); dot.setAttribute('opacity', 1);
-      showTip(e.clientX, box.top + (Y(y) / H) * box.height,
-        'other income <b>' + money(other) + '</b><br>' +
-        'provisional <b>' + money(other + half) + '</b><br>' +
-        'taxable benefits <b>' + money(y) + '</b>');
+    // Both native slider and plot use exactly the same fixed 0..120,000 income domain.
+    const taken=[];
+    [th.lo,th.up].map(toX).filter(v=>v>=0&&v<=xMax).forEach(function(v){
+      const x=X(v);if(taken.some(t=>Math.abs(t-x)<52))return;
+      const text=svgEl('text',{x,y:y1+20,'text-anchor':'middle',class:'axis-text emph','data-linked':'status'});text.textContent=abbr(v);svg.appendChild(text);taken.push(x);
     });
-    hit.addEventListener('pointerleave', function(){
-      cross.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); hideTip();
+    niceTicks(xMax,small?3:6).forEach(function(v){
+      const x=X(v);if(taken.some(t=>Math.abs(t-x)<40))return;
+      const text=svgEl('text',{x,y:y1+20,'text-anchor':v===0?'start':v===xMax?'end':'middle',class:'axis-text'});text.textContent=abbr(v);svg.appendChild(text);
     });
+    svg.appendChild(svgEl('line',{x1:x0,x2:x1,y1:piY-15,y2:piY-15,stroke:'var(--gridline)','stroke-width':1}));
+    const piTicks=niceTicks(xMax,small?3:6);
+    piTicks.forEach(function(v){const text=svgEl('text',{x:X(v),y:piY,'text-anchor':v===0?'start':v===xMax?'end':'middle',class:'axis-text'});text.textContent=abbr(v+half);svg.appendChild(text);});
+    const piLabel=svgEl('text',{x:(x0+x1)/2,y:piY+20,'text-anchor':'middle',class:'axis-text','data-linked':'benefits agi'});piLabel.textContent='Provisional income = other + '+abbr(half);svg.appendChild(piLabel);
 
-    els.curveDesc.textContent =
-      'Line chart of taxable Social Security benefits against income excluding Social Security, ' +
-      'for a ' + money(b) + ' benefit, ' + STATUS[state.status].label + '. The horizontal axis is ' +
-      'labelled in two units: ordinary income, and below it provisional income, which is the same ' +
-      'figure plus half the benefit (' + money(half) + '). The statutory thresholds of ' +
-      money(th.lo) + ' and ' + money(th.up) + ' are provisional-income amounts, reached at ' +
-      money(Math.max(0, toX(th.lo))) + ' and ' + money(Math.max(0, toX(th.up))) + ' of ordinary ' +
-      'income. None of the benefit is taxable below the first; then 50 cents of benefit becomes ' +
-      'taxable per additional dollar, rising to 85 cents above the second, until the total stops ' +
-      'at the ceiling of ' + money(cap) + '. At ' + money(state.agi) + ' of other income, ' +
-      money(r.taxable) + ' is taxable.';
+    const hit=svgEl('rect',{x:x0,y:y0,width:x1-x0,height:y1-y0,fill:'transparent',style:'cursor:crosshair'});
+    const cross=svgEl('line',{x1:0,x2:0,y1:y0,y2:y1,stroke:'var(--ink-muted)','stroke-width':1,opacity:0,'pointer-events':'none'});
+    const dot=svgEl('circle',{r:4,fill:'var(--answer)',opacity:0,'pointer-events':'none'});svg.appendChild(hit);svg.appendChild(cross);svg.appendChild(dot);
+    function incomeAt(e){const box=svg.getBoundingClientRect();const vx=(e.clientX-box.left)/box.width*W;return Math.max(0,Math.min(xMax,(vx-x0)/(x1-x0)*xMax));}
+    hit.addEventListener('pointermove',function(e){
+      const other=incomeAt(e),value=model({benefits:b,agi:other,lo:th.lo,up:th.up}).taxable,box=svg.getBoundingClientRect();
+      cross.setAttribute('x1',X(other));cross.setAttribute('x2',X(other));cross.setAttribute('opacity',.4);dot.setAttribute('cx',X(other));dot.setAttribute('cy',Y(value));dot.setAttribute('opacity',1);
+      showTip(e.clientX,box.top+Y(value)/H*box.height,'Other income <b>'+money(other)+'</b><br>Taxable benefits <b>'+money(value)+'</b>');
+    });
+    hit.addEventListener('pointerleave',function(){cross.setAttribute('opacity',0);dot.setAttribute('opacity',0);hideTip();});
+    hit.addEventListener('click',function(e){hideTip();moveIncome(Math.round(incomeAt(e)));setLink('agi');});
+    els.curveDesc.textContent='Tax year '+state.year+', '+STATUS[state.status].label+'. Facts: annual benefits '+money(b)+', other income '+money(state.agi)+'. Answer: '+money(r.taxable)+' included in income, not tax owed. '+
+      'At zero other income, '+money(origin)+' is taxable. '+zones.map(z=>'From '+money(z.left)+' to '+money(z.right)+': '+z.full+'.').join(' ')+
+      ' The purple point is the answer; the diamond is the comparison at '+money(baseline.agi)+'. Both the income slider and chart span zero to $120,000.';
   }
 
   /* ========================= BENEFIT SPLIT BAR ========================= */
@@ -1013,7 +1096,7 @@
     }
 
     [
-      { v:taxable,  color:'var(--fill-strong)',  name:'Taxable now' },
+      { v:taxable,  color:'var(--answer)',  name:'Included in income' },
       { v:headroom, color:'var(--fill-soft)',    name:'Nontaxable' },
       { v:never,    color:'var(--fill-neutral)', name:'Never taxable — the 15% the ceiling protects' }
     ].forEach(function(p){
@@ -1040,18 +1123,66 @@
   }
 
 
+  function renderExploration(r, th){
+    const story = inclusionStory({ benefits:state.benefits, agi:state.agi, lo:th.lo, up:th.up });
+    const br = model({ benefits:state.benefits, agi:baseline.agi, lo:th.lo, up:th.up });
+    const change = state.agi-baseline.agi, delta = r.taxable-br.taxable;
+    const direction = change >= 0 ? 'more' : 'less';
+    $('experimentIntro').textContent = 'Benefit held at '+money(state.benefits)+'; '+STATUS[state.status].label+'. '+
+      'The pinned baseline has '+money(baseline.agi)+' of other income and '+money(br.taxable)+' of taxable benefits.';
+    $('comparisonResult').textContent = Math.abs(change)<1e-8
+      ? 'You are at the baseline. '+money(r.taxable)+' of benefits is included in income. Try an increase to compare.'
+      : money(Math.abs(change))+' '+direction+' other income makes '+money(Math.abs(delta))+' '+(delta>=0?'more':'less')+
+        ' of the benefit taxable ('+money(br.taxable)+' to '+money(r.taxable)+'). '+
+        'Benefits and filing status are unchanged. This is income inclusion, not tax owed.';
+    const reasons = {
+      empty:'With no Social Security benefit, none can become taxable.',
+      none:'You are below the first inclusion threshold. Extra income does not yet bring benefits into taxable income.',
+      lower:'In this part of the curve, each additional dollar of other income brings 50 cents of benefits into taxable income.',
+      upper:'In this part of the curve, each additional dollar of other income brings 85 cents of benefits into taxable income.',
+      plateau:'You are on a flat stretch: the first inclusion limit has been reached, but the higher inclusion region has not begun.',
+      cap:'You have reached the 85% benefit ceiling. More other income cannot make any more of this benefit taxable.'
+    };
+    const shortReasons={empty:'No benefits were entered, so none is included.',none:'At this income, none of the benefit is included.',lower:'Here, the next $1 includes up to 50 cents more.',upper:'Here, the next $1 includes up to 85 cents more.',plateau:'The curve is flat here until the next threshold.',cap:'The 85% benefit ceiling has been reached.'};
+    $('mechanismStory').textContent=shortReasons[story.zone];
+    $('tryIncrease').disabled = state.agi>=120000;
+    $('tryIncrease').textContent = story.increment>0 ? 'Try '+money(story.increment)+' more income' : 'Other-income limit reached';
+    $('restoreComparison').disabled = Math.abs(change)<1e-8;
+    const breaks = explorationBreaks(state.benefits, th.lo, th.up);
+    const select = $('boundarySelect');
+    if (selectedBoundary>=breaks.length) selectedBoundary=0;
+    clear(select);
+    breaks.forEach(function(point,k){
+      const option = document.createElement('option'); option.value=String(k);
+      option.textContent = point.label+' - '+money(point.agi)+' other income'; select.appendChild(option);
+    });
+    if (!breaks.length){
+      const option = document.createElement('option'); option.textContent='No inclusion boundaries with no benefit'; select.appendChild(option);
+    }
+    select.value=String(selectedBoundary); select.disabled=!breaks.length;
+    const point=breaks[selectedBoundary];
+    $('boundaryBelow').disabled=!point || point.agi<1;
+    $('boundaryAt').disabled=!point;
+    $('boundaryAbove').disabled=!point || point.agi+1>120000;
+    $('nextBoundary').disabled=!breaks.some(function(p){ return p.agi>state.agi+1e-7; });
+    $('boundaryNote').textContent=point ? point.label+' at '+money(point.agi)+' of other income. The chart emphasizes your current segment. Displayed dollars are rounded to cents.' : 'Set benefits above zero to explore the changes in the curve.';
+    const upper = story.zone==='upper' || story.zone==='cap' || (story.zone==='empty' && story.pi>th.up);
+    $('applicableRule').href=upper?'#ss-rule-upper':'#ss-rule-lower';
+    $('applicableRule').textContent='Why? Section 86(a)('+(upper?'2':'1')+')';
+  }
+
   /* =============================== RENDER =============================== */
   function render(){
-    const th = STATUS[state.status];
+    const th = thresholdsFor(state.year,state.status);
     const r = model({ benefits: state.benefits, agi: state.agi, lo: th.lo, up: th.up });
     const cap = state.benefits * MAX_PCT;
     const half = state.benefits * 0.5;
 
     /* Domain runs a little past the point where the ceiling binds — that is
        the last thing that happens, so there is nothing to show beyond it. */
-    const xMax = Math.max(th.up + half + state.benefits * 0.35, state.agi * 1.1, 20000);
+    const xMax = 120000;
     const pts = curvePoints(state.benefits, th.lo, th.up, xMax + half);
-    const mr  = marginalAt(pts, r.pi);
+    const mr = inclusionStory({benefits:state.benefits,agi:state.agi,lo:th.lo,up:th.up}).nextDollar;
 
     els.benefitsOut.textContent = money(state.benefits);
     els.agiOut.textContent = money(state.agi);
@@ -1069,22 +1200,13 @@
        thresholds are measured against, so say it in the lede with this
        taxpayer's own numbers rather than in the abstract. */
     const startsAt = th.lo - half;
-    els.chartLede.textContent =
-      'Benefit held at ' + money(state.benefits) + ', ' + STATUS[state.status].label + '. ' +
-      'The thresholds are not set on the income below — they are set on ' +
-      'provisional income, which adds half the benefit' +
-      (half > 0 ? ' (' + money(half) + ') ' : ' ') + 'to it. ' +
-      (state.benefits <= 0
-        ? 'With no benefit the two scales are identical.'
-        : startsAt > 0
-          ? 'So the ' + money(th.lo) + ' threshold is already reached at ' + money(startsAt) +
-            ' of ordinary income, and that is where the curve lifts off. '
-          : 'Half this benefit alone exceeds the ' + money(th.lo) + ' threshold, so some of it ' +
-            'is taxable from the first dollar of other income. ') +
-      'Both scales run under the chart.';
+    els.chartLede.textContent = 'Tax year '+state.year+'; '+STATUS[state.status].label+'. Benefit held at '+money(state.benefits)+'. The lower scale adds half the benefit to other income.';
 
-    renderCurve(r, th, xMax, pts);
     renderSplit(r);
+    renderExploration(r,th);
+    syncControls();
+    syncYears();
+    renderCurve(r,th,xMax,pts);
   }
 
   /* =============================== WIRING =============================== */
@@ -1110,32 +1232,122 @@
       els.statTaxableSub.textContent + '. Next $1 of other income: ' +
       els.statMarginal.textContent + ' more of the benefit becomes taxable. ' +
       'Provisional income: ' + els.statPI.textContent + ', ' +
-      els.statPISub.textContent + '.';
+      els.statPISub.textContent + '. '+$('comparisonResult').textContent+' '+$('mechanismStory').textContent;
+  }
+
+  function syncControls(){
+    CONTROLS.forEach(function(c){
+      els[c[0]].value=String(state[c[1]]);
+      els[c[0]].style.setProperty('--range-progress',100*state[c[1]]/(+els[c[0]].max)+'%');
+      els[c[0]].setAttribute('aria-valuetext',valueText(c));
+      const exact=$(c[1]+'Exact');
+      if (document.activeElement!==exact) exact.value=String(state[c[1]]);
+    });
+  }
+
+  function updateControl(key,value){
+    state[key]=value;
+    if (key==='benefits') { baseline={...state}; selectedBoundary=0; }
+    render();
   }
 
   CONTROLS.forEach(function(c){
-    els[c[0]].addEventListener('input', function(){
-      state[c[1]] = +this.value;
-      render();
-      this.setAttribute('aria-valuetext', valueText(c));
+    els[c[0]].addEventListener('input',function(){ updateControl(c[1],+this.value); });
+    els[c[0]].addEventListener('change',announce);
+    const exact=$(c[1]+'Exact');
+    exact.addEventListener('input',function(){
+      if (this.value==='' || !this.validity.valid) return;
+      updateControl(c[1],this.valueAsNumber);
     });
-    els[c[0]].addEventListener('change', announce);
+    exact.addEventListener('change',function(){
+      if (this.value==='' || !this.validity.valid) this.value=String(state[c[1]]);
+      render(); announce();
+    });
   });
 
-  els.statusSeg.addEventListener('click', function(e){
-    const b = e.target.closest('button');
-    if (!b) return;
-    state.status = b.dataset.status;
-    Array.prototype.forEach.call(this.children, function(x){
-      x.setAttribute('aria-pressed', String(x.dataset.status === state.status));
-    });
-    render();
-    announce();
+  els.statusSeg.addEventListener('change',function(){
+    state.status=this.value; baseline={...state}; selectedBoundary=0;
+    render(); announce();
   });
 
+  function syncYears(){
+    $('taxYearSelect').value=String(state.year);
+    $('statusSelect').value=state.status;
+    const pending=yearChoices.filter(function(y){return !y.reviewed;});
+    $('yearNote').textContent=yearChoices.map(function(y){return y.year+' is '+y.label+(y.reviewed?'':' (review pending)');}).join('; ')+'. '+
+      (pending.length ? 'Calculations remain on a reviewed year until the new rules are checked.' : 'Both years use the same benefit-inclusion thresholds; changing the year keeps your facts.');
+    document.querySelectorAll('[data-adjust]').forEach(function(button){
+      const key=button.dataset.adjust, max=key==='benefits'?60000:120000;
+      button.disabled=+button.dataset.delta<0?state[key]<=0:state[key]>=max;
+    });
+  }
+
+  function setupYears(){
+    const select=$('taxYearSelect'); clear(select);
+    const choices=yearChoices.slice();
+    if (!choices.some(function(y){return y.year===state.year;})) choices.push({year:state.year,label:'last reviewed',reviewed:true});
+    choices.forEach(function(y){
+      const option=document.createElement('option'); option.value=String(y.year);
+      option.textContent=y.year+' - '+y.label+(y.reviewed?'':' (review pending)'); option.disabled=!y.reviewed; select.appendChild(option);
+    });
+    select.addEventListener('change',function(){
+      const year=+this.value;
+      if (!YEAR_RULES[year]) {this.value=String(state.year);return;}
+      state.year=year; baseline={...state}; selectedBoundary=0; render(); announce();
+    });
+  }
+
+  function setLink(key){
+    const layout=$('readingLayout');
+    if(key) layout.dataset.highlight=key; else delete layout.dataset.highlight;
+    document.querySelectorAll('[data-control]').forEach(function(control){control.classList.toggle('is-linked',control.dataset.control===key);});
+    const hints={
+      status:'Filing status sets the highlighted inclusion thresholds and the shape of the curve.',
+      benefits:'Your benefit sets the highlighted 85% ceiling and the half-benefit offset on the lower scale.',
+      agi:'Other income moves your highlighted point along the curve. The diamond keeps the comparison in view.'
+    };
+    $('linkHint').textContent=hints[key] || 'Blue controls are your facts. The purple point and label are the calculated answer. Click the chart to try another income.';
+  }
+  document.querySelectorAll('[data-control]').forEach(function(control){
+    control.addEventListener('mouseenter',function(){setLink(this.dataset.control);});
+    control.addEventListener('mouseleave',function(){const active=document.activeElement.closest('[data-control]');setLink(active?active.dataset.control:null);});
+    control.addEventListener('focusin',function(){setLink(this.dataset.control);});
+    control.addEventListener('focusout',function(){queueMicrotask(function(){const active=document.activeElement.closest('[data-control]');setLink(active?active.dataset.control:null);});});
+  });
+  document.querySelectorAll('[data-adjust]').forEach(function(button){
+    button.addEventListener('click',function(){
+      const key=this.dataset.adjust, max=key==='benefits'?60000:120000;
+      updateControl(key,Math.max(0,Math.min(max,state[key]+ +this.dataset.delta))); announce();
+    });
+  });
+
+  function moveIncome(value){ state.agi=value; render(); announce(); }
+  $('tryIncrease').addEventListener('click',function(){ moveIncome(Math.min(120000,state.agi+1000)); });
+  $('pinComparison').addEventListener('click',function(){ baseline={...state}; render(); announce(); });
+  $('restoreComparison').addEventListener('click',function(){ moveIncome(baseline.agi); });
+  $('restartExperiment').addEventListener('click',function(){
+    Object.assign(state,{benefits:12400,agi:36000,status:'joint'}); baseline={...state}; selectedBoundary=0;
+    els.statusSeg.value=state.status;
+    render(); announce();
+  });
+  $('boundarySelect').addEventListener('change',function(){ selectedBoundary=+this.value; render(); });
+  [['boundaryBelow',-1],['boundaryAt',0],['boundaryAbove',1]].forEach(function(pair){
+    $(pair[0]).addEventListener('click',function(){
+      const th=thresholdsFor(state.year,state.status), point=explorationBreaks(state.benefits,th.lo,th.up)[selectedBoundary];
+      if (point) moveIncome(Math.max(0,Math.min(120000,point.agi+pair[1])));
+    });
+  });
+  $('nextBoundary').addEventListener('click',function(){
+    const th=thresholdsFor(state.year,state.status), breaks=explorationBreaks(state.benefits,th.lo,th.up);
+    const k=breaks.findIndex(function(p){return p.agi>state.agi+1e-7;});
+    if(k>=0){ selectedBoundary=k; moveIncome(breaks[k].agi); }
+  });
+  $('applicableRule').addEventListener('click',function(){ $('sourceRules').open=true; });
+
+  document.querySelector('.chart-scroll').addEventListener('keydown',function(e){if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();moveIncome(Math.max(0,Math.min(120000,state.agi+(e.key==='ArrowRight'?1000:-1000))));setLink('agi');}});
+  setupYears();
   render();
-  CONTROLS.forEach(function(c){ els[c[0]].setAttribute('aria-valuetext', valueText(c)); });
-  window.addEventListener('resize', hideTip);
+  window.addEventListener('resize',function(){hideTip();render();});
 })();
 </script>
 </body>

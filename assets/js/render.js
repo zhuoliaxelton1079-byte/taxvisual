@@ -27,6 +27,15 @@
     p.textContent = tool.description;
     card.appendChild(p);
 
+    if (tool.taxYear) {
+      var year = document.createElement('p');
+      var yearLabel = document.createElement('strong');
+      yearLabel.textContent = 'Tax year: ';
+      year.appendChild(yearLabel);
+      year.appendChild(document.createTextNode(tool.taxYear));
+      card.appendChild(year);
+    }
+
     var meta = document.createElement('div');
     meta.className = 'tool-meta';
 
