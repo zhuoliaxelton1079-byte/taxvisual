@@ -6,6 +6,11 @@ A hand-authored static site — no build step, no framework, no npm. Every page 
 
 ## Adding a new tool
 
+Use the [shared explorable design guide](docs/explorable-design.md) for the
+experience and visual language, and the
+[interactive tool pattern](docs/interactive-tool-pattern.md) for model
+verification and implementation.
+
 This is the whole workflow — no other page needs hand-editing.
 
 1. Copy `tools/_starter/` to `tools/<your-slug>/`, and build your tool inside the marked sections of `tools/<your-slug>/index.html`.

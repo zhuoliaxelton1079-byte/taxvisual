@@ -260,6 +260,7 @@
   }
   @media (prefers-reduced-motion: reduce){ .app *, .tooltip{ transition:none !important; } }
 </style>
+<link rel="stylesheet" href="../../assets/css/tool-scope.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -294,6 +295,16 @@
         If itemizing barely beat the standard deduction, most of the refund never becomes taxable at all.
       </p>
     </div>
+
+    <section class="tool-scope" aria-labelledby="model-scope-title">
+      <h2 id="model-scope-title">Model scope</h2>
+      <dl>
+        <div><dt>Tax year</dt><dd>No year selected - user-supplied amounts</dd></div>
+        <div><dt>Supported situations</dt><dd>The taxable part of a state tax refund tied to deductions in one earlier year. Enter the standard deduction and other amounts for the year being tested.</dd></div>
+        <div><dt>Exclusions</dt><dd>Limits on the state and local tax deduction itself and refunds relating to more than one deduction year.</dd></div>
+        <div><dt>Last scope review</dt><dd><time datetime="2026-10-17">October 17, 2026</time> &mdash; checked against the model and its documentation; not a tax-law update.</dd></div>
+      </dl>
+    </section>
 
     <div class="layout">
 
@@ -469,8 +480,8 @@
           </div>
 
           <p class="footnote">
-            Educational simulation, not tax advice. A date-neutral model: the standard deduction is an
-            input rather than a fixed tax year, so the mechanics hold whatever the figures are. Assumes
+            Educational simulation, not tax advice. No tax year is selected: the standard deduction is an
+            input rather than a fixed tax year, so you must supply the amounts for the year being tested. Assumes
             the refund relates to tax deducted in a single earlier year and ignores any limit on the
             state and local tax deduction itself. Source model: ACCTG 410 Individual Taxation Toolbox,
             &ldquo;Tax Benefit Rule&rdquo; tab.

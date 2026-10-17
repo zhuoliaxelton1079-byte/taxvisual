@@ -324,6 +324,7 @@
   }
   @media (prefers-reduced-motion: reduce){ .app *, .tooltip{ transition:none !important; } }
 </style>
+<link rel="stylesheet" href="../../assets/css/tool-scope.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -370,6 +371,16 @@
         <span class="wp-status" id="wp-status" role="status"></span>
       </div>
     </div>
+
+    <section class="tool-scope" aria-labelledby="model-scope-title">
+      <h2 id="model-scope-title">Model scope</h2>
+      <dl>
+        <div><dt>Tax year</dt><dd>No year selected - opens on 2024 worksheet defaults</dd></div>
+        <div><dt>Supported situations</dt><dd>One business, including the wage/property limitation and service-business phase-out. Threshold and phase-in range are editable; defaults are $191,950 and $50,000, not an automatically selected current year.</dd></div>
+        <div><dt>Exclusions</dt><dd>Business aggregation, losses netted across businesses, qualified REIT dividends, publicly traded partnership income, and a complete annual return calculation.</dd></div>
+        <div><dt>Last scope review</dt><dd><time datetime="2026-10-17">October 17, 2026</time> &mdash; checked against the model and its documentation; not a tax-law update.</dd></div>
+      </dl>
+    </section>
 
     <section class="wp-result" aria-label="Result">
       <div class="wp-verdict">
@@ -723,9 +734,8 @@
           </div>
 
           <p class="footnote">
-            Educational simulation, not tax advice. A date-neutral model: the threshold and the
-            phase-in range are inputs rather than a fixed tax year, so the mechanics hold whatever the
-            figures are. They open on the 2024 single-filer amounts the source worksheet uses,
+            Educational simulation, not tax advice. No tax year is selected: the threshold and the
+            phase-in range are inputs rather than a fixed tax year, so the figures must be checked for the year being tested. They open on the 2024 single-filer amounts the source worksheet uses,
             $191,950 and $50,000. <b>&sect;199A(b)(3)(B) and (d)(3) now read $75,000 ($150,000 joint)</b>,
             so for a current year set the range slider accordingly; the threshold itself is inflation
             adjusted each year under &sect;199A(e)(2)(B). One trade or business only: no aggregation, no

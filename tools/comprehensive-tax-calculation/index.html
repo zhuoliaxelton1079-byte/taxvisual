@@ -362,6 +362,7 @@
   }
   @media (prefers-reduced-motion: reduce){ .app *, .tooltip{ transition:none !important; } }
 </style>
+<link rel="stylesheet" href="../../assets/css/tool-scope.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -399,6 +400,16 @@
         benefit of a preferential rate.
       </p>
     </div>
+
+    <section class="tool-scope" aria-labelledby="model-scope-title">
+      <h2 id="model-scope-title">Model scope</h2>
+      <dl>
+        <div><dt>Tax year</dt><dd>2025</dd></div>
+        <div><dt>Supported situations</dt><dd>US federal ordinary income and capital-gain stacking for all four filing statuses, starting from taxable income. Reproduces the source worksheet, including its documented base-tax shortfall of up to $2.09.</dd></div>
+        <div><dt>Exclusions</dt><dd>AGI and deduction calculations, credits, payments, alternative minimum tax, net investment income tax, and state tax.</dd></div>
+        <div><dt>Last scope review</dt><dd><time datetime="2026-10-17">October 17, 2026</time> &mdash; checked against the model and its documentation; not a tax-law update.</dd></div>
+      </dl>
+    </section>
 
     <div class="layout">
 

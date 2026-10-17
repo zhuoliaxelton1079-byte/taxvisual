@@ -2,6 +2,12 @@
 
 *A deliberately simple interactive showing how much of a Social Security benefit becomes taxable as other income rises. Self-contained page (`tools/social-security-inclusion/index.html`) sharing only the site's topbar/footer chrome — no build step, no dependencies beyond Google Fonts.*
 
+For the common experience and visual language used across all interactive
+tools, see the [shared explorable design guide](../explorable-design.md).
+The [Social Security case study](../social-security-explorable-design.md)
+records this pilot's layout, interaction, and maintenance decisions. Earlier
+visual rationale below is retained as implementation history.
+
 ## What it is
 
 Three controls — filing status, benefit amount, and income excluding Social
@@ -31,8 +37,8 @@ taxable benefits   = MIN(upper tier + carryforward, benefits × 85%)
 ```
 
 Thresholds are the statutory provisional-income figures, selected by the filing
-status toggle: **32,000 / 44,000** married filing jointly, **25,000 / 34,000**
-single. They are not indexed for inflation, so they need no tax-year label.
+status selector: **32,000 / 44,000** married filing jointly, **25,000 / 34,000**
+single. They are not indexed for inflation. The page explicitly supports 2025 (most recent) and 2026 (upcoming), using reviewed section 86 thresholds for each year.
 
 ### Verification
 
@@ -57,10 +63,9 @@ ceiling everywhere past "maximum reached."
 
 ## Layout
 
-- **The source rules** (collapsed `<details>`, directly above the chart): the
+- **The source rules** (collapsed `<details>`, below the exploration): the
   complete, unedited text of 26 U.S.C. §86. See below.
-- **Left rail:** filing-status toggle, two sliders (benefit, other income), and
-  three readouts — taxable benefits, the marginal rate stated in plain terms
+- **Inline explanation:** filing status and tax year selectors; benefit and other-income amounts each contain an exact number input, up/down buttons and a slider. Matching chart marks highlight on focus or hover. Secondary readouts — taxable benefits, the marginal rate stated in plain terms
   ("next $1 of other income → $0.50"), and provisional income with its threshold.
 - **The chart:** taxable benefits against income excluding Social Security, with
   the benefit held fixed. Drawn *exactly*, not sampled — the slope only changes at
@@ -197,11 +202,11 @@ fresh `curl` of the source is the whole job.
 - Full light/dark via tool-scoped custom properties, namespaced apart from the
   site-wide `--tv-*` tokens. The dark ramp is selected for the dark surface, not
   flipped.
-- Responsive to 390px: the layout collapses to one column, and below ~600px the
-  chart keeps a legible floor and scrolls sideways rather than shrinking its
-  10.5px axis text to about 5px.
+- Responsive to 390px: the layout collapses to one column and the chart adapts
+  its SVG width to the container instead of requiring horizontal scrolling. Axis labels retain their
+  configured font size rather than shrinking with a fixed-width viewBox.
 - Accessibility: the SVG carries a generated prose description of what it
-  currently shows; the turning-point table and the rail readouts reach every value
+  currently shows; the boundary controls and the explanatory readouts reach every value
   without hover; hover is an enhancement, never the only route to a number.
 - No build tooling — one inline `<script>`, chart hand-built with
   `document.createElementNS`, no charting library.
@@ -215,3 +220,39 @@ fresh `curl` of the source is the whole job.
   right on this curve than the tool shows.
 - The statute text is a static copy with a retrieval date, not a live feed. It goes
   stale silently when Congress amends §86.
+
+
+## Update log
+
+### 2026-10-17 - Chart-integrated facts and answer
+
+Blue fact controls now sit in reserved chart bands: annual benefits next to the
+ceiling, and other income along its horizontal axis. The calculated answer is a
+purple annotation connected to the current point, with matching purple guides
+and benefit split. Explicit Fact/Answer labels supplement the colors. The income
+slider and plot share a fixed 0-to-120,000 domain. HTML inputs stay outside SVG
+for native keyboard/screen-reader behavior. Narrow screens reserve a top gutter
+for the answer annotation rather than covering the curve.
+
+### 2026-10-17 - One combined panel
+
+The editable facts now sit above the chart inside one shared panel. The two
+separate bordered cards and sticky side-by-side layout were removed.
+
+### 2026-10-17 - Inline explanation and tax years
+
+- Replaced the separate input rail with controls embedded in the explanatory text;
+  linked keyboard focus and hover to chart marks without adding a color legend.
+- Added 2025 and 2026 year rules and a selector. The previous/current calendar-year
+  pair is always shown as most recent/upcoming. A new year remains review pending
+  and unavailable for calculation until its rules are added to `YEAR_RULES`.
+- Reviewed IRS Publication 915 (2025), https://www.irs.gov/publications/p915,
+  and current IRC section 86, https://www.law.cornell.edu/uscode/text/26/86.
+  The inclusion thresholds match for 2025 and enacted 2026 rules. This does not
+  add tax-exempt interest, other excluded adjustments, or a total-tax calculation.
+- Made the chart adapt to its container and collapsed comparisons, boundaries,
+  scope, source text and the public update log to reduce the initial reading load.
+
+For each later change, add a dated entry here and in the tool's visible update
+log. Before enabling another year, check the official rules, add that year's
+explicit data, and run the model/year checks and browser interactions.

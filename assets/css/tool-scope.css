@@ -1,0 +1,42 @@
+/* Static scope panels stay readable before scripts load and follow each tool theme. */
+.tool-scope {
+  margin-block: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--border, var(--rule));
+  border-radius: var(--radius-md);
+  background: var(--tool-surface, var(--surface));
+  color: var(--tool-ink, var(--ink));
+  font-family: var(--font-sans);
+  overflow-wrap: anywhere;
+}
+.tool-scope h2 {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: inherit;
+}
+.tool-scope dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-5);
+  margin: 0;
+}
+.tool-scope dl > div { min-width: 0; }
+.tool-scope dt {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: inherit;
+}
+.tool-scope dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--ink-soft, var(--muted));
+}
+@media (max-width: 600px) {
+  .tool-scope dl { grid-template-columns: minmax(0, 1fr); }
+}
+/* Existing workpaper pages print their exported record only. */
+@media print { .tool-scope { display: none; } }
