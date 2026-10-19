@@ -167,5 +167,22 @@ window.TOOLS = [
       { label: 'Limits', value: '$250,000 / $500,000' },
       { label: 'Model', value: 'Date-based; no annual tax table' }
     ]
+  },
+  {
+    slug: 'retirement-contribution-limits',
+    taxYear: '2025 / 2026 (reviewed)',
+    title: 'Retirement Contribution Limits',
+    description: 'Find the most one taxpayer can put into every plan at once: a 401(k) or 403(b) with a match, a SEP or solo 401(k) for a side business, a governmental 457(b), IRAs and a spousal IRA. Set a target to see the best order to fill them, which cross-plan limit binds and how the plan contributions lower MAGI for the Roth and the IRA deduction.',
+    category: 'individual-income-tax',
+    status: 'live',
+    url: 'tools/retirement-contribution-limits/index.html',
+    order: 11,
+    featured: false,
+    facts: [
+      { label: 'Authority', value: 'IRC §§402(g), 404(a)(3), 415(c), 457(e)(15), 219, 408A' },
+      { label: 'Jurisdiction', value: 'US federal' },
+      { label: 'Accounts', value: '401(k)/403(b), SEP, solo 401(k), 457(b), IRA, Roth IRA, spousal IRA' },
+      { label: 'Tax year', value: '2025 / 2026' }
+    ]
   }
 ];
