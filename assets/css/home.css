@@ -4,33 +4,6 @@
    stacking bordered, shadowed cards.
    ========================================================================== */
 
-/* ---- Selected homepage logo --------------------------------------------- */
-
-.brand--wordmark {
-  --brand-artwork-paper: #fbfaf8;
-  flex: none;
-  gap: 0;
-}
-
-.brand--wordmark .brand-logo {
-  display: block;
-  width: 13.5rem;
-  height: auto;
-}
-
-/* Preserve the selected teal and charcoal artwork in both themes. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .brand--wordmark {
-    background: var(--brand-artwork-paper);
-    border-radius: var(--radius-sm);
-  }
-}
-
-:root[data-theme="dark"] .brand--wordmark {
-  background: var(--brand-artwork-paper);
-  border-radius: var(--radius-sm);
-}
-
 /* ---- Section rhythm ------------------------------------------------------ */
 
 .section {

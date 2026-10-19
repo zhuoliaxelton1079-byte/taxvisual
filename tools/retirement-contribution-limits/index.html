@@ -1,0 +1,1480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retirement Contribution Limits | TaxVisual</title>
+<meta name="description" content="Find the most one taxpayer can put into every retirement plan in a year: a workplace 401(k) or 403(b) with a match, a SEP or solo 401(k) for a side business, a governmental 457(b) and IRAs, and see which cross-plan limit stops each one.">
+<link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<link rel="stylesheet" href="../../assets/css/components.css">
+<style>
+  /* ---------------------------------------------------------------------
+     Tool-scoped theme, matching the Social Security reference
+     implementation: blue for editable facts, purple for the calculated
+     answer, neutrals for context. Inside the limit bars, employee money is
+     purple (catch-up a lighter step of the same ramp, because it sits
+     outside §415(c)) and employer money is a distinct teal. Room that
+     another limit blocks is hatched, so no state relies on colour alone.
+     --------------------------------------------------------------------- */
+  :root{
+    color-scheme: light;
+    --tool-surface:#fcfcfb; --page:#f9f9f7; --tool-ink:#0b0b0b; --ink-soft:#52514e; --ink-muted:#75736e;
+    --gridline:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --tool-accent:#2a78d6; --fact-ink:#1c579e; --answer:#6d28d9; --answer-wash:#f4f0ff;
+    --employer:#0f766e; --warn:#9a5b00; --warn-wash:#fff6e6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --tool-surface:#1a1a19; --page:#0d0d0d; --tool-ink:#ffffff; --ink-soft:#c3c2b7; --ink-muted:#898781;
+      --gridline:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,0.10);
+      --tool-accent:#3987e5; --fact-ink:#8bbcf3; --answer:#c4b5fd; --answer-wash:#252033;
+      --employer:#3cbfae; --warn:#f0b357; --warn-wash:#2a2112;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --tool-surface:#1a1a19; --page:#0d0d0d; --tool-ink:#ffffff; --ink-soft:#c3c2b7; --ink-muted:#898781;
+    --gridline:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,0.10);
+    --tool-accent:#3987e5; --fact-ink:#8bbcf3; --answer:#c4b5fd; --answer-wash:#252033;
+    --employer:#3cbfae; --warn:#f0b357; --warn-wash:#2a2112;
+  }
+
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); }
+  .app { background:var(--page); color:var(--tool-ink); font-family:var(--font-sans); padding:28px 16px 40px; }
+  .wrap { max-width:1200px; margin:0 auto; }
+  .masthead { display:flex; flex-direction:column; gap:8px; padding-bottom:16px; margin-bottom:20px; border-bottom:1px solid var(--border); }
+  .kicker { font:11px var(--font-mono); letter-spacing:.12em; text-transform:uppercase; color:var(--ink-muted); }
+  .app h1 { font:600 clamp(24px,3.4vw,32px)/1.2 var(--font-serif); margin:2px 0 0; text-wrap:balance; color:var(--tool-ink); }
+  .standfirst { font-size:15px; color:var(--ink-soft); margin:0; line-height:1.55; max-width:68ch; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+
+  .reading-layout { display:grid; grid-template-columns:minmax(270px,340px) minmax(0,1fr); gap:22px; align-items:start; }
+  @media (max-width:900px){ .reading-layout { grid-template-columns:minmax(0,1fr); } }
+  .panel { background:var(--tool-surface); border:1px solid var(--border); border-radius:10px; padding:24px; }
+  .panel h2 { font:600 20px/1.35 var(--font-serif); margin:0 0 16px; }
+
+  /* ---- facts ---- */
+  .fact-label, .answer-label { font:600 11px/1.5 var(--font-sans); letter-spacing:.045em; text-transform:uppercase; }
+  .fact-label { color:var(--fact-ink); }
+  .answer-label { color:var(--answer); }
+  .fact-grid { display:grid; gap:14px; }
+  .fact-pair { display:grid; grid-template-columns:minmax(0,84px) minmax(0,1fr); gap:10px; }
+  .fact-field { min-width:0; }
+  .fact-field > .fact-label { display:block; margin-bottom:6px; }
+  .inline-choice { display:block; border-bottom:2px solid var(--tool-accent); background:color-mix(in srgb,var(--tool-accent) 7%,var(--tool-surface)); border-radius:4px; }
+  .inline-choice select { width:100%; min-height:38px; border:0; padding:4px 6px; font:500 13px var(--font-sans); color:var(--tool-ink); background:transparent; }
+  .inline-choice option { background:var(--tool-surface); color:var(--tool-ink); }
+  .inline-amount { display:flex; align-items:center; gap:4px; width:100%; padding:1px 8px; border-bottom:2px solid var(--tool-accent); border-radius:4px; background:color-mix(in srgb,var(--tool-accent) 7%,var(--tool-surface)); }
+  .inline-amount > span { font-size:15px; color:var(--ink-soft); }
+  .inline-number { width:100%; min-width:0; border:0; padding:7px 0; background:transparent; color:var(--tool-ink); font:500 15px var(--font-mono); }
+  .inline-choice:focus-within, .inline-amount:focus-within { outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .inline-number:focus-visible, .inline-choice select:focus-visible { outline:none; }
+  .year-note, .mini-note { margin:6px 0 0; font-size:11.5px; line-height:1.45; color:var(--ink-muted); }
+  .year-note { margin-top:-6px; }
+  .check input:focus-visible, .fact-group > summary:focus-visible { outline:2px solid var(--tool-accent); outline-offset:2px; }
+
+  .fact-group { border-top:1px solid var(--gridline); padding-top:12px; }
+  .fact-group > summary { list-style:none; cursor:pointer; display:flex; align-items:baseline; gap:8px; font:600 12px/1.5 var(--font-sans); letter-spacing:.04em; text-transform:uppercase; color:var(--fact-ink); }
+  .fact-group > summary::-webkit-details-marker { display:none; }
+  .fact-group > summary::before { content:'+'; width:12px; flex:none; }
+  .fact-group[open] > summary::before { content:'\2212'; }
+  .group-state { margin-left:auto; font:500 12px var(--font-mono); letter-spacing:0; text-transform:none; color:var(--tool-ink); }
+  .group-body { display:grid; gap:12px; margin-top:12px; }
+  .group-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
+  .mini-field { display:grid; gap:4px; align-content:start; font-size:12.5px; line-height:1.4; color:var(--ink-soft); }
+  .cite { font-size:11px; color:var(--ink-muted); }
+  .check { display:flex; gap:8px; align-items:flex-start; font-size:13px; line-height:1.4; color:var(--tool-ink); cursor:pointer; }
+  .check input { width:18px; height:18px; margin:1px 0 0; flex:none; accent-color:var(--tool-accent); }
+  .app [data-needs][hidden] { display:none; }
+  .derived { margin:0; font-size:12px; line-height:1.45; color:var(--ink-soft); padding:8px 10px; border-left:2px solid var(--gridline); }
+
+  /* ---- workspace ---- */
+  .tax-workspace { margin:0; min-width:0; }
+  .answer-band { display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px 24px; align-items:end; padding:16px 18px; margin-bottom:24px; border-radius:8px; background:var(--answer-wash); border-left:3px solid var(--answer); }
+  .answer-total { font:600 clamp(28px,4vw,36px)/1.05 var(--font-mono); color:var(--answer); font-variant-numeric:tabular-nums; }
+  .answer-sentence { margin:0; font:15px/1.5 var(--font-serif); color:var(--tool-ink); }
+  .answer-split { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:4px 18px; margin:4px 0 0; padding:0; list-style:none; font-size:12.5px; color:var(--ink-soft); }
+  .answer-split b { font:600 13px var(--font-mono); color:var(--tool-ink); }
+  @media (max-width:600px){ .answer-band { grid-template-columns:minmax(0,1fr); } }
+
+  .scene-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:4px 16px; margin:0 0 6px; }
+  .scene-head h3 { font:600 17px/1.35 var(--font-serif); margin:0; }
+  .scene-lede { margin:0 0 14px; font-size:13px; line-height:1.55; color:var(--ink-soft); max-width:70ch; }
+  .key { display:flex; flex-wrap:wrap; gap:6px 16px; margin:0 0 14px; padding:0; list-style:none; font-size:12px; color:var(--ink-soft); }
+  .key li { display:flex; align-items:center; gap:6px; }
+  .sw { width:16px; height:10px; border-radius:2px; display:inline-block; flex:none; }
+  .sw.tick { width:2px; height:14px; border-radius:0; background:var(--tool-ink); }
+
+  /* ---- buckets: each limit is a bucket, the contribution is its fill ---- */
+  .buckets { display:grid; grid-template-columns:repeat(var(--n, 4), minmax(0,1fr)); gap:18px 14px; align-items:start; }
+  .bk-head { display:flex; flex-direction:column; justify-content:flex-end; align-items:center; min-height:88px; }
+  @media (max-width:760px){ .buckets { grid-template-columns:repeat(2, minmax(0,1fr)); } .buckets .bk-body { width:46%; margin-right:38%; } .buckets .mark-label { font-size:9.5px; left:calc(100% + 5px); } }
+  .bk { display:flex; flex-direction:column; align-items:center; min-width:0; padding:8px 4px 10px; border-radius:8px; text-align:center; transition:background var(--transition); }
+  .bk.is-linked { background:color-mix(in srgb,var(--tool-accent) 6%,transparent); }
+  .bk-group { font:600 10px/1.3 var(--font-sans); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); }
+  .bk-title { margin:2px 0 6px; font:600 12.5px/1.25 var(--font-sans); color:var(--tool-ink); min-height:2.5em; display:flex; align-items:center; }
+  .limit-btn { display:inline; padding:0; border:0; background:none; cursor:pointer; font:inherit; color:var(--tool-ink);
+    text-decoration:underline dotted color-mix(in srgb,var(--tool-ink) 55%,transparent); text-underline-offset:3px; text-decoration-thickness:1.5px; }
+  .limit-btn b { font:600 12px var(--font-mono); }
+  .tip { display:inline; padding:0; border:0; background:none; cursor:pointer; font:inherit; color:inherit;
+    text-decoration:underline dotted color-mix(in srgb,currentColor 60%,transparent); text-decoration-thickness:1.5px; text-underline-offset:3px; }
+  .tip:hover { color:var(--tool-accent); text-decoration-color:var(--tool-accent); }
+  .tip:focus-visible { outline:2px solid var(--tool-accent); outline-offset:2px; border-radius:2px; }
+  .plan-why { margin-left:6px; font:500 12px var(--font-sans); color:var(--ink-muted); }
+  .bk-detail { margin-top:6px; font-size:11.5px; line-height:1.5; color:var(--ink-soft); }
+  .bk-detail .tip { font:600 11.5px var(--font-mono); color:var(--tool-ink); }
+  .limit-btn:hover { color:var(--tool-accent); text-decoration-color:var(--tool-accent); }
+  .limit-btn:focus-visible { outline:2px solid var(--tool-accent); outline-offset:2px; border-radius:2px; }
+  .limit-btn::after { content:'?'; display:inline-block; width:13px; height:13px; margin-left:3px; border-radius:50%; font:600 9px/13px var(--font-sans);
+    text-align:center; vertical-align:1px; background:color-mix(in srgb,var(--tool-ink) 10%,transparent); color:var(--ink-soft); }
+  .bk-limit { font-size:11px; color:var(--ink-muted); }
+  .bk-well { position:relative; width:100%; height:var(--bk-h); margin-top:8px; display:flex; align-items:flex-end; justify-content:center; }
+  .bk-body { position:relative; width:min(50%, 112px); margin-right:28%; }
+  .buckets.is-five .bk-body { width:min(46%, 100px); margin-right:40%; }
+  .buckets.is-five .mark-label { font-size:9.5px; left:calc(100% + 4px); }
+  .bucket { position:absolute; inset:0; border:2.5px solid var(--ink-soft); border-top:0; border-radius:0 0 12px 12px; overflow:hidden; background:color-mix(in srgb,var(--tool-ink) 3%,transparent); }
+  .bk-rim { position:absolute; top:-2px; left:-6px; right:-6px; height:3px; border-radius:2px; background:var(--ink-soft); }
+  .bucket.is-off { border-style:dashed; border-color:var(--baseline); }
+  .fill { position:absolute; left:0; right:0; }
+  .fill.def { background:var(--answer); }
+  .fill.catch { background:color-mix(in srgb,var(--answer) 40%,var(--tool-surface)); }
+  .fill.roth { background:color-mix(in srgb,var(--answer) 68%,var(--tool-surface)); }
+  .fill.nd { background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--answer) 45%,var(--tool-surface)) 0 5px,color-mix(in srgb,var(--answer) 25%,var(--tool-surface)) 5px 9px); }
+  .fill.er { background:var(--employer); }
+  .fill.used { background:var(--baseline); }
+  .fill.open { background:color-mix(in srgb,var(--answer) 8%,var(--tool-surface)); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--answer) 40%,transparent); }
+  .fill.blocked { background:repeating-linear-gradient(135deg,transparent 0 4px,color-mix(in srgb,var(--ink-muted) 50%,transparent) 4px 5px); }
+  .fill + .fill { box-shadow:inset 0 -1.5px 0 var(--tool-surface); }
+  .fill-label { position:absolute; left:0; right:0; display:flex; flex-direction:column; justify-content:center; align-items:center; overflow:hidden; padding:0 3px;
+    font:500 10px/1.2 var(--font-sans); color:var(--tool-surface); pointer-events:none; }
+  .fill-label b { font:600 10.5px var(--font-mono); }
+  .fill-label.dark { color:var(--tool-ink); }
+  .bk-off { position:absolute; bottom:12px; left:0; right:0; font-size:11px; color:var(--ink-muted); }
+  .bk-contrib { margin-top:8px; font-size:11px; color:var(--ink-soft); }
+  .bk-contrib b { display:block; font:600 17px var(--font-mono); color:var(--answer); font-variant-numeric:tabular-nums; }
+  .bk.is-off .bk-contrib b { color:var(--ink-muted); }
+  .bk-state { margin-top:3px; font-size:11px; line-height:1.35; color:var(--ink-muted); }
+  .bk-state.is-full { color:var(--answer); font-weight:600; }
+  .mark { position:absolute; left:2px; right:2px; height:0; border-top:1.5px dashed var(--tool-ink); opacity:.7; pointer-events:none; }
+  .mark.is-limit { left:-6px; right:-6px; border-top:2px solid var(--tool-ink); opacity:1; }
+  .mark-label { position:absolute; left:calc(100% + 8px); transform:translateY(50%); white-space:nowrap; font:500 10.5px var(--font-mono); color:var(--ink-soft); }
+  .mark-label.is-limit { color:var(--tool-ink); font-weight:600; }
+  .over-zone { position:absolute; left:2px; right:2px; display:flex; align-items:center; justify-content:center; border:1px dashed var(--baseline); border-bottom:0; pointer-events:none; }
+  .over-zone span { font:500 9.5px/1.15 var(--font-sans); color:var(--ink-muted); text-align:center; }
+  .bk-sub { display:block; font-size:10.5px; color:var(--ink-muted); }
+  .bk-baseline { height:1px; margin:-1px 0 0; background:var(--baseline); }
+
+  /* ---- the per-person deferral pool, spanning the two plans that share it ---- */
+  .pool-row { display:grid; grid-template-columns:repeat(var(--n, 4), minmax(0,1fr)); gap:10px 14px; margin:0 0 6px; }
+  @media (max-width:760px){ .pool-row { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  .pool-strip { grid-column:1 / span 2; padding:12px 14px 4px; border:1.5px solid color-mix(in srgb,var(--answer) 45%,var(--gridline)); border-bottom:0; border-radius:10px 10px 0 0;
+    background:color-mix(in srgb,var(--answer) 5%,var(--tool-surface)); transition:background var(--transition); }
+  .pool-strip.is-linked { background:color-mix(in srgb,var(--tool-accent) 8%,var(--tool-surface)); }
+  .pool-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 8px; font-size:12px; color:var(--ink-soft); }
+  .pool-head strong { font:600 13.5px var(--font-sans); color:var(--tool-ink); }
+  .pool-head .status { margin-left:auto; }
+  .pool-bar { display:flex; height:26px; margin:8px 0 6px; border-radius:4px; overflow:hidden; background:color-mix(in srgb,var(--tool-ink) 4%,transparent); box-shadow:inset 0 0 0 1px var(--gridline); }
+  .pool-bar span { display:flex; align-items:center; justify-content:center; min-width:0; overflow:hidden; white-space:nowrap; font:600 10.5px var(--font-mono); color:var(--tool-surface); }
+  .pool-bar span + span { box-shadow:inset 2px 0 0 var(--tool-surface); }
+  .pool-bar .def { background:var(--answer); }
+  .pool-bar .catch { background:color-mix(in srgb,var(--answer) 40%,var(--tool-surface)); color:var(--tool-ink); }
+  .pool-bar .left { background:repeating-linear-gradient(135deg,transparent 0 4px,color-mix(in srgb,var(--answer) 30%,transparent) 4px 5px); color:var(--ink-soft); }
+  .pool-arrows { display:grid; grid-template-columns:1fr 1fr; gap:14px; font-size:11.5px; line-height:1.35; color:var(--ink-soft); text-align:center; }
+  .pool-arrows span::after { content:'\2193'; display:block; font-size:15px; line-height:1.1; color:var(--answer); }
+  .pool-arrows b { font:600 12px var(--font-mono); color:var(--tool-ink); }
+
+  .fact-field.lever { padding:12px; margin:0 -12px; border-radius:8px; background:color-mix(in srgb,var(--tool-accent) 6%,var(--tool-surface)); }
+  .lever-tag { margin-left:6px; padding:1px 6px; border-radius:10px; font:600 10px/1.5 var(--font-sans); letter-spacing:.04em; background:var(--tool-accent); color:#fff; vertical-align:1px; }
+  .target-range { display:block; width:100%; margin:10px 0 0; accent-color:var(--tool-accent); }
+  .link-btn { padding:0; border:0; background:none; font:inherit; color:var(--tool-accent); text-decoration:underline; cursor:pointer; }
+  .link-btn[aria-pressed="true"] { color:var(--ink-muted); text-decoration:none; cursor:default; }
+  .link-btn:focus-visible { outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .plan-title { margin:24px 0 8px; font:600 15px/1.35 var(--font-serif); color:var(--tool-ink); }
+  .plan-list { margin:22px 0 0; padding:16px 18px 16px 38px; border-radius:8px; border:1px solid var(--gridline); font-size:13.5px; line-height:1.65; color:var(--ink-soft); }
+  .plan-list li + li { margin-top:6px; }
+  .plan-list { list-style:none; padding:12px 16px; counter-reset:step; }
+  .plan-list li { display:grid; grid-template-columns:20px 78px minmax(0,1fr); gap:10px; align-items:baseline; padding:6px 0; }
+  .plan-list li + li { margin-top:0; border-top:1px solid var(--gridline); }
+  .plan-list li::before { counter-increment:step; content:counter(step); font:600 12px var(--font-mono); color:var(--answer); }
+  .plan-list li.plan-total::before { content:'='; counter-increment:none; }
+  .plan-list .step-amt { font:600 14px var(--font-mono); text-align:right; color:var(--answer); font-variant-numeric:tabular-nums; }
+  .plan-list li.is-zero .step-amt { color:var(--ink-muted); }
+  .plan-list li.is-na { opacity:.5; }
+  .plan-list li.is-na .step-amt { color:var(--ink-muted); }
+  .plan-list li.plan-total { border-top:2px solid var(--gridline); }
+  @media (max-width:600px){ .plan-list li { grid-template-columns:18px minmax(0,1fr); } .plan-list .step-amt { text-align:left; } .plan-list .step-text { grid-column:2; } }
+  .plan-list li::marker { font:600 12px var(--font-mono); color:var(--answer); }
+  .plan-list .amt { font:600 13.5px var(--font-mono); color:var(--answer); }
+  .plan-list .limit-btn b { font-size:13px; }
+  .plan-head { margin:0 0 6px -20px; font:600 12px var(--font-sans); letter-spacing:.04em; text-transform:uppercase; color:var(--ink-muted); list-style:none; }
+
+  /* ---- limit pop-up ---- */
+  .limit-pop { width:min(460px, calc(100vw - 32px)); max-height:calc(100vh - 48px); overflow:auto; margin:auto; padding:20px 22px; border:1px solid var(--border); border-radius:12px;
+    background:var(--tool-surface); color:var(--tool-ink); font-family:var(--font-sans); box-shadow:0 18px 48px rgba(0,0,0,.25); }
+  .limit-pop::backdrop { background:rgba(0,0,0,.28); }
+  .limit-pop.is-fallback { position:fixed; inset:0; z-index:50; }
+  .limit-pop[hidden] { display:none; }
+  .pop-head { display:flex; justify-content:space-between; align-items:start; gap:12px; }
+  .pop-head h4 { margin:0; font:600 17px/1.3 var(--font-serif); }
+  .pop-head .cite { display:block; margin-top:2px; font-size:11.5px; }
+  .pop-close { flex:none; width:30px; height:30px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--ink-soft); font-size:18px; line-height:1; cursor:pointer; }
+  .pop-close:focus-visible { outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .pop-lede { margin:10px 0 0; font-size:13px; line-height:1.55; color:var(--ink-soft); }
+  .pop-table { width:100%; margin:12px 0 0; border-collapse:collapse; font-size:12.5px; }
+  .pop-table td { padding:5px 0; border-bottom:1px solid var(--gridline); vertical-align:top; color:var(--ink-soft); }
+  .pop-table td.num { padding-left:12px; text-align:right; white-space:nowrap; font-family:var(--font-mono); font-variant-numeric:tabular-nums; color:var(--tool-ink); }
+  .pop-table td .cite { display:block; font-size:10.5px; }
+  .pop-table tr.total td { font-weight:600; color:var(--tool-ink); }
+  .pop-table tr.total td.num { color:var(--answer); }
+  .pop-table tr.binds td:first-child::after { content:' \2190 binds'; font:600 10.5px var(--font-sans); color:var(--answer); }
+  .pop-why { margin:12px 0 0; padding:10px 12px; border-radius:6px; background:var(--answer-wash); font-size:12.5px; line-height:1.55; }
+
+  .phase-scene { margin-top:30px; padding-top:22px; border-top:1px solid var(--gridline); }
+  .chart-shell { position:relative; }
+  .chart-shell svg { display:block; width:100%; height:auto; overflow:visible; }
+  .axis-text { font:10.5px var(--font-mono); fill:var(--ink-muted); }
+  .axis-text.emph { fill:var(--tool-ink); font-weight:500; }
+  .axis-text.magi { fill:var(--answer); font-weight:600; }
+  .line-label { font:600 11.5px var(--font-sans); fill:var(--ink-soft); paint-order:stroke; stroke:var(--tool-surface); stroke-width:3px; stroke-linejoin:round; }
+  .shift-label { font:500 11px var(--font-sans); fill:var(--ink-soft); paint-order:stroke; stroke:var(--tool-surface); stroke-width:3px; stroke-linejoin:round; }
+  .point-text { font:600 12px var(--font-mono); fill:var(--answer); paint-order:stroke; stroke:var(--tool-surface); stroke-width:4px; stroke-linejoin:round; }
+  .phase-answer { margin:12px 0 0; font-size:13px; line-height:1.6; color:var(--ink-soft); }
+  .phase-answer b { color:var(--tool-ink); }
+  .phase-answer .amt { font:600 13px var(--font-mono); color:var(--answer); }
+
+  .notes { display:grid; gap:8px; margin:20px 0 0; padding:0; list-style:none; }
+  .notes:empty { display:none; }
+  .notes li { display:flex; gap:8px; padding:8px 12px; border-radius:6px; font-size:12.5px; line-height:1.5; background:var(--warn-wash); color:var(--tool-ink); }
+  .notes li::before { content:'\26A0'; flex:none; color:var(--warn); font-weight:600; }
+
+  .evidence { margin-top:24px; border-top:1px solid var(--gridline); }
+  .evidence details { border-bottom:1px solid var(--gridline); }
+  .evidence summary { cursor:pointer; padding:12px 0; font:600 13px var(--font-sans); color:var(--tool-ink); }
+  .evidence summary:focus-visible { outline:2px solid var(--tool-accent); outline-offset:2px; }
+  .evidence .body { padding:0 0 14px; font-size:13px; line-height:1.6; color:var(--ink-soft); }
+  .evidence .body p { margin:6px 0; }
+  .evidence a { color:var(--tool-accent); }
+  .scope-line { margin:14px 0 0; font-size:12px; line-height:1.5; color:var(--ink-muted); }
+  .table-wrap { overflow-x:auto; }
+  .analysis-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .analysis-table th, .analysis-table td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--gridline); vertical-align:top; }
+  .analysis-table th { font:600 11px/1.4 var(--font-sans); letter-spacing:.04em; text-transform:uppercase; color:var(--ink-muted); }
+  .analysis-table td.line { font:500 11.5px var(--font-mono); color:var(--ink-muted); white-space:nowrap; }
+  .analysis-table td.num { text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums; color:var(--tool-ink); white-space:nowrap; }
+  .analysis-table .why { display:block; margin-top:2px; font-size:11.5px; line-height:1.45; color:var(--ink-muted); }
+  .analysis-table tr.is-total td { font-weight:600; color:var(--answer); }
+  .analysis-table tr.group td { padding-top:14px; font:600 11px var(--font-sans); letter-spacing:.04em; text-transform:uppercase; color:var(--fact-ink); border-bottom:0; }
+
+  @media (max-width:600px){
+    .panel { padding:14px; }
+  }
+  @media (prefers-reduced-motion: reduce){ .app *{ transition:none !important; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand brand--wordmark" href="../../index.html" aria-label="TaxVisual home">
+        <img class="brand-logo" src="../../assets/img/taxvisual-logo-deep-teal.png" alt="TaxVisual" width="2172" height="724" decoding="async">
+      </a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="../../services/index.html">Services</a></li>
+          <li><a href="../../samples/index.html">Samples</a></li>
+          <li><a href="../../tools/index.html" aria-current="true">Tools</a></li>
+          <li><a href="../../resources/index.html">Resources</a></li>
+          <li><a href="../../about/index.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+<div class="app" id="main">
+  <div class="wrap">
+    <div class="masthead">
+      <div class="kicker">Retirement savings &middot; Explorable explanation</div>
+      <h1>How Much Can Go Into Every Retirement Plan at Once?</h1>
+    </div>
+
+    <div class="reading-layout" id="readingLayout">
+    <section class="panel facts-panel" aria-labelledby="facts-title">
+      <h2 id="facts-title">Taxpayer facts</h2>
+      <div class="fact-grid">
+        <div class="fact-pair">
+          <div class="fact-field">
+            <label class="fact-label" for="yearSelect">Tax year</label>
+            <span class="inline-choice"><select id="yearSelect" aria-describedby="yearNote"></select></span>
+          </div>
+          <div class="fact-field" data-link="ira">
+            <label class="fact-label" for="statusSelect">Filing status</label>
+            <span class="inline-choice"><select id="statusSelect"><option value="single" title="Single, head of household or qualifying surviving spouse">Single, HOH or QSS</option><option value="joint">Married filing jointly</option><option value="mfsApart" title="Married filing separately, lived apart from spouse all year">MFS, lived apart</option><option value="mfsTogether" title="Married filing separately, lived with spouse at any time in the year">MFS, lived together</option></select></span>
+          </div>
+        </div>
+        <p class="year-note" id="yearNote"></p>
+        <div class="fact-field lever" data-link="pool e415 g457 b415 bER ira">
+          <label class="fact-label" for="targetIn">Your target contribution <span class="lever-tag">Planning lever</span></label>
+          <span class="inline-amount"><span aria-hidden="true">$</span><input class="inline-number" id="targetIn" type="text" inputmode="decimal" autocomplete="off" aria-describedby="targetNote"></span>
+          <input type="range" class="target-range" id="targetRange" min="0" step="250" aria-label="Your target contribution">
+          <p class="mini-note" id="targetNote">Your money<span data-needs="joint">, both IRAs included</span>; the <button type="button" class="tip" data-pop="target" aria-haspopup="dialog">match comes on top</button>. <button type="button" class="link-btn" id="targetMax"></button></p>
+        </div>
+        <div class="fact-field" data-link="pool e415 g457 ira">
+          <label class="fact-label" for="ageIn">Age on December 31</label>
+          <span class="inline-amount"><input class="inline-number" id="ageIn" data-key="age" data-max="100" type="text" inputmode="numeric" autocomplete="off" value="61" aria-describedby="ageNote"></span>
+          <p class="mini-note" id="ageNote"><button type="button" class="tip" data-pop="catchup" aria-haspopup="dialog">Catch-ups</button> from age 50, larger at 60&ndash;63.</p>
+        </div>
+        <label class="check" data-needs="married" data-link="ira sira"><input type="checkbox" id="spouseCovered"> Spouse is covered by a workplace retirement plan</label>
+        <details class="fact-group" data-needs="joint" data-link="sira ira" open>
+          <summary>Spouse <span class="group-state" id="stateSpouse"></span></summary>
+          <div class="group-body">
+            <div class="group-pair">
+              <label class="mini-field"><span>Age on Dec. 31</span><span class="inline-amount"><input class="inline-number" data-key="spouseAge" data-max="100" type="text" inputmode="numeric" autocomplete="off" value="58"></span></label>
+              <label class="mini-field"><span>Compensation</span><span class="inline-amount"><span aria-hidden="true">$</span><input class="inline-number" data-key="spouseComp" data-max="2000000" type="text" inputmode="decimal" autocomplete="off" value="0"></span></label>
+            </div>
+            <label class="mini-field"><span>Pre-tax deferrals to the spouse&rsquo;s own workplace plan</span><span class="inline-amount"><span aria-hidden="true">$</span><input class="inline-number" data-key="spouseDeferrals" data-max="200000" type="text" inputmode="decimal" autocomplete="off" value="0"></span></label>
+            <p class="derived" id="spouseDerived"></p>
+          </div>
+        </details>
+        <div class="fact-field" data-link="ira">
+          <label class="fact-label" for="otherIn">Other income in MAGI</label>
+          <span class="inline-amount"><span aria-hidden="true">$</span><input class="inline-number" id="otherIn" data-key="other" data-max="2000000" type="text" inputmode="decimal" autocomplete="off" value="2,100" aria-describedby="otherNote"></span>
+          <p class="mini-note" id="otherNote">Interest, dividends and similar income<span data-needs="joint"> of both spouses</span>.</p>
+        </div>
+
+        <details class="fact-group" data-link="pool e415 g457 ira" open>
+          <summary>Employer 1 &middot; W-2 job <span class="group-state" id="stateE1"></span></summary>
+          <div class="group-body">
+            <label class="mini-field"><span>Workplace plan</span><span class="inline-choice"><select id="planSelect"><option value="401k">401(k)</option><option value="403b">403(b)</option></select></span></label>
+            <label class="mini-field"><span>W-2 wages, before deferrals</span><span class="inline-amount"><span aria-hidden="true">$</span><input class="inline-number" data-key="wages" data-max="2000000" type="text" inputmode="decimal" autocomplete="off" value="150,000"></span></label>
+            <div class="group-pair">
+              <label class="mini-field" data-link="e415"><span>Match per $1 deferred</span><span class="inline-amount"><input class="inline-number" data-key="matchRate" data-pct data-max="300" type="text" inputmode="decimal" autocomplete="off" value="100"><span aria-hidden="true">%</span></span></label>
+              <label class="mini-field" data-link="e415"><span>Up to % of pay</span><span class="inline-amount"><input class="inline-number" data-key="matchLimit" data-pct data-max="100" type="text" inputmode="decimal" autocomplete="off" value="6" aria-label="Match limit, percent of pay"><span aria-hidden="true">%</span></span></label>
+            </div>
+            <label class="check" data-link="g457"><input type="checkbox" id="has457"> Employer also offers a governmental 457(b) plan</label>
+          </div>
+        </details>
+
+        <details class="fact-group" data-link="pool b415 bER ira" open>
+          <summary>Side business &middot; Schedule C <span class="group-state" id="stateBiz"></span></summary>
+          <div class="group-body">
+            <label class="mini-field"><span>Net profit from self-employment (no employees)</span><span class="inline-amount"><span aria-hidden="true">$</span><input class="inline-number" data-key="profit" data-max="2000000" type="text" inputmode="decimal" autocomplete="off" value="40,000"></span></label>
+            <p class="derived" id="bizDerived"></p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <figure class="panel tax-workspace" id="workspace" aria-labelledby="workspace-title">
+      <h2 id="workspace-title" class="sr-only">Maximum contributions</h2>
+      <div class="answer-band">
+        <div><span class="answer-label" id="answerLabel">Most across all plans</span><div class="answer-total" id="answerTotal">$0</div></div>
+        <p class="answer-sentence" id="answerSentence"></p>
+        <ul class="answer-split" id="answerSplit"></ul>
+      </div>
+
+      <div class="scene-head"><h3>Fill the buckets in the best order</h3></div>
+      <p class="scene-lede">Each bucket is one plan&rsquo;s <button type="button" class="tip" data-pop="intro" aria-haspopup="dialog">limit</button>, drawn to scale; the fill is what goes in. An employer&rsquo;s deferrals and match share one <button type="button" class="tip" data-pop="e415" aria-haspopup="dialog">§415(c) bucket</button>, and <button type="button" class="tip" data-pop="catchup" aria-haspopup="dialog">catch-up</button> rides on top.</p>
+      <ul class="key" aria-label="Bucket key">
+        <li><span class="sw" style="background:var(--answer)"></span>Your contribution</li>
+        <li><span class="sw" style="background:color-mix(in srgb,var(--answer) 40%,var(--tool-surface))"></span>Catch-up (above the §415(c) line)</li>
+        <li><span class="sw" style="background:color-mix(in srgb,var(--answer) 68%,var(--tool-surface))"></span>Roth IRA</li>
+        <li><span class="sw" style="background:var(--employer)"></span>Employer contribution</li>
+        <li><span class="sw" style="background:color-mix(in srgb,var(--answer) 8%,var(--tool-surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--answer) 40%,transparent)"></span>Open: room your target leaves</li>
+        <li><span class="sw" style="background:repeating-linear-gradient(135deg,transparent 0 3px,var(--ink-muted) 3px 4px);box-shadow:inset 0 0 0 1px var(--baseline)"></span>Blocked by another limit</li>
+      </ul>
+      <div class="pool-row" id="poolRow"></div>
+      <div class="buckets" id="buckets"></div>
+      <h4 class="plan-title">The best order for your target <button type="button" class="tip plan-why" data-pop="order" aria-haspopup="dialog">why this order?</button></h4>
+      <ol class="plan-list" id="planList" aria-label="Contribution order"></ol>
+      <div class="limit-pop" id="limitPop" popover role="dialog" aria-modal="false" aria-labelledby="popTitle" hidden></div>
+
+      <section class="phase-scene" aria-labelledby="phase-title">
+        <div class="scene-head"><h3 id="phase-title">The plan contributions lower MAGI, which decides the IRA</h3></div>
+        <p class="scene-lede">Pre-tax deferrals and the business contribution lower <button type="button" class="tip" data-pop="magi" aria-haspopup="dialog">modified AGI</button>, which decides how much of an IRA can be <button type="button" class="tip" data-pop="phase" aria-haspopup="dialog">deductible or Roth</button>.</p>
+        <div class="chart-shell" id="phaseShell">
+          <svg id="phaseChart" viewBox="0 0 800 250" role="img" aria-labelledby="phaseDesc"></svg>
+          <p class="sr-only" id="phaseDesc"></p>
+        </div>
+        <p class="phase-answer" id="phaseAnswer"></p>
+      </section>
+
+      <ul class="notes" id="notes" aria-label="Things to check"></ul>
+
+      <p class="scope-line" id="scopeLine"></p>
+      <div class="evidence">
+        <details>
+          <summary>How each limit is calculated</summary>
+          <div class="body"><div class="table-wrap"><table class="analysis-table" id="calcTable"><thead><tr><th scope="col">Line</th><th scope="col">Item and why</th><th scope="col" class="num">Amount</th></tr></thead><tbody></tbody></table></div></div>
+        </details>
+        <details>
+          <summary>Scope, sources and limitations</summary>
+          <div class="body">
+            <p><b>Supported:</b> one person&rsquo;s maximum contributions for tax years 2025 (most recent) and 2026 (upcoming), all filing statuses: elective deferrals and the employer match in one employer&rsquo;s 401(k) or 403(b); a SEP IRA or solo 401(k) for a Schedule C business with no employees, including the 20% owner rate and the self-employment tax deduction; a governmental 457(b) at the same employer; and traditional (deductible and nondeductible) and Roth IRA contributions, with modified AGI worked out from the plan contributions; on a joint return, a spousal IRA under §219(c) and the spouse&rsquo;s pay, deferrals and coverage. A target contribution is allocated in a fixed best order. Includes the age 50+ and 60&ndash;63 catch-ups, the per-person §402(g) deferral limit across plans, a separate §415(c) limit for each unrelated employer, and the IRA phase-outs. Every elective deferral is assumed pre-tax, except that from 2026 a catch-up by someone whose wages exceed $150,000 is treated as Roth.</p>
+            <p><b>Not modelled:</b> the spouse&rsquo;s own plan limits (only their deferrals&rsquo; effect on MAGI and coverage is); SIMPLE plans; the 403(b) 15-year and 457(b) final-three-years catch-ups; tax-exempt (non-governmental) 457(b) plans; after-tax and Roth deferral choices; employers the taxpayer controls; the $400 floor for self-employment tax and the 0.9% Additional Medicare Tax; reduction of IRA compensation by pre-tax deferrals; plan terms stricter than the law.</p>
+            <p><b>Source model:</b> the &ldquo;Retirement Contribution Limits&rdquo; tab of the ACCTG 410 Individual Taxation workbook (2025). Two lines differ on purpose, and match the workbook whenever the full match fits under §415(c): the employer-plan deferral is the largest amount whose deferrals and match fit §415(c), and its catch-up is the part above the lower of the §402(g) limit or the §415(c) room.</p>
+            <p><b>Sources:</b> IRC §§219(b), (c), (g), 401(a)(17), 401(c)(2), 402(g), 404(a)(3), 408A(c), 414(v), 415(c), 457(e)(15), 1401, 1402; Treas. Reg. §1.415(f)-1; IRS Notice 2024-80 (2025 limits); <a href="https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500" rel="noopener">IRS IR-2025-111 and Notice 2025-67</a> (2026 limits, retrieved October 18, 2026); SSA contribution and benefit base for 2025 and 2026; <a href="https://www.irs.gov/publications/p560" rel="noopener">Publication 560</a> (self-employed rate); <a href="https://www.irs.gov/publications/p590a" rel="noopener">Publication 590-A</a> for the phase-out rounding.</p>
+            <p><b>Last scope review:</b> <time datetime="2026-10-18">October 18, 2026</time>. Educational only; not tax advice.</p>
+          </div>
+        </details>
+      </div>
+      <p class="sr-only" id="liveResult" role="status" aria-live="polite"></p>
+    </figure>
+    </div>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav aria-label="Footer">
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h2>Services</h2>
+            <ul>
+              <li><a href="../../services/index.html">Services overview</a></li>
+              <li><a href="../../services/walkthrough/index.html">Return walkthroughs</a></li>
+              <li><a href="../../services/planning/index.html">Planning packages</a></li>
+              <li><a href="../../services/training/index.html">Firm training &amp; custom tools</a></li>
+              <li><a href="../../services/index.html#preparers">Working with your preparer</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Samples</h2>
+            <ul>
+              <li><a href="../../samples/index.html">All samples</a></li>
+              <li><a href="../../samples/real-marginal-rate/index.html">Sample planning memo</a></li>
+              <li><a href="../../review/1040/index.html">Sample return walkthrough</a></li>
+              <li><a href="../../review/flow-map/index.html">Return flow map</a></li>
+              <li><a href="../../review/how-it-works/index.html">How the walkthrough works</a></li>
+              <li><a href="../../review/privacy/index.html">Privacy</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Tools</h2>
+            <ul>
+              <li><a href="../../tools/index.html">All tools</a></li>
+              <li><a href="../../tools/tax-bracket-ledger/index.html">Income Tax Ledger</a></li>
+              <li><a href="../../tools/comprehensive-tax-calculation/index.html">Comprehensive Tax Calculation</a></li>
+              <li><a href="../../tools/qbi-deduction/index.html">QBI Deduction</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Resources</h2>
+            <ul>
+              <li><a href="../../resources/index.html">Resources</a></li>
+              <li><a href="../../dashboard/index.html">IRS data dashboard</a></li>
+              <li><a href="../../methodology/index.html">Methodology</a></li>
+              <li><a href="../../sitemap/index.html">Site map</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>About</h2>
+            <ul>
+              <li><a href="../../about/index.html">About TaxVisual</a></li>
+              <li><a href="../../contact/index.html">Contact</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <div class="footer-base">
+        <p class="footer-note">TaxVisual builds return walkthroughs, explorable planning memos and client-ready visuals for tax and wealth professionals. We do not prepare returns. The public tools and samples are educational and are not tax advice.</p>
+        <p class="footer-note"><a href="../../contact/index.html">Start an enquiry</a></p>
+      </div>
+    </div>
+  </footer>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ==================================================================
+     MODEL — the most one person can contribute to every plan in a year.
+     Ported from the workbook tab "Retirement Contribution Limits"; cell
+     references are in the comments. Two limits cut across plans:
+       the elective-deferral POOL, one per person (§402(g)), shared by every
+       401(k), 403(b) and solo 401(k);
+       §415(c) annual additions, one per EMPLOYER (Reg. §1.415(f)-1), so a
+       SEP and a solo 401(k) of the same business share one limit.
+     A governmental 457(b) and the IRA each have their own limit.
+     ================================================================== */
+  const YEAR_RULES = {
+    2025: { deferral:23500, catch50:7500, catch6063:11250, c415:70000, compLimit:350000, ssWageBase:176100,
+      ira:7000, iraCatch:1000, rothCatchWage:145000, rothCatchRequired:false,
+      roth:{ single:[150000,165000], joint:[236000,246000], mfs:[0,10000] },
+      dedCovered:{ single:[79000,89000], joint:[126000,146000], mfs:[0,10000] },
+      dedSpouseCovered:[236000,246000] },
+    2026: { deferral:24500, catch50:8000, catch6063:11250, c415:72000, compLimit:360000, ssWageBase:184500,
+      ira:7500, iraCatch:1100, rothCatchWage:150000, rothCatchRequired:true,
+      roth:{ single:[153000,168000], joint:[242000,252000], mfs:[0,10000] },
+      dedCovered:{ single:[81000,91000], joint:[129000,149000], mfs:[0,10000] },
+      dedSpouseCovered:[242000,252000] }
+  };
+  /* Rates that do not change by year (workbook B171, B187–B189). */
+  const SE = { factor:0.9235, ssRate:0.124, medRate:0.029, erRate:0.25 };
+  /* A married person filing separately who lived apart all year is treated
+     as single for both IRA phase-outs (§219(g)(4), §408A(c)(3)). */
+  const STATUS_GROUP = { joint:'joint', single:'single', mfsApart:'single', mfsTogether:'mfs' };
+
+  function taxYearChoices(calendarYear){
+    return [calendarYear-1, calendarYear].map(function(year, k){
+      return { year:year, label:k===0?'most recent':'upcoming', reviewed:!!YEAR_RULES[year] };
+    });
+  }
+  function rulesFor(year){
+    if (!YEAR_RULES[year]) throw new RangeError('Tax year not reviewed');
+    return YEAR_RULES[year];
+  }
+
+  /* B31: §414(v)(2)(E) gives ages 60 to 63 at year end the larger catch-up. */
+  function catchupFor(L, age){
+    if (age >= 60 && age <= 63) return { amount:L.catch6063, kind:'60to63' };
+    if (age >= 50) return { amount:L.catch50, kind:'50plus' };
+    return { amount:0, kind:'none' };
+  }
+
+  /* B108, B113: the allowed amount falls linearly across the range, is
+     rounded UP to the next $10, and is never less than $200 while any of the
+     range remains (§219(g)(2)). The floor never lifts it above the base. */
+  function phaseOut(base, magi, range){
+    if (!range || magi <= range[0]) return base;
+    if (magi >= range[1]) return 0;
+    const raw = base * (range[1] - magi) / (range[1] - range[0]);
+    const up = Math.ceil(Math.round(raw * 100) / 1000) * 10;
+    return Math.min(base, Math.max(200, up));
+  }
+
+  /* B105–B107, B111–B112. */
+  function iraRanges(L, status, covered, spouseCovered){
+    const g = STATUS_GROUP[status];
+    let ded = null, dedWhy = 'none';
+    if (covered){ ded = L.dedCovered[g]; dedWhy = 'covered'; }
+    else if (spouseCovered && g === 'joint'){ ded = L.dedSpouseCovered; dedWhy = 'spouse'; }
+    else if (spouseCovered && g === 'mfs'){ ded = L.dedCovered.mfs; dedWhy = 'spouse'; }
+    return { roth:L.roth[g], ded:ded, dedWhy:dedWhy };
+  }
+
+  /* Step 3, B38–B47. The deferral is the largest amount d with
+       d ≤ pool, d ≤ wages, and d + match(d) ≤ §415(c) limit + catch-up,
+     where match(d) = MIN(rate × d, full match). Catch-up is the part of d
+     above the lower of the §402(g) limit or the §415(c) room (§414(v)(3)).
+     Whenever the workbook's B41 = MIN(pool, wages, a − c + catch-up) earns
+     the full match within §415(c), this is B41 exactly. It differs only
+     where the full match alone nearly fills §415(c); there the workbook
+     defers too little (or nothing) and this finds the true maximum. */
+  function employerPlan(L, wages, rate, matchLimit, pool, cu){
+    const limit415 = Math.min(L.c415, wages);                      // B38
+    const needForMatch = matchLimit * wages;                       // B39
+    const fullMatch = rate * needForMatch;                         // B40
+    const top = limit415 + cu;
+    const withFull = top - fullMatch;
+    const cap = rate * withFull >= fullMatch - 1e-9 ? withFull : top / (1 + rate);
+    const deferral = Math.max(0, Math.min(pool, wages, cap));      // B41
+    const match = Math.min(rate * deferral, fullMatch);            // B43
+    const regularRoom = Math.max(0, Math.min(L.deferral, limit415 - match));
+    const catchup = Math.min(cu, Math.max(0, deferral - regularRoom)); // B44
+    const additions = deferral - catchup + match;                  // B45
+    return { limit415:limit415, needForMatch:needForMatch, fullMatch:fullMatch, deferral:deferral, match:match,
+      catchup:catchup, additions:additions, total:deferral + match,  // B46
+      room415:Math.max(0, limit415 - additions),                   // B47
+      rate:rate, capturesMatch:deferral >= needForMatch - 0.005 };            // D42
+  }
+
+  function maxContributions(i){
+    const L = rulesFor(i.year);
+    const wages = Math.max(0, i.wages), profit = Math.max(0, i.profit), other = Math.max(0, i.other);
+    const cu = catchupFor(L, i.age);
+
+    /* Step 2: one deferral pool per person (B30–B32). */
+    const pool = { base:L.deferral, catchup:cu.amount, total:L.deferral + cu.amount };
+
+    /* Step 3: Employer 1's 401(k) or 403(b) is filled first. */
+    const e = employerPlan(L, wages, Math.max(0, i.matchRate), Math.max(0, i.matchLimit), pool.total, cu.amount);
+
+    /* Step 4: the side business. Owner compensation (B55–B61). */
+    const b = { profit:profit };
+    b.nese = profit * SE.factor;                                                   // B56
+    b.ss = SE.ssRate * Math.min(b.nese, Math.max(0, L.ssWageBase - wages));        // B57
+    b.med = SE.medRate * b.nese;                                                   // B58
+    b.halfSE = (b.ss + b.med) / 2;                                                 // B59
+    b.comp = Math.max(0, Math.min(L.compLimit, profit - b.halfSE));                // B60
+    b.rate = SE.erRate / (1 + SE.erRate);                                          // B61
+    b.erLimit = Math.min(b.comp * b.rate, L.c415);                                 // B64
+    b.poolLeft = Math.max(0, pool.total - e.deferral);                             // B65
+    b.limit415 = Math.min(L.c415, b.comp);                                         // B66
+    b.soloDeferral = Math.max(0, Math.min(b.poolLeft, b.comp - b.erLimit));        // B67
+    b.soloCatch = Math.max(0, Math.min(b.soloDeferral, cu.amount - e.catchup));    // B68
+    b.sep = b.erLimit;                                                             // B69
+    b.solo = Math.min(b.erLimit + b.soloDeferral, b.limit415 + b.soloCatch);       // B70
+    b.soloWins = b.solo - b.sep > 0.005;                                           // B71
+    b.max = Math.max(b.sep, b.solo);                                               // B73
+    b.employee = b.soloWins ? b.max - b.erLimit : 0;                               // B74
+    b.employer = b.max - b.employee;                                               // B75
+    b.catchIn = Math.min(b.employee, b.soloCatch);
+    b.additions = b.max - b.catchIn;                                               // C140
+
+    /* Step 5: a governmental 457(b) has its own limit (B81–B82). */
+    const g = { offered:!!i.has457 && wages > 0, limit:L.deferral + cu.amount };
+    g.payLeft = Math.max(0, wages - e.deferral);
+    g.deferral = g.offered ? Math.min(g.limit, g.payLeft) : 0;
+    g.catchup = Math.max(0, g.deferral - L.deferral);
+
+    /* Step 6: MAGI after the plan contributions (B90–B96). From 2026 a
+       catch-up by someone whose prior-year FICA wages from the employer
+       exceed the threshold must be Roth (§414(v)(7)); this year's wages
+       stand in for last year's, and a Roth catch-up does not lower income. */
+    const rothCatch = L.rothCatchRequired && wages > L.rothCatchWage && (e.catchup + g.catchup) > 0;
+    const rothCatchAmt = rothCatch ? e.catchup + g.catchup : 0;
+    const preTax = e.deferral + g.deferral - rothCatchAmt;
+    /* A joint return adds the spouse: their pay is in joint MAGI, their own
+       pre-tax plan deferrals come out of it, and deferring makes them an
+       active participant (§219(g)(5)). */
+    const sp0 = i.status === 'joint' && i.spouse ? i.spouse : null;
+    const sComp = sp0 ? Math.max(0, sp0.comp) : 0, sDef = sp0 ? Math.min(Math.max(0, sp0.deferrals), sComp) : 0;
+    const spouseCov = !!i.spouseCovered || sDef > 0;
+    const magiBefore = wages + profit - b.halfSE + other + sComp - sDef;
+    const magi = magiBefore - preTax - b.max;                                      // B96
+
+    /* IRA (B99–B119): one limit for traditional and Roth together. On a
+       joint return each spouse has their own limit and age catch-up, and
+       §219(c) lets a spouse with little or no pay use the other's: the two
+       IRAs together cannot exceed the couple's compensation. Each covers
+       their own IRA from their own pay first; spare pay tops up the
+       taxpayer, then the spouse. */
+    const a = { limit:L.ira + (i.age >= 50 ? L.iraCatch : 0), fromOther:0 };      // B99
+    a.comp = Math.max(0, wages + profit - b.halfSE);                               // B100
+    let s = null;
+    if (sp0){
+      s = { age:sp0.age, limit:L.ira + (sp0.age >= 50 ? L.iraCatch : 0), comp:sComp, deferrals:sDef, covered:spouseCov };
+      const tOwn = Math.min(a.limit, a.comp), sOwn = Math.min(s.limit, s.comp);
+      let spare = a.comp + s.comp - tOwn - sOwn;
+      a.fromOther = Math.min(a.limit - tOwn, spare); spare -= a.fromOther;
+      s.fromOther = Math.min(s.limit - sOwn, spare);
+      a.max = tOwn + a.fromOther; s.max = sOwn + s.fromOther;
+    } else a.max = Math.min(a.limit, a.comp);                                      // B101
+    a.active = e.total > 0 || b.max > 0;                                           // B104
+    a.ranges = iraRanges(L, i.status, a.active, spouseCov);                        // B105–B107, B111–B112
+    a.dedLimit = phaseOut(a.max, magi, a.ranges.ded);                              // B108
+    a.rothLimit = phaseOut(a.max, magi, a.ranges.roth);                            // B113
+    a.ded = a.dedLimit;                                                            // B116
+    a.roth = Math.min(a.rothLimit, a.max - a.ded);                                 // B117
+    a.nondeductible = a.max - a.ded - a.roth;                                      // B118
+    /* The spouse's deduction range turns on the spouse's own coverage, or,
+       if not covered, on the taxpayer's (§219(g)(7)); Roth uses joint MAGI. */
+    if (s){
+      s.ranges = iraRanges(L, i.status, s.covered, a.active);
+      s.dedLimit = phaseOut(s.max, magi, s.ranges.ded);
+      s.rothLimit = phaseOut(s.max, magi, s.ranges.roth);
+      s.ded = s.dedLimit; s.roth = Math.min(s.rothLimit, s.max - s.ded); s.nondeductible = s.max - s.ded - s.roth;
+    }
+
+    const total = e.deferral + e.match + b.employee + b.employer + g.deferral + a.max + (s ? s.max : 0); // B133 + spousal IRA
+
+    /* Which cross-plan limits bind (B138–E143). */
+    const status = function(limit, used){ return limit <= 0 ? 'off' : limit - used < 1 ? 'binding' : 'open'; };
+    const limits = {
+      pool: { limit:pool.total, used:e.deferral + b.employee },
+      e415: { limit:e.limit415, used:e.additions },
+      b415: { limit:b.limit415, used:b.additions },
+      bER:  { limit:b.erLimit, used:b.employer },
+      g457: { limit:g.offered ? g.limit : 0, used:g.deferral },
+      ira:  { limit:a.max, used:a.ded + a.roth + a.nondeductible },
+      sira: { limit:s ? s.max : 0, used:s ? s.ded + s.roth + s.nondeductible : 0 }
+    };
+    Object.keys(limits).forEach(function(k){ const x = limits[k]; x.left = Math.max(0, x.limit - x.used); x.status = status(x.limit, x.used); });
+
+    const notes = [];
+    if (wages > 0 && e.fullMatch > 0 && !e.capturesMatch) notes.push('matchShort');
+    if (rothCatch) notes.push('rothCatch');
+    return { L:L, cu:cu, pool:pool, e:e, b:b, g:g, a:a, s:s, wages:wages, other:other, status:i.status, spouseCovered:spouseCov, preTax:preTax, rothCatchAmt:rothCatchAmt,
+      magiBefore:magiBefore, magi:magi, total:total, limits:limits, notes:notes };
+  }
+
+  /* The OPTIMAL ORDER for a target the taxpayer funds; the Employer 1 match
+     comes on top. Each step fills before the next, up to what that step
+     allows at the maximum, so every target stays inside every cross-plan
+     limit, and a target at or above the maximum reproduces
+     maxContributions exactly.
+       1. Employer 1 deferral up to the full match: every dollar earns match
+       2. The rest of the Employer 1 deferral: pre-tax, lowers MAGI
+       3. Governmental 457(b): pre-tax, its own limit
+       4. Business employer share (SEP or profit-sharing): deduction for AGI
+       5. Solo 401(k) deferral: pre-tax, from what the pool has left
+       6. IRA: deductible, then Roth, then nondeductible. Last, because the
+          MAGI that steps 1–5 leave decides the deduction and the Roth room.
+       7. Spousal IRA (joint return), in the same order. */
+  function allocateTarget(r, target){
+    const L = r.L, e = r.e, b = r.b, g = r.g, a = r.a;
+    let left = target === null || target === undefined ? Infinity : Math.max(0, target);
+    const take = function(cap){ const v = Math.max(0, Math.min(cap, left)); left -= v; return v; };
+    const s = {};
+    s.toMatch = take(Math.min(e.deferral, e.needForMatch));
+    s.e1Rest = take(e.deferral - s.toMatch);
+    const d = s.toMatch + s.e1Rest;
+    const match = Math.min(e.rate * d, e.match);
+    s.g457 = take(g.deferral);
+    s.er = take(b.employer);
+    s.solo = take(b.employee);
+    const dCatch = Math.max(0, d - (e.deferral - e.catchup));
+    const gCatch = Math.max(0, s.g457 - L.deferral);
+    const soloCatch = Math.max(0, s.solo - (b.employee - b.catchIn));
+    const rothRule = L.rothCatchRequired && r.wages > L.rothCatchWage;
+    const rothCatchAmt = rothRule ? dCatch + gCatch : 0;
+    const preTax = d + s.g457 - rothCatchAmt;
+    const biz = s.er + s.solo;
+    const magi = r.magiBefore - preTax - biz;
+    const active = d + match > 0 || biz > 0;
+    const ranges = iraRanges(L, r.status, active, r.spouseCovered);
+    const dedLimit = phaseOut(a.max, magi, ranges.ded), rothLimit = phaseOut(a.max, magi, ranges.roth);
+    s.ded = take(dedLimit);
+    s.roth = take(Math.min(rothLimit, a.max - s.ded));
+    s.nd = take(a.max - s.ded - s.roth);
+    const sp = r.s;
+    const sRanges = sp ? iraRanges(L, r.status, sp.covered, active) : null;
+    const sDedLimit = sp ? phaseOut(sp.max, magi, sRanges.ded) : 0, sRothLimit = sp ? phaseOut(sp.max, magi, sRanges.roth) : 0;
+    s.sded = take(sDedLimit);
+    s.sroth = take(sp ? Math.min(sRothLimit, sp.max - s.sded) : 0);
+    s.snd = take(sp ? sp.max - s.sded - s.sroth : 0);
+    const sira = s.sded + s.sroth + s.snd;
+    const own = d + s.g457 + biz + s.ded + s.roth + s.nd + sira, maxOwn = r.total - e.match;
+    return { target:target, steps:s, d:d, match:match, dCatch:dCatch, g457:s.g457, er:s.er, solo:s.solo, soloCatch:soloCatch,
+      ded:s.ded, roth:s.roth, nd:s.nd, ira:s.ded + s.roth + s.nd, sded:s.sded, sroth:s.sroth, snd:s.snd, sira:sira,
+      sRanges:sRanges, sDedLimit:sDedLimit, sRothLimit:sRothLimit, own:own, maxOwn:maxOwn, total:own + match,
+      excess:isFinite(left) ? left : 0, atMax:own >= maxOwn - 0.5,
+      preTax:preTax, rothCatchAmt:rothCatchAmt, magi:magi, active:active, ranges:ranges, dedLimit:dedLimit, rothLimit:rothLimit };
+  }
+
+  /* The drawn Roth/deduction line: linear to the $200 floor, flat at $200,
+     then a step to zero at the top of the range. */
+  function phaseLine(base, range, xLo, xHi){
+    if (!range) return [{ x:xLo, y:base }, { x:xHi, y:base }];
+    const pts = [{ x:xLo, y:base }];
+    const lo = range[0], hi = range[1];
+    if (base <= 0) return [{ x:xLo, y:0 }, { x:xHi, y:0 }];
+    const floorAt = hi - 200 * (hi - lo) / base;
+    if (lo > xLo) pts.push({ x:lo, y:base });
+    if (base > 200){ pts.push({ x:Math.max(lo, floorAt), y:200 }); }
+    pts.push({ x:hi, y:Math.min(base, 200) });
+    pts.push({ x:hi, y:0 });
+    pts.push({ x:xHi, y:0 });
+    return pts.filter(function(p){ return p.x >= xLo - 1e-9; });
+  }
+
+  /* ============================== FORMATTING ============================== */
+  const usd0 = new Intl.NumberFormat('en-US',{ style:'currency', currency:'USD', maximumFractionDigits:0 });
+  const num0 = new Intl.NumberFormat('en-US',{ maximumFractionDigits:0 });
+  const num2 = new Intl.NumberFormat('en-US',{ maximumFractionDigits:2 });
+  function money(v){ return usd0.format(Math.round(v)); }
+  function abbr(v){
+    if (Math.abs(v) >= 1000){ const k = v / 1000; return '$' + (k % 1 === 0 ? k : k.toFixed(1)) + 'k'; }
+    return '$' + num0.format(v);
+  }
+  const CEIL_STEPS = [1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+  function niceCeil(v){
+    if (v <= 0) return 10;
+    const mag = Math.pow(10, Math.floor(Math.log10(v))), r = v / mag;
+    for (let k = 0; k < CEIL_STEPS.length; k++) if (r <= CEIL_STEPS[k] + 1e-9) return CEIL_STEPS[k] * mag;
+    return 10 * mag;
+  }
+  function niceTicks(lo, hi, target){
+    const raw = (hi - lo) / target, mag = Math.pow(10, Math.floor(Math.log10(raw))), r = raw / mag;
+    const step = (r <= 1 ? 1 : r <= 2 ? 2 : r <= 2.5 ? 2.5 : r <= 5 ? 5 : 10) * mag;
+    const out = [];
+    for (let v = Math.ceil(lo / step - 1e-9) * step + 0; v <= hi + step * 1e-6; v += step) out.push(v);
+    return out;
+  }
+
+  /* ================================ STATE ================================ */
+  const yearChoices = taxYearChoices(new Date().getFullYear());
+  const firstReviewed = yearChoices.find(function(y){ return y.reviewed; });
+  /* The workbook's exercise: age 61, single, a $150,000 W-2 job with a
+     dollar-for-dollar match on 6% of pay, and a $40,000 side business. */
+  const state = { year:firstReviewed ? firstReviewed.year : 2026, status:'single', age:61, spouseCovered:false, other:2100,
+    plan:'401k', wages:150000, matchRate:1, matchLimit:0.06, has457:false, profit:40000,
+    spouseAge:58, spouseComp:0, spouseDeferrals:0,
+    target:null /* null = the maximum */ };
+
+  const $ = function(id){ return document.getElementById(id); };
+  const yearSel = $('yearSelect');
+  yearChoices.forEach(function(y){
+    const o = document.createElement('option');
+    o.value = y.year; o.disabled = !y.reviewed;
+    o.textContent = y.year + (y.reviewed ? '' : ' (pending)');
+    if (y.year === state.year) o.selected = true;
+    yearSel.appendChild(o);
+  });
+  $('yearNote').textContent = yearChoices.map(function(y){ return y.year + ' ' + y.label + (y.reviewed ? '' : ' (review pending)'); }).join(' · ');
+
+  function parseAmount(s){ const v = parseFloat(String(s).replace(/[^0-9.]/g, '')); return isFinite(v) ? v : 0; }
+  /* Percent inputs show 100 and 6; the state holds 1 and 0.06. */
+  function shown(el){ const v = state[el.dataset.key]; return el.hasAttribute('data-pct') ? num2.format(v * 100) : num0.format(v); }
+  document.querySelectorAll('.inline-number[data-key]').forEach(function(el){
+    el.addEventListener('input', function(){
+      const v = Math.min(parseAmount(el.value), +el.dataset.max);
+      state[el.dataset.key] = el.hasAttribute('data-pct') ? v / 100 : v;
+      render(false);
+    });
+    el.addEventListener('change', function(){ el.value = shown(el); render(true); });
+  });
+  /* The target: what the taxpayer funds, excluding the employer match. */
+  $('targetIn').addEventListener('input', function(){ state.target = Math.min(parseAmount($('targetIn').value), 2000000); render(false); });
+  $('targetIn').addEventListener('change', function(){ $('targetIn').value = num0.format(state.target === null ? +$('targetRange').max : state.target); render(true); });
+  $('targetRange').addEventListener('input', function(e){ const v = +e.target.value; state.target = v >= +e.target.max ? null : v; $('targetIn').value = num0.format(v); render(false); });
+  $('targetRange').addEventListener('change', function(){ render(true); });
+  $('targetMax').addEventListener('click', function(){ state.target = null; render(true); });
+  $('spouseCovered').addEventListener('change', function(e){ state.spouseCovered = e.target.checked; render(true); });
+  $('has457').addEventListener('change', function(e){ state.has457 = e.target.checked; render(true); });
+  $('statusSelect').addEventListener('change', function(e){ state.status = e.target.value; render(true); });
+  $('planSelect').addEventListener('change', function(e){ state.plan = e.target.value; render(true); });
+  yearSel.addEventListener('change', function(e){ state.year = +e.target.value; render(true); });
+
+  /* Focusing a fact highlights the columns it feeds. */
+  const layout = $('readingLayout');
+  layout.addEventListener('focusin', function(e){
+    const host = e.target.closest('[data-link]');
+    const links = host ? host.dataset.link.split(' ') : [];
+    document.querySelectorAll('#buckets [data-lane], #poolRow [data-lane]').forEach(function(l){ l.classList.toggle('is-linked', l.dataset.lane.split(' ').some(function(k){ return links.indexOf(k) >= 0; })); });
+  });
+  layout.addEventListener('focusout', function(){
+    document.querySelectorAll('#buckets .is-linked, #poolRow .is-linked').forEach(function(l){ l.classList.remove('is-linked'); });
+  });
+
+  /* ================================ BUCKETS ================================ */
+  function planName(){ return state.plan === '403b' ? '403(b)' : '401(k)'; }
+  function catchName(r){ return r.cu.kind === '60to63' ? 'Age 60–63 catch-up' : 'Age 50+ catch-up'; }
+  function pctOf(v){ return num2.format(v * 100) + '%'; }
+  function rangeText(rg){ return rg ? money(rg[0]) + '–' + money(rg[1]) : 'no phase-out'; }
+
+  /* One bucket per PLAN. An employer plan is one bucket because §415(c) is
+     one limit per employer on everything that goes in: employee deferrals
+     and employer money together. Its separate limits (the §402(g) deferral
+     pool, the match formula, the owner's 20% share) are marks inside the
+     bucket and chips under it. Catch-up is not an annual addition, so it
+     fills a zone ABOVE the §415(c) line. The 457(b) and the IRA have limits
+     of their own and are buckets of their own. Every limit opens a pop-up. */
+  function buildBuckets(r, x){
+    const L = r.L, e = r.e, b = r.b, g = r.g, a = r.a, P1 = planName(), cu = r.cu.amount, cuName = catchName(r);
+    const hasBiz = b.comp > 0, buckets = [], pops = {};
+
+    /* ---- pop-ups for every limit ---- */
+    const deferStop = e.deferral >= r.pool.total - 0.5 ? 'pool' : e.deferral >= r.wages - 0.5 ? 'pay' : '§415(c)';
+    pops.pool = { title:'Deferral limit ' + money(r.pool.total), cite:'§402(g)(1) and §414(v)',
+      lede:'Elective deferrals are limited per <b>person</b>, not per plan: every 401(k), 403(b) and solo 401(k) draws on one pool. Anyone 50 or older by December 31 adds a catch-up for the whole year; ages 60–63 get the larger one.',
+      rows:[['§402(g) base limit', L.deferral, '§402(g)(1), indexed yearly'], ['+ ' + cuName.toLowerCase() + ' (age ' + state.age + ')', cu, '§414(v)'],
+        ['Deferral pool', r.pool.total, 'one per person', 'total' + (deferStop === 'pool' ? ' binds' : '')],
+        ['Pay from Employer 1', r.wages, 'deferrals cannot exceed pay', deferStop === 'pay' ? 'binds' : ''],
+        ['§415(c) room: ' + abbr(e.limit415) + ' − ' + abbr(e.fullMatch) + ' match + catch-up', e.limit415 - e.fullMatch + cu, '§415(c)(1); catch-up sits outside it', deferStop === '§415(c)' ? 'binds' : ''],
+        ['Defer: the lesser', e.deferral, '', 'total']],
+      why:'Defer at least <b>' + money(e.needForMatch) + '</b> (' + pctOf(state.matchLimit) + ' of pay) to earn the full match. Every pre-tax dollar also lowers MAGI for the IRA.' };
+    pops.match = { title:'Match limit ' + money(e.fullMatch), cite:'Plan formula, inside §415(c)',
+      lede:'The match is a plan term, not a tax rule: ' + pctOf(state.matchRate) + ' of each dollar deferred, on deferrals up to ' + pctOf(state.matchLimit) + ' of pay. It does not use the deferral pool, but it does fill the same §415(c) bucket.',
+      rows:[['Wages × ' + pctOf(state.matchLimit), e.needForMatch, 'deferral needed for the full match'], ['× ' + pctOf(state.matchRate) + ' match rate', e.fullMatch, 'full match available', 'total'],
+        ['Match earned on a ' + money(e.deferral) + ' deferral', e.match, 'earned only on dollars deferred', 'total']],
+      why:e.capturesMatch ? 'The deferral earns the whole match.' : 'Deferrals plus the full match would exceed §415(c), so part of the match cannot be earned.' };
+    pops.e415 = { title:'Employer plan limit ' + money(e.limit415), cite:'§415(c)(1); catch-up outside it under §414(v)(3)(A)',
+      lede:'One limit per employer on <b>annual additions</b>: the employee&rsquo;s deferrals and the employer&rsquo;s contributions together, capped at the lesser of ' + money(L.c415) + ' or 100% of pay. Catch-up contributions are not annual additions, so they sit on top.',
+      rows:[['§415(c) dollar limit', L.c415, '§415(c)(1)(A)'], ['100% of pay', r.wages, '§415(c)(1)(B)'], ['§415(c) limit: the lesser', e.limit415, '', 'total' + (e.room415 < 1 ? ' binds' : '')],
+        ['Your deferrals (excl. catch-up)', e.deferral - e.catchup, 'capped by the §402(g) pool'], ['Employer match', e.match, 'capped by the plan formula'],
+        ['Room left', e.room415, 'after-tax or employer money only', 'total'], ['+ catch-up on top of the limit', e.catchup, '§414(v)']],
+      why:e.room415 >= 1 ? 'Not full. The pre-tax dollars stop at the <b>deferral limit</b> and the match stops at the <b>plan formula</b>, so ' + money(e.room415) + ' of §415(c) room is left. Only after-tax contributions could fill it, if the plan allows them.'
+        : '<b>§415(c) binds</b>: deferrals plus the match fill the whole limit.' };
+    pops.g457 = { title:'457(b) limit ' + money(g.limit), cite:'§457(e)(15) and §414(v)',
+      lede:'Governmental 457(b) deferrals are not among the elective deferrals in §402(g)(3), so they have their <b>own</b> limit that stacks on top of the deferral pool. A public employee can fill both.',
+      rows:[['457(b) base limit', L.deferral, '§457(e)(15)'], ['+ ' + cuName.toLowerCase(), cu, '§414(v), governmental plans only'], ['457(b) limit', g.limit, '', 'total'],
+        ['Pay left after the ' + P1 + ' deferrals', g.payLeft, 'deferrals cannot exceed pay'], ['Defer: the lesser', g.deferral, '', 'total']],
+      why:g.offered ? 'Every dollar here is pre-tax too, so it also lowers MAGI.' : 'Tick &ldquo;Employer also offers a governmental 457(b)&rdquo; in the facts to add this bucket.' };
+    pops.solo = { title:'Deferral pool left ' + money(b.poolLeft), cite:'§402(g)(1): the same pool as the ' + P1,
+      lede:'As the employee of the business, the owner can defer into a solo 401(k), but only from the per-person pool already drawn on at Employer 1. A SEP takes no employee deferrals at all.',
+      rows:[['Deferral pool', r.pool.total, 'one per person'], ['Used by the ' + P1, -e.deferral], ['Pool left', b.poolLeft, '', 'total' + (b.poolLeft <= b.comp - b.erLimit ? ' binds' : '')],
+        ['Earnings left after the employer share', b.comp - b.erLimit, 'deferrals cannot exceed compensation', b.poolLeft > b.comp - b.erLimit ? 'binds' : ''],
+        ['Defer: the lesser', b.employee, '', 'total']],
+      why:b.soloWins ? 'Pool room is left, so a <b>solo 401(k) beats a SEP</b> by ' + money(b.solo - b.sep) + ' of employee deferrals.'
+        : 'Nothing is left in the pool, so a solo 401(k) adds nothing over a SEP here.' };
+    pops.bER = { title:'Employer share limit ' + money(b.erLimit), cite:'§404(a)(3), §401(c)(2), §1402',
+      lede:'The owner is also the employer. The business may contribute 25% of compensation, but the contribution itself reduces that compensation, so the rate on net earnings is 25% &divide; 125% = <b>20%</b>.',
+      rows:[['Net profit', b.profit, 'Schedule C'], ['× 92.35% = net earnings subject to SE tax', b.nese, '§1402(a)(12)'],
+        ['Social Security tax, 12.4% up to the wage base left', b.ss, '§1402(b): W-2 wages use the ' + money(L.ssWageBase) + ' base first'], ['Medicare tax, 2.9%', b.med, '§1401(b)'],
+        ['− half of SE tax', -b.halfSE, '§164(f)'], ['Net earnings for plan purposes', b.comp, '§401(c)(2)', 'total'], ['× 20%', b.erLimit, '§404(a)(3)', 'total binds']],
+      why:'The contribution is a deduction for AGI, so it also lowers MAGI.' };
+    pops.b415 = { title:'Business plan limit ' + money(b.limit415), cite:'§415(c)(1); Reg. §1.415(f)-1',
+      lede:'The business is a separate employer, so it has its <b>own</b> §415(c) limit: the lesser of ' + money(L.c415) + ' or the owner&rsquo;s net earnings. A SEP and a solo 401(k) of the same business share this one bucket.',
+      rows:[['§415(c) dollar limit', L.c415, '§415(c)(1)(A)'], ['Net earnings for plan purposes', b.comp, '§401(c)(2)'], ['§415(c) limit: the lesser', b.limit415, '', 'total' + (r.limits.b415.status === 'binding' ? ' binds' : '')],
+        ['Employer share (≤ 20% of net earnings)', b.employer, '§404(a)(3)'], ['Employee deferral (excl. catch-up, ≤ pool left)', b.employee - b.catchIn, '§402(g)'],
+        ['Room left', r.limits.b415.left, '', 'total'], ['+ catch-up on top', b.catchIn, '§414(v)'],
+        ['Maximum with a SEP IRA', b.sep, 'employer share only'], ['Maximum with a solo 401(k)', b.solo, 'employer share + deferral']],
+      why:r.limits.b415.status === 'binding' ? '<b>§415(c) binds</b> for the business.'
+        : 'Not full: the <b>20% employer cap</b>' + (b.poolLeft < 1 ? ' and the <b>empty deferral pool</b>' : '') + ' stop it first. ' + (b.soloWins ? 'A solo 401(k) adds the deferral, so it beats a SEP.' : 'A SEP and a solo 401(k) give the same maximum.') };
+    pops.ira = { title:'IRA limit ' + money(a.limit), cite:'§219(b)(5), §408A(c)',
+      lede:'One limit for traditional and Roth IRAs together, separate from every workplace plan. Modified AGI then decides how much may be Roth and how much of a traditional contribution is deductible.',
+      rows:[['IRA limit', L.ira, '§219(b)(5)(A)'], ['+ age 50+ catch-up', a.limit - L.ira, '§219(b)(5)(B)'], ['Taxable compensation', a.comp, '§219(b)(1)'], ['IRA maximum', a.max, '', 'total'],
+        ['Modified AGI after the plan contributions', r.magi, 'see the MAGI chart below'],
+        ['Deductible traditional (' + rangeText(a.ranges.ded) + ')', a.ded, '§219(g)'], ['Roth (' + rangeText(a.ranges.roth) + ')', a.roth, '§408A(c)(3)'],
+        ['Nondeductible traditional (the rest)', a.nondeductible, 'basis on Form 8606']],
+      why:'Fill the deductible part first, then Roth, then nondeductible.' + (a.active ? ' Contributing to a workplace plan makes the taxpayer an active participant, which is why the deduction phases out.' : '') };
+
+    /* ---- buckets: the limit is the bucket, the fill is the allocation x ---- */
+    const R = e.deferral - e.catchup, dReg = Math.min(x.d, R);
+    buckets.push({ lanes:'pool e415', group:'Employer 1 · steps 1–2', title:'Employer ' + P1, off:r.wages <= 0 ? 'No W-2 wages' : '',
+      limit:{ key:'e415', amount:e.limit415, label:'§415(c) limit' }, over:cu, cap:e.limit415 + cu, line:e.limit415,
+      parts:[{ kind:'def', amount:dReg, label:'your deferrals' }, { kind:'er', amount:x.match, label:'match' },
+        { kind:'open', amount:(R - dReg) + (e.match - x.match), label:'open', dark:true },
+        { kind:'blocked', amount:e.room415, label:'after-tax only', dark:true }, { kind:'catch', amount:x.d - dReg, label:'catch-up' }],
+      marks:[{ y:Math.min(L.deferral, e.limit415), label:'§402(g) ' + abbr(L.deferral) }],
+      give:x.d + x.match, verb:'Total in',
+      state:x.d >= e.deferral - 0.5 ? (e.room415 < 1 ? ['Full', true] : ['Maxed', true])
+        : [money(e.deferral - x.d) + ' more deferral room' + (x.match < e.match - 0.5 ? ' · ' + money(e.match - x.match) + ' match unclaimed' : ''), false],
+      chips:[{ label:'you', amount:x.d, key:'pool', limit:r.pool.total }, { label:'match', amount:x.match, key:'match', limit:e.fullMatch }] });
+
+    buckets.push({ lanes:'g457', group:'Employer 1 · step 3', title:'Governmental 457(b)', off:g.offered ? '' : 'Not offered',
+      limit:{ key:'g457', amount:g.limit, label:'Limit' }, cap:g.limit,
+      parts:[{ kind:'def', amount:Math.min(x.g457, L.deferral), label:'pre-tax' }, { kind:'catch', amount:Math.max(0, x.g457 - L.deferral), label:'catch-up' },
+        { kind:'open', amount:g.deferral - x.g457, label:'open', dark:true }, { kind:'blocked', amount:g.limit - g.deferral, label:'no pay left', dark:true }],
+      marks:[], give:x.g457, verb:'You defer',
+      state:x.g457 >= g.deferral - 0.5 ? (g.deferral >= g.limit - 0.5 ? ['Full', true] : ['Maxed: pay', true])
+        : [money(g.deferral - x.g457) + ' more room', false], chips:[] });
+
+    const catchAvail = Math.max(0, cu - e.catchup), soloReg = x.solo - x.soloCatch;
+    buckets.push({ lanes:'b415 bER', group:'Side business · steps 4–5', title:b.soloWins ? 'Solo 401(k)' : 'SEP IRA or solo 401(k)', off:hasBiz ? '' : 'No business',
+      limit:{ key:'b415', amount:b.limit415, label:'§415(c) limit' }, over:catchAvail, cap:b.limit415 + catchAvail, line:b.limit415,
+      parts:[{ kind:'er', amount:x.er, label:'employer share' }, { kind:'def', amount:soloReg, label:'your deferral' },
+        { kind:'open', amount:(b.employer - x.er) + ((b.employee - b.catchIn) - soloReg), label:'open', dark:true },
+        { kind:'blocked', amount:r.limits.b415.left, label:'blocked', dark:true }, { kind:'catch', amount:x.soloCatch, label:'catch-up' }],
+      marks:[{ y:b.erLimit, label:'20% cap ' + abbr(b.erLimit) }],
+      give:x.er + x.solo, verb:'Total in',
+      state:x.er + x.solo >= b.max - 0.5 ? ['Maxed', true]
+        : [money(b.max - x.er - x.solo) + ' more room', false],
+      chips:[{ label:'employer', amount:x.er, key:'bER', limit:b.erLimit }, { label:'you', amount:x.solo, key:'solo', limit:b.poolLeft, limitLabel:'pool left' }] });
+
+    buckets.push({ lanes:'ira', group:'IRAs · step 6', title:'Traditional + Roth IRA', off:a.max > 0 ? '' : 'No compensation',
+      limit:{ key:'ira', amount:a.limit, label:'Limit' }, cap:a.limit,
+      parts:[{ kind:'def', amount:x.ded, label:'deductible' }, { kind:'roth', amount:x.roth, label:'Roth', dark:true }, { kind:'nd', amount:x.nd, label:'nondeduct.', dark:true },
+        { kind:'open', amount:a.max - x.ira, label:'open', dark:true }, { kind:'blocked', amount:a.limit - a.max, label:'no pay', dark:true }],
+      marks:[], give:x.ira, verb:'You contribute',
+      state:x.ira >= a.max - 0.5 ? (a.max >= a.limit - 0.5 ? ['Full', true] : ['Maxed: pay', true]) : [money(a.max - x.ira) + ' more room', false],
+      chips:[{ label:'deductible', amount:x.ded }, { label:'Roth', amount:x.roth }, { label:'nondeductible', amount:x.nd }] });
+    if (r.s){
+      const sv = r.s;
+      pops.sira = { title:'Spousal IRA limit ' + money(sv.limit), cite:'§219(c), §219(b)(5), §219(g)(7)',
+        lede:'On a joint return each spouse has their own IRA limit and age catch-up. A spouse with little or no pay can use the couple&rsquo;s combined compensation, but the two IRAs together cannot exceed it.',
+        rows:[['IRA limit', L.ira, '§219(b)(5)(A)'], ['+ age 50+ catch-up (spouse is ' + sv.age + ')', sv.limit - L.ira, '§219(b)(5)(B)'],
+          ['Spouse&rsquo;s own compensation', sv.comp, ''], ['+ your compensation not used by your IRA', sv.fromOther, '§219(c)(1)(B)'],
+          ['Spousal IRA maximum', sv.max, '', 'total'], ['Joint modified AGI', r.magi, 'the same MAGI as yours'],
+          ['Deductible (' + rangeText(sv.ranges.ded) + ')', sv.ded, sv.covered ? 'the spouse is covered' : a.active ? 'not covered, but you are: §219(g)(7)' : 'neither spouse covered'],
+          ['Roth (' + rangeText(sv.ranges.roth) + ')', sv.roth, '§408A(c)(3)'], ['Nondeductible traditional (the rest)', sv.nondeductible, 'Form 8606']],
+        why:sv.fromOther > 0.5 ? 'This IRA rests on your pay: ' + money(sv.fromOther) + ' of it is the classic spousal IRA.' : 'The spouse&rsquo;s own pay covers this IRA.' };
+      buckets.push({ lanes:'sira', group:'Spouse · step 7', title:'Spousal IRA', off:sv.max > 0 ? '' : 'No compensation',
+        limit:{ key:'sira', amount:sv.limit, label:'Limit' }, cap:sv.limit,
+        parts:[{ kind:'def', amount:x.sded, label:'deductible' }, { kind:'roth', amount:x.sroth, label:'Roth', dark:true }, { kind:'nd', amount:x.snd, label:'nondeduct.', dark:true },
+          { kind:'open', amount:sv.max - x.sira, label:'open', dark:true }, { kind:'blocked', amount:sv.limit - sv.max, label:'no pay', dark:true }],
+        marks:[], give:x.sira, verb:'Spouse contributes',
+        state:x.sira >= sv.max - 0.5 ? ['Full', true] : [money(sv.max - x.sira) + ' more room', false],
+        chips:[{ label:'deductible', amount:x.sded }, { label:'Roth', amount:x.sroth }, { label:'nondeductible', amount:x.snd }] });
+    }
+    // The two plans that share the deferral pool sit side by side, under the pool strip.
+    return { buckets:[buckets[0], buckets[2], buckets[1], buckets[3]].concat(buckets.slice(4)), pops:pops };
+  }
+
+  const BUCKET_H = 270;
+  function tip(key, html, cls){ return '<button type="button" class="tip' + (cls ? ' ' + cls : '') + '" data-pop="' + key + '" aria-haspopup="dialog">' + html + '</button>'; }
+  function limitBtn(key, amount, label){ return '<button type="button" class="limit-btn" data-pop="' + key + '" aria-haspopup="dialog">' + label + ' <b>' + money(amount) + '</b></button>'; }
+  function bucketHtml(k, max){
+    const off = !!k.off;
+    const h = off ? 44 : Math.max(26, k.cap / max * BUCKET_H);
+    const at = function(v){ return (v / k.cap * 100).toFixed(3) + '%'; };
+    let inner = '', marks = '', y = 0;
+    if (off) inner = '<span class="bk-off">' + k.off + '</span>';
+    else {
+      k.parts.forEach(function(p){
+        if (p.amount <= 0.5) return;
+        const ph = p.amount / k.cap * h, style = 'bottom:' + at(y) + ';height:' + at(p.amount);
+        inner += '<span class="fill ' + p.kind + '" style="' + style + '"></span>';
+        if (ph >= 16) inner += '<span class="fill-label' + (p.dark || p.kind === 'catch' ? ' dark' : '') + '" style="' + style + '">' + (ph >= 30 ? p.label : '') + '<b>' + money(p.amount) + '</b></span>';
+        y += p.amount;
+      });
+      // The combined limit line, then the separate limits as dashed marks,
+      // dropping a label that would sit on top of one already drawn.
+      const drawn = [];
+      const mark = function(v, label, cls){
+        const py = v / k.cap * h;
+        marks += '<span class="mark ' + cls + '" style="bottom:' + at(v) + '"></span>';
+        if (drawn.every(function(d){ return Math.abs(d - py) >= 14; })){ marks += '<span class="mark-label ' + cls + '" style="bottom:' + at(v) + '">' + label + '</span>'; drawn.push(py); }
+      };
+      if (k.line) mark(k.line, '§415(c) ' + abbr(k.line), 'is-limit');
+      k.marks.forEach(function(m){ if (m.y > 0.5 && m.y < k.cap - 0.5) mark(m.y, m.label, ''); });
+      const catchIn = k.parts.filter(function(p){ return p.kind === 'catch'; }).reduce(function(s, p){ return s + p.amount; }, 0);
+      if (k.over > 0.5) marks += '<span class="over-zone" style="bottom:' + at(k.line) + ';height:' + at(k.over) + '">' + (catchIn < 0.5 && k.over / k.cap * h >= 22 ? '<span>catch-up<br>on top</span>' : '') + '</span>';
+    }
+    const detail = (off || !k.chips.length) ? '' : '<div class="bk-detail">' + k.chips.filter(function(c){ return c.key || c.amount > 0.5; }).map(function(c){
+      return c.label + ' ' + (c.key ? tip(c.key, money(c.amount)) : '<b>' + money(c.amount) + '</b>');
+    }).join(' &middot; ') + '</div>';
+    return '<div class="bk' + (off ? ' is-off' : '') + '" data-lane="' + k.lanes + '">' +
+      '<div class="bk-head"><span class="bk-group">' + k.group + '</span><span class="bk-title">' + k.title + '</span>' +
+      '<span class="bk-limit">' + (off ? '&nbsp;' : limitBtn(k.limit.key, k.limit.amount, k.limit.label) + (k.over > 0.5 ? '<span class="bk-sub">+ ' + tip('catchup', money(k.over) + ' catch-up') + '</span>' : '')) + '</span></div>' +
+      '<div class="bk-well"><div class="bk-body" style="height:' + h + 'px"><span class="bk-rim"></span><div class="bucket' + (off ? ' is-off' : '') + '">' + inner + '</div>' + marks + '</div></div>' +
+      '<div class="bk-contrib">' + k.verb + '<b>' + money(off ? 0 : k.give) + '</b></div>' +
+      (off ? '' : '<div class="bk-state' + (k.state[1] ? ' is-full' : '') + '">' + k.state[0] + '</div>') + detail + '</div>';
+  }
+
+  /* §402(g) limits elective deferrals per PERSON. The strip spans the two
+     buckets that draw on it, the Employer 1 plan and the solo 401(k), and
+     splits the one pool between them; the 457(b) and IRA sit outside it. */
+  function renderPool(r, x){
+    const P1 = planName(), total = r.pool.total, left = Math.max(0, total - x.d - x.solo);
+    // Same catch-up split as the buckets, so the strip and the fills agree.
+    const segs = [['def', x.d - x.dCatch, P1], ['catch', x.dCatch, P1 + ' catch-up'], ['def', x.solo - x.soloCatch, 'solo 401(k)'], ['catch', x.soloCatch, 'solo catch-up'], ['left', left, 'left']]
+      .filter(function(s){ return s[1] > 0.5; });
+    const bar = segs.map(function(s){
+      const w = s[1] / total * 100;
+      return '<span class="' + s[0] + '" style="flex:0 0 ' + w.toFixed(3) + '%" title="' + s[2] + ' ' + money(s[1]) + '">' + (w >= 16 ? money(s[1]) : '') + '</span>';
+    }).join('');
+    const hasBiz = r.b.comp > 0;
+    $('poolRow').innerHTML = '<div class="pool-strip" data-lane="pool">' +
+      '<div class="pool-head"><strong>Elective-deferral pool</strong><span>one per person &middot; ' + limitBtn('pool', total, 'limit') + ' &middot; ' + tip('outsidePool', 'what is outside it?') + '</span>' +
+      '<span class="status' + (left < 1 ? ' is-binding' : '') + '">' + (left < 1 ? 'Used up' : money(left) + ' left') + '</span></div>' +
+      '<div class="pool-bar" role="img" aria-label="Deferral pool ' + money(total) + ': ' + segs.map(function(s){ return s[2] + ' ' + money(s[1]); }).join(', ') + '">' + bar + '</div>' +
+      '<div class="pool-arrows"><span>' + P1 + ' deferrals <b>' + money(x.d) + '</b></span><span>' +
+        (hasBiz ? 'Solo 401(k) deferrals <b>' + money(x.solo) + '</b>' + (r.b.poolLeft < 1 ? '<br>the ' + P1 + ' gets the pool first' : '') : 'No business, no solo 401(k)') + '</span></div></div>';
+  }
+
+  let lastPops = {}, lastR = null;
+  function renderBuckets(r, x){
+    const built = buildBuckets(r, x);
+    lastR = r; lastPops = built.pops;
+    const max = Math.max(10000, Math.max.apply(null, built.buckets.filter(function(k){ return !k.off; }).map(function(k){ return k.cap; }).concat([0])));
+    $('buckets').style.setProperty('--bk-h', (BUCKET_H + 4) + 'px');
+    $('buckets').style.setProperty('--n', built.buckets.length);
+    $('buckets').classList.toggle('is-five', built.buckets.length > 4);
+    $('poolRow').style.setProperty('--n', built.buckets.length);
+    $('buckets').innerHTML = built.buckets.map(function(k){ return bucketHtml(k, max); }).join('');
+    renderPool(r, x);
+
+    // The optimal order, step by step, with each limit as an inline explorable link.
+    const amt = function(v){ return '<span class="amt">' + money(v) + '</span>'; };
+    const btn = function(key, v, label){ return limitBtn(key, v, label || 'limit'); };
+    const e = r.e, b = r.b, a = r.a, s = x.steps, P1 = planName(), hasBiz = b.comp > 0;
+    const step = function(v, cap, text, na){
+      const cls = na ? 'is-na' : v <= 0.5 ? 'is-zero' : v >= cap - 0.5 ? 'is-full' : 'is-part';
+      return '<li class="' + cls + '"><span class="step-amt">' + (na ? '&mdash;' : money(v)) + '</span><span class="step-text">' + text + '</span></li>';
+    };
+    const iraParts = function(dd, rr, nn){
+      const p = [[dd, 'deductible'], [rr, 'Roth'], [nn, 'nondeductible']].filter(function(q){ return q[0] > 0.5; }).map(function(q){ return amt(q[0]) + ' ' + q[1]; });
+      return p.length ? p.join(' &middot; ') : 'nothing yet';
+    };
+    const items = [
+      step(s.toMatch, Math.min(e.deferral, e.needForMatch), P1 + ' up to the ' + tip('match', 'full match') + (x.match > 0.5 ? ', earning ' + amt(x.match) + ' of match' : ''), r.wages <= 0),
+      step(s.e1Rest, e.deferral - Math.min(e.deferral, e.needForMatch), 'The rest of the ' + P1 + ', to the ' + tip('pool', 'deferral limit'), r.wages <= 0),
+      step(s.g457, r.g.deferral, tip('g457', 'Governmental 457(b)') + ', its own limit', !r.g.offered),
+      step(s.er, b.employer, 'Business ' + tip('bER', 'employer share'), !hasBiz),
+      step(s.solo, b.employee, tip('solo', 'Solo 401(k) deferral') + (b.poolLeft < 1 ? ', no pool left' : ''), !hasBiz),
+      step(x.ira, a.max, tip('ira', 'IRA') + ': ' + iraParts(x.ded, x.roth, x.nd), a.max <= 0)
+    ];
+    if (r.s) items.push(step(x.sira, r.s.max, tip('sira', 'Spousal IRA') + ': ' + iraParts(x.sded, x.sroth, x.snd), r.s.max <= 0));
+    $('planList').innerHTML = items.join('') +
+      '<li class="plan-total"><span class="step-amt">' + money(x.total) + '</span><span class="step-text">your ' + amt(x.own) + ' + ' + amt(x.match) + ' match' +
+      (x.excess > 0.5 ? '; ' + money(x.excess) + ' of the target has no room' : '') + '</span></li>';
+  }
+
+  /* ============================== LIMIT POP-UP ============================== */
+  const pop = $('limitPop');
+  const nativePop = typeof pop.showPopover === 'function';
+  if (nativePop) pop.removeAttribute('hidden'); else { pop.removeAttribute('popover'); pop.classList.add('is-fallback'); }
+  let popTrigger = null;
+  function introPop(){
+    const r = lastR, L = r.L;
+    return { title:'How the limits stack', cite:'There is no single cap across all plans',
+      lede:'Two limits cut across plans; the others belong to one plan each. The most anyone can save is the sum of what each bucket allows after the cross-plan limits.',
+      rows:[['Deferral pool, one per person: all 401(k), 403(b) and solo 401(k) deferrals', r.pool.total, '§402(g) + §414(v)'],
+        ['§415(c) annual additions, one per employer (catch-up outside)', L.c415, '§415(c)(1)'],
+        ['Governmental 457(b), its own limit', r.g.limit, '§457(e)(15)'],
+        ['Business employer contribution, 20% of net earnings', r.b.erLimit, '§404(a)(3)'],
+        ['IRA, traditional and Roth combined', r.a.limit, '§219(b)(5)']],
+      why:'Click the limit on any bucket to see its own calculation.' };
+  }
+  function popHtml(p){
+    const rows = p.rows.map(function(row){
+      const v = typeof row[1] === 'string' ? row[1] : (row[1] < 0 ? '&minus;' : '') + money(Math.abs(row[1]));
+      return '<tr' + (row[3] ? ' class="' + row[3] + '"' : '') + '><td>' + row[0] + (row[2] ? '<span class="cite">' + row[2] + '</span>' : '') + '</td><td class="num">' + v + '</td></tr>';
+    }).join('');
+    return '<div class="pop-head"><div><h4 id="popTitle">' + p.title + '</h4><span class="cite">' + p.cite + '</span></div>' +
+      '<button type="button" class="pop-close" aria-label="Close">&times;</button></div>' +
+      '<p class="pop-lede">' + p.lede + '</p><table class="pop-table"><tbody>' + rows + '</tbody></table>' +
+      (p.why ? '<p class="pop-why">' + p.why + '</p>' : '');
+  }
+  function closePop(){ if (nativePop){ if (pop.matches(':popover-open')) pop.hidePopover(); } else { pop.hidden = true; if (popTrigger) popTrigger.focus(); } }
+  document.addEventListener('click', function(ev){
+    const t = ev.target.closest('.limit-btn, .tip');
+    if (t){
+      const key = t.dataset.pop;
+      const p = key === 'intro' ? introPop() : lastPops[key] || (INFO[key] ? INFO[key]() : null);
+      if (!p) return;
+      popTrigger = t;
+      pop.innerHTML = popHtml(p);
+      if (nativePop){ if (!pop.matches(':popover-open')) pop.showPopover(); } else pop.hidden = false;
+      pop.querySelector('.pop-close').focus();
+      return;
+    }
+    if (ev.target.closest('.pop-close')) closePop();
+  });
+  if (nativePop) pop.addEventListener('toggle', function(ev){ if (ev.newState === 'closed' && popTrigger) popTrigger.focus(); });
+  else document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape' && !pop.hidden) closePop(); });
+
+  /* ============================ MAGI AND PHASE-OUT ============================ */
+  /* Concept pop-ups for the inline text; the same dialog as the limits. */
+  let lastView = null;
+  function magiRows(r){
+    const P1 = planName();
+    return [['W-2 wages', r.wages], ['− pre-tax deferrals to the ' + P1 + (r.g.deferral > 0 ? ' and 457(b)' : ''), -r.preTax, r.rothCatchAmt > 0 ? 'Roth catch-up excluded' : 'never enter income'],
+      ['+ net profit from self-employment', r.b.profit], ['− half of SE tax', -r.b.halfSE, '§164(f)'], ['− business plan contribution', -r.b.max, 'deduction for AGI'], ['+ other income', r.other]]
+      .concat(r.s ? [['+ spouse&rsquo;s compensation', r.s.comp], ['− spouse&rsquo;s pre-tax plan deferrals', -r.s.deferrals]] : [])
+      .filter(function(x){ return Math.abs(x[1]) >= 0.5 || x[0] === 'W-2 wages'; })
+      .concat([['Modified AGI for IRA purposes', r.magi, '', 'total']]);
+  }
+  const INFO = {
+    magi:function(){ const v = lastView;
+      return { title:'Modified AGI ' + money(v.magi), cite:'§219(g)(3), §408A(c)(3)',
+        lede:'IRA MAGI is AGI before any IRA deduction. Pre-tax deferrals never enter income, and the business plan contribution and half of SE tax are deductions for AGI, so every workplace dollar lowers it.',
+        rows:magiRows(v), why:v.magiBefore - v.magi > 0.5 ? 'Your plan contributions lower MAGI by <b>' + money(v.magiBefore - v.magi) + '</b>.' : '' }; },
+    phase:function(){ const v = lastView, a = v.a, rg = a.ranges;
+      const before = { roth:phaseOut(a.max, v.magiBefore, rg.roth), ded:phaseOut(a.max, v.magiBefore, rg.ded) };
+      const rows = [['Roth range', rangeText(rg.roth), 'MAGI and filing status only'], ['Your Roth limit at ' + money(v.magi), a.rothLimit, '§408A(c)(3)', 'total'],
+        ['Deduction range', rangeText(rg.ded), rg.dedWhy === 'covered' ? 'you are an active participant' : rg.dedWhy === 'spouse' ? 'your spouse is covered (§219(g)(7))' : 'no one is covered'],
+        ['Your deductible limit', a.dedLimit, '§219(g)', 'total']];
+      if (v.s) rows.push(['Spouse&rsquo;s deduction range', rangeText(v.s.ranges.ded), v.s.covered ? 'spouse covered' : a.active ? 'you are covered (§219(g)(7))' : 'no one is covered'],
+        ['Spouse&rsquo;s Roth / deductible limit', money(v.s.rothLimit) + ' / ' + money(v.s.dedLimit)]);
+      return { title:'IRA phase-outs', cite:'§219(g), §408A(c)(3); Pub. 590-A worksheets',
+        lede:'The IRA limit never phases out. MAGI decides how much can go to a Roth IRA and, for someone covered by a workplace plan, how much of a traditional contribution is deductible. Inside a range the amount falls in a straight line, rounded up to $10, with a $200 floor.',
+        rows:rows, why:'Without the plan contributions MAGI would be ' + money(v.magiBefore) + ': Roth ' + money(before.roth) + ', deductible ' + money(before.ded) + '.' }; },
+    catchup:function(){ const r = lastR, L = r.L;
+      return { title:'Catch-up contributions', cite:'§414(v); §219(b)(5)(B)',
+        lede:'Anyone 50 or older by December 31 can add a catch-up for the whole year; ages 60–63 get a larger plan catch-up. A plan catch-up is not an annual addition, so it rides above the employer&rsquo;s §415(c) line.',
+        rows:[['Plan catch-up, age 50+', L.catch50, '401(k), 403(b), governmental 457(b)'], ['Plan catch-up, ages 60–63', L.catch6063, '§414(v)(2)(E)'], ['IRA catch-up, age 50+', L.iraCatch, '§219(b)(5)(B)'],
+          ['Your plan catch-up (age ' + state.age + ')', r.cu.amount, '', 'total']],
+        why:L.rothCatchRequired ? 'From 2026, if last year&rsquo;s wages from the employer were over ' + money(L.rothCatchWage) + ', the plan catch-up must be Roth.' : '' }; },
+    target:function(){ const r = lastR;
+      return { title:'Your target', cite:'What you choose to put in',
+        lede:'Your deferrals, your IRAs' + (r.s ? ' (both spouses)' : '') + ', and what your business contributes for you as the employer. Employer 1&rsquo;s match is earned on your deferrals and comes on top, so it is not part of the target.',
+        rows:[['Most you can put in', r.total - r.e.match], ['+ employer match at that level', r.e.match], ['Most across all plans', r.total, '', 'total']] }; },
+    order:function(){ const r = lastR;
+      const rows = [['1 · ' + planName() + ' up to the full match', 'free money'], ['2 · the rest of the ' + planName(), 'pre-tax, lowers MAGI'], ['3 · governmental 457(b)', 'pre-tax, own limit'],
+        ['4 · business employer share', 'deduction for AGI'], ['5 · solo 401(k) deferral', 'what the pool has left'], ['6 · IRA: deductible, Roth, nondeductible', 'MAGI sets the split']];
+      if (r.s) rows.push(['7 · spousal IRA, same order', '§219(c)']);
+      return { title:'Why this order', cite:'Each step fills before the next, up to its maximum',
+        lede:'Free money first, then dollars that lower MAGI, then the IRAs, whose deduction and Roth room depend on the MAGI the earlier steps leave. Every step stays inside every cross-plan limit.',
+        rows:rows, why:'Steps 3–5 are interchangeable for tax. Many planners put a Roth IRA right after the match instead; this order favours the current-year deduction.' }; },
+    outsidePool:function(){
+      return { title:'Outside the deferral pool', cite:'§402(g)(3), §457(e)(15), §219(b)',
+        lede:'The pool covers elective deferrals to every 401(k), 403(b), SIMPLE and solo 401(k) of one person. Some contributions never touch it.',
+        rows:[['Governmental 457(b) deferrals', 'own limit'], ['IRA contributions', 'own limit'], ['Employer match', 'employer money'], ['SEP or profit-sharing share', 'employer money']] }; },
+    binding:function(){ const r = lastR;
+      return { title:'What stops it', cite:'A limit binds when it is full',
+        lede:'There is no single cap across all plans. These are the limits that apply here; a binding one is the reason no more can go in.',
+        rows:Object.keys(r.limits).filter(function(k){ return r.limits[k].status !== 'off'; }).map(function(k){ const x = r.limits[k];
+          return [LIMIT_NAME[k].replace(/^the /, ''), money(x.used) + ' of ' + money(x.limit), x.status === 'binding' ? 'full' : money(x.left) + ' left', x.status === 'binding' ? 'binds' : ''];
+        }) }; },
+    rothCatch:function(){ const r = lastR;
+      return { title:'Roth catch-up from 2026', cite:'§414(v)(7), added by SECURE 2.0',
+        lede:'Someone whose prior-year FICA wages from the employer exceeded ' + money(r.L.rothCatchWage) + ' must make plan catch-ups as Roth deferrals. A Roth deferral is taxed now, so it does not lower MAGI.',
+        rows:[['Catch-up treated as Roth', lastView.rothCatchAmt], ['Wages from Employer 1', r.wages, 'this year&rsquo;s wages stand in for last year&rsquo;s']],
+        why:'A plan with no Roth option cannot accept the catch-up at all.' }; }
+  };
+
+  const NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs){
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+  function phaseDomain(r){
+    const rg = r.a.ranges, ends = rg.roth.slice();
+    if (rg.ded) ends.push(rg.ded[0], rg.ded[1]);
+    const lo = Math.min.apply(null, ends.concat([r.magi])), hi = Math.max.apply(null, ends.concat([r.magiBefore]));
+    const pad = Math.max(10000, (hi - lo) * 0.08);
+    return [Math.max(0, Math.floor((lo - pad) / 10000) * 10000), Math.ceil((hi + pad) / 10000) * 10000];
+  }
+
+  function renderPhase(r){
+    const svg = $('phaseChart'), W = Math.max(280, $('phaseShell').clientWidth || 760), small = W < 560;
+    const x0 = small ? 40 : 56, x1 = W - (small ? 10 : 20), y0 = 46, y1 = small ? 200 : 210, H = y1 + 32;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    const a = r.a, dom = phaseDomain(r), xLo = dom[0], xHi = dom[1];
+    const yMax = Math.max(1000, Math.ceil((a.limit * 1.1) / 1000) * 1000);
+    const X = function(v){ return x0 + (v - xLo) / (xHi - xLo) * (x1 - x0); };
+    const Y = function(v){ return y1 - v / yMax * (y1 - y0); };
+    const text = function(s, x, y, anchor, cls){ const t = svgEl('text', { x:x, y:y, 'text-anchor':anchor, class:cls }); t.textContent = s; svg.appendChild(t); return t; };
+
+    niceTicks(0, yMax, 4).forEach(function(v){
+      svg.appendChild(svgEl('line', { x1:x0, x2:x1, y1:Y(v), y2:Y(v), stroke:v === 0 ? 'var(--baseline)' : 'var(--gridline)' }));
+      text(abbr(v), x0 - 6, Y(v) + 4, 'end', 'axis-text');
+    });
+    text('Allowed IRA contribution', x0, 12, 'start', 'axis-text');
+
+    // Range bands and their end labels on the MAGI axis.
+    const rg = a.ranges, marks = [];
+    [rg.roth, rg.ded].forEach(function(p){
+      if (!p) return;
+      svg.appendChild(svgEl('rect', { x:X(p[0]), y:y0, width:Math.max(1, X(p[1]) - X(p[0])), height:y1 - y0, fill:'var(--tool-ink)', 'fill-opacity':.04 }));
+      marks.push(p[0], p[1]);
+    });
+    const mx = X(r.magi), bx = X(r.magiBefore);
+    const taken = [mx];
+    marks.sort(function(p, q){ return p - q; }).forEach(function(v){
+      const x = X(v); if (taken.some(function(t){ return Math.abs(t - x) < (small ? 40 : 52); })) return;
+      text(abbr(v), x, y1 + 15, 'middle', 'axis-text emph'); taken.push(x);
+    });
+
+    const path = function(pts){ return pts.map(function(p, k){ return (k ? 'L' : 'M') + X(Math.min(xHi, Math.max(xLo, p.x))).toFixed(2) + ' ' + Y(p.y).toFixed(2); }).join(''); };
+    const rothPts = phaseLine(a.max, rg.roth, xLo, xHi);
+    const dedPts = phaseLine(a.max, rg.ded, xLo, xHi);
+    svg.appendChild(svgEl('path', { d:path(dedPts), fill:'none', stroke:'var(--ink-muted)', 'stroke-width':2, 'stroke-dasharray':'6 4' }));
+    svg.appendChild(svgEl('path', { d:path(rothPts), fill:'none', stroke:'var(--ink-soft)', 'stroke-width':2.5, 'stroke-linejoin':'round' }));
+
+    const lineLabels = [];
+    const lineLabel = function(s, range, y, dy){
+      const end = range ? X(range[0]) - 6 : x1 - 4;
+      const t = text(s, end, y + dy, 'end', 'line-label');
+      lineLabels.push(t);
+      if (t.getBBox && t.getBBox().x < x0 + 4){
+        if (range){ t.setAttribute('x', (X(range[0]) + X(range[1])) / 2 + 8); t.setAttribute('y', (y + y1) / 2); t.setAttribute('text-anchor', 'start'); }
+        else { t.setAttribute('x', x0 + 6); t.setAttribute('text-anchor', 'start'); }
+      }
+    };
+    lineLabel('Roth IRA limit', rg.roth, Y(rothPts[0].y), -8);
+    lineLabel(rg.ded ? 'Deductible (dashed)' : 'Deductible (dashed): no phase-out', rg.ded, Y(dedPts[0].y), 16);
+
+    // MAGI before plan contributions (hollow, dashed) and after (solid), with
+    // the shift drawn as an arrow above the plot.
+    const shift = r.magiBefore - r.magi;
+    if (shift > 0.5){
+      svg.appendChild(svgEl('line', { x1:bx, x2:bx, y1:y0, y2:y1, stroke:'var(--ink-muted)', 'stroke-width':1, 'stroke-dasharray':'2 3' }));
+      const ay = y0 - 12;
+      svg.appendChild(svgEl('line', { x1:bx, x2:mx + 6, y1:ay, y2:ay, stroke:'var(--answer)', 'stroke-width':1.5 }));
+      svg.appendChild(svgEl('path', { d:'M' + (mx + 7) + ' ' + (ay - 4) + 'L' + mx + ' ' + ay + 'L' + (mx + 7) + ' ' + (ay + 4), fill:'none', stroke:'var(--answer)', 'stroke-width':1.5 }));
+      const lbl = (small ? '−' : 'Plan contributions −') + abbr(shift);
+      const t = text(lbl, (bx + mx) / 2, ay - 6, 'middle', 'shift-label');
+      if (t.getBBox){ const bb = t.getBBox(); if (bb.x < x0) t.setAttribute('x', x0 + bb.width / 2); if (bb.x + bb.width > x1) t.setAttribute('x', x1 - bb.width / 2); }
+      text(small ? 'before' : 'before ' + abbr(r.magiBefore), bx, H - 1, bx > x1 - 40 ? 'end' : 'middle', 'axis-text');
+    }
+    svg.appendChild(svgEl('line', { x1:mx, x2:mx, y1:y0, y2:y1, stroke:'var(--answer)', 'stroke-width':1.5, 'stroke-dasharray':'3 3' }));
+    text('MAGI ' + abbr(r.magi), mx, H - 1, mx < x0 + 40 ? 'start' : mx > x1 - 40 ? 'end' : (shift > 0.5 ? 'end' : 'middle'), 'axis-text magi');
+    svg.appendChild(svgEl('circle', { cx:mx, cy:Y(a.dedLimit), r:6, fill:'var(--tool-surface)', stroke:'var(--answer)', 'stroke-width':2.5 }));
+    svg.appendChild(svgEl('circle', { cx:mx, cy:Y(a.rothLimit), r:6.5, fill:'var(--answer)', stroke:'var(--tool-surface)', 'stroke-width':2 }));
+
+    const right = mx < (x0 + x1) / 2, ax = right ? mx + 12 : mx - 12, anchor = right ? 'start' : 'end';
+    const pointLabels = [];
+    const pointLabel = function(s, y){
+      const t = text(s, ax, Math.min(y, y1 - 8), anchor, 'point-text');
+      if (t.getBBox){
+        const bb = t.getBBox();
+        if (bb.x < x0 + 2){ t.setAttribute('x', mx + 12); t.setAttribute('text-anchor', 'start'); }
+        else if (bb.x + bb.width > x1){ t.setAttribute('x', mx - 12); t.setAttribute('text-anchor', 'end'); }
+        const fb = t.getBBox();
+        if (fb.x < x0 + 2 || fb.x + fb.width > x1){
+          t.setAttribute('text-anchor', 'start');
+          t.setAttribute('x', Math.max(x0 + 2, Math.min(x1 - fb.width, mx - fb.width / 2)));
+        }
+      }
+      pointLabels.push(t);
+    };
+    const off = function(v){ return v > yMax * 0.6 ? 20 : v < yMax * 0.08 ? -10 : 4; };
+    if (Math.abs(a.rothLimit - a.dedLimit) < 1e-9) pointLabel((small ? 'Both ' : 'Roth or deductible ') + money(a.rothLimit), Y(a.rothLimit) + (a.rothLimit > yMax * 0.6 ? 36 : -12));
+    else {
+      const close = Math.abs(Y(a.rothLimit) - Y(a.dedLimit)) < 18, rothUp = a.rothLimit >= a.dedLimit;
+      pointLabel('Roth ' + money(a.rothLimit), Y(a.rothLimit) + (close ? (rothUp ? -8 : 18) : off(a.rothLimit)));
+      pointLabel('Deductible ' + money(a.dedLimit), Y(a.dedLimit) + (close ? (rothUp ? 18 : -8) : off(a.dedLimit)));
+    }
+    if (svg.getBBox){
+      const hit = function(p, q){ return p.x < q.x + q.width && q.x < p.x + p.width && p.y < q.y + q.height && q.y < p.y + p.height; };
+      lineLabels.forEach(function(t){
+        const bb = t.getBBox();
+        if (pointLabels.some(function(p){ return hit(bb, p.getBBox()); })) t.remove();
+      });
+    }
+
+    $('phaseDesc').textContent = 'Line chart of the Roth IRA limit and the deductible traditional IRA limit against modified AGI. Plan contributions move MAGI from ' +
+      money(r.magiBefore) + ' to ' + money(r.magi) + ', where the Roth limit is ' + money(a.rothLimit) + ' and the deductible limit is ' + money(a.dedLimit) + '.';
+
+    // What the shift bought, in a line; the detail lives in the pop-ups.
+    const before = { roth:phaseOut(a.max, r.magiBefore, rg.roth), ded:phaseOut(a.max, r.magiBefore, rg.ded) };
+    const gained = [];
+    if (a.rothLimit > before.roth) gained.push(money(a.rothLimit - before.roth) + ' of Roth room');
+    if (a.dedLimit > before.ded) gained.push(money(a.dedLimit - before.ded) + ' of deduction');
+    const bits = ['At ' + tip('magi', 'MAGI ' + money(r.magi)) + ': Roth up to <span class="amt">' + money(a.rothLimit) + '</span>, deductible <span class="amt">' + money(a.dedLimit) + '</span>' +
+      (r.s ? '; spouse <span class="amt">' + money(r.s.rothLimit) + '</span> Roth, <span class="amt">' + money(r.s.dedLimit) + '</span> deductible' : '') + '. ' + tip('phase', 'Why these amounts?')];
+    if (gained.length) bits.push('The plan contributions restore <b>' + gained.join(' and ') + '</b>.');
+    $('phaseAnswer').innerHTML = bits.join(' ');
+  }
+
+  /* ============================ CALCULATION TABLE ============================ */
+  function renderTable(r){
+    const rows = [], L = r.L, e = r.e, b = r.b, g = r.g, a = r.a, P1 = planName();
+    const row = function(line, item, why, v, cls){
+      rows.push('<tr' + (cls ? ' class="' + cls + '"' : '') + '><td class="line">' + line + '</td><td>' + item + (why ? '<span class="why">' + why + '</span>' : '') +
+        '</td><td class="num">' + (v === null ? '' : typeof v === 'string' ? v : money(v)) + '</td></tr>');
+    };
+    const group = function(name){ rows.push('<tr class="group"><td colspan="3">' + name + '</td></tr>'); };
+    group('Step 2 · Per-person deferral pool');
+    row('a', 'Base elective deferral limit', '§402(g)(1), indexed each year.', L.deferral);
+    row('b', 'Catch-up allowed for age ' + state.age, 'Age at December 31; 60–63 get the larger amount (§414(v)).', r.cu.amount);
+    row('c', 'Deferral pool for all plans', 'One pool per person: every 401(k), 403(b) and solo 401(k) draws from it.', r.pool.total, 'is-total');
+    group('Step 3 · Employer 1 ' + P1);
+    row('a', '§415(c) limit: lesser of ' + money(L.c415) + ' or wages', 'Annual additions cannot exceed pay.', e.limit415);
+    row('b', 'Deferral needed for the full match', 'Match limit × wages. A plan term, not a tax rule.', e.needForMatch);
+    row('c', 'Full employer match available', 'Match rate × line b. Employer money does not use the deferral pool.', e.fullMatch);
+    row('d', 'Maximum deferral', 'Lesser of the pool, wages, or what fits §415(c) with the match plus catch-up.', e.deferral);
+    row('e', 'Employer match received', 'Earned only on dollars deferred, up to the plan cap.', e.match);
+    row('f', 'Catch-up included in the deferral', 'Sits on top of §415(c) (§414(v)(3)(A)).', e.catchup);
+    row('g', 'Annual additions counted toward §415(c)', 'd − f + e', e.additions);
+    row('h', 'Total into the ' + P1, 'd + e', e.total, 'is-total');
+    row('i', '§415(c) room left', 'Usable only by employer or after-tax contributions.', e.room415);
+    group('Step 4 · Side business: SEP vs. solo 401(k)');
+    row('a', 'Net profit from self-employment', '', b.profit);
+    row('b', 'Net earnings subject to SE tax', 'a × 92.35%', b.nese);
+    row('c', 'Social Security portion', '12.4% up to the wage base (' + money(L.ssWageBase) + ') not used by W-2 wages (§1402(b)).', b.ss);
+    row('d', 'Medicare portion', '2.9% with no wage base.', b.med);
+    row('e', 'Deductible half of SE tax', '(c + d) ÷ 2, a deduction for AGI (§164(f)).', b.halfSE);
+    row('f', 'Net earnings for plan purposes', 'a − e, capped at ' + money(L.compLimit) + ' (§§401(c)(2), 401(a)(17)).', b.comp);
+    row('g', 'Owner&rsquo;s employer contribution rate', '25% ÷ 125%', '20%');
+    row('h', 'Maximum employer contribution', 'Lesser of f × g or ' + money(L.c415) + ' (§404(a)(3)); the same for a SEP and a solo 401(k).', b.erLimit);
+    row('i', 'Deferral pool left after Employer 1', 'Step 2c − Step 3d', b.poolLeft);
+    row('j', 'Business §415(c) limit', 'Its own limit: lesser of ' + money(L.c415) + ' or f.', b.limit415);
+    row('k', 'Maximum solo 401(k) deferral', 'Lesser of i or f − h.', b.soloDeferral);
+    row('l', 'Catch-up in the solo deferral', 'Outside §415(c).', b.soloCatch);
+    row('m', 'Maximum with a SEP IRA', 'Employer contributions only: h.', b.sep);
+    row('n', 'Maximum with a solo 401(k)', 'Lesser of h + k or j + l.', b.solo);
+    row('p', 'Maximum for the business (' + (b.soloWins ? 'solo 401(k)' : 'either plan') + ')', 'Greater of m or n.', b.max, 'is-total');
+    group('Step 5 · Governmental 457(b)');
+    row('a', '457(b) limit including catch-up', '§457(e)(15) plus §414(v).', g.limit);
+    row('b', 'Maximum 457(b) deferral', g.offered ? 'Lesser of a or the pay left after the ' + P1 + ' deferrals.' : 'Not offered.', g.deferral, 'is-total');
+    group('Step 6 · IRAs');
+    row('g', 'Modified AGI for IRA purposes', 'Wages − pre-tax deferrals + profit − ½ SE tax − business plan contribution + other income.', r.magi);
+    row('h', 'IRA limit including age 50 catch-up', '§219(b)(5)', a.limit);
+    row('i', 'Taxable compensation', 'Wages + net earnings from self-employment.', a.comp);
+    row('j', 'Maximum total IRA contribution', 'Lesser of h or i; traditional and Roth share it.', a.max);
+    row('k', 'Active participant in a workplace plan?', 'Contributions to a 401(k), 403(b) or SEP this year. A 457(b) alone does not count (§219(g)(5)).', a.active ? 'Yes' : 'No');
+    row('m–n', 'Deduction phase-out range', a.ranges.ded ? '' : 'No phase-out applies.', a.ranges.ded ? money(a.ranges.ded[0]) + '–' + money(a.ranges.ded[1]) : '—');
+    row('o', 'Maximum deductible traditional IRA', 'Pro rata across the range, rounded up to $10, $200 floor (§219(g)(2)).', a.dedLimit);
+    row('p–q', 'Roth phase-out range', 'MAGI and filing status only (§408A(c)(3)).', money(a.ranges.roth[0]) + '–' + money(a.ranges.roth[1]));
+    row('r', 'Roth limit after phase-out', '', a.rothLimit);
+    row('s', 'Deductible traditional IRA', 'Filled first.', a.ded);
+    row('t', 'Roth IRA', 'Lesser of r or j − s.', a.roth);
+    row('u', 'Nondeductible traditional IRA', 'j − s − t', a.nondeductible);
+    if (r.s){
+      const sv = r.s;
+      group('Spousal IRA · §219(c)');
+      row('', 'Spouse&rsquo;s IRA limit (age ' + sv.age + ')', '§219(b)(5)', sv.limit);
+      row('', 'Spouse&rsquo;s own compensation', '', sv.comp);
+      row('', 'Your compensation not needed for your IRA', 'Combined pay caps both IRAs together.', sv.fromOther);
+      row('', 'Spousal IRA maximum', '', sv.max, 'is-total');
+      row('', 'Deduction range', sv.ranges.ded ? (sv.covered ? 'Spouse covered.' : 'Spouse not covered, taxpayer covered (§219(g)(7)).') : 'Neither spouse covered.', sv.ranges.ded ? rangeText(sv.ranges.ded) : '—');
+      row('', 'Deductible / Roth / nondeductible', '', money(sv.ded) + ' / ' + money(sv.roth) + ' / ' + money(sv.nondeductible));
+    }
+    group('Step 7 · Maximum across all plans');
+    row('', 'Total', 'Sum of every plan&rsquo;s maximum.', r.total, 'is-total');
+    $('calcTable').tBodies[0].innerHTML = rows.join('');
+  }
+
+  /* ================================ RENDER ================================ */
+  const NOTE_TEXT = {
+    matchShort: function(r){ return 'Part of the match cannot be earned: ' +
+      (r.limits.e415.status === 'binding' ? 'deferrals plus the match would exceed §415(c)' : r.limits.pool.status === 'binding' ? 'the deferral pool runs out first' : 'pay runs out first') +
+      '. ' + tip('match', 'See the match limit'); },
+    rothCatch: function(r){ return 'From 2026 your ' + money(r.rothCatchAmt) + ' catch-up must be Roth, so it does not lower MAGI. ' + tip('rothCatch', 'Why?'); }
+  };
+  const LIMIT_NAME = { sira:'the spousal IRA limit', pool:'the per-person deferral pool', e415:'Employer 1’s §415(c) limit', b415:'the business’s §415(c) limit',
+    bER:'the business’s 20% employer limit', g457:'the 457(b) limit', ira:'the IRA limit' };
+
+  let lastAnnounce = '';
+  function render(commit){
+    const married = state.status !== 'single' && state.status !== 'mfsApart';
+    const flags = { married:married, joint:state.status === 'joint' };
+    document.querySelectorAll('[data-needs]').forEach(function(el){
+      el.hidden = !el.dataset.needs.split(' ').every(function(k){ return flags[k]; });
+    });
+
+    let r;
+    const spouse = state.status === 'joint' ? { age:state.spouseAge, comp:state.spouseComp, deferrals:state.spouseDeferrals } : null;
+    try { r = maxContributions(Object.assign({}, state, { spouseCovered:married && state.spouseCovered, spouse:spouse })); }
+    catch (err){ $('answerSentence').textContent = 'This tax year has not been reviewed yet.'; return; }
+    const x = allocateTarget(r, state.target);
+    const e = r.e, b = r.b, P1 = planName();
+
+    // The target lever: its range runs to the most the taxpayer can put in.
+    const maxOwn = Math.round(x.maxOwn), range = $('targetRange');
+    range.max = maxOwn; range.value = Math.min(state.target === null ? maxOwn : state.target, maxOwn);
+    if (document.activeElement !== $('targetIn')) $('targetIn').value = num0.format(state.target === null ? maxOwn : state.target);
+    $('targetMax').textContent = 'Use the maximum (' + money(maxOwn) + ')';
+    $('targetMax').setAttribute('aria-pressed', String(x.atMax));
+
+    $('answerLabel').textContent = x.atMax ? 'Most across all plans' : 'Into plans for your target';
+    $('answerTotal').textContent = money(x.total);
+    const binding = Object.keys(r.limits).filter(function(k){ return r.limits[k].status === 'binding'; }).map(function(k){ return LIMIT_NAME[k]; });
+    const list = binding.length > 1 ? binding.slice(0, -1).join(', ') + ' and ' + binding[binding.length - 1] : binding[0];
+    $('answerSentence').innerHTML = x.atMax
+      ? 'is the most across every plan in ' + state.year + ': your ' + money(x.own) + ' + ' + money(x.match) + ' match. ' + tip('binding', 'What stops it?') +
+        (x.excess > 0.5 ? ' ' + money(x.excess) + ' of your target has no room.' : '')
+      : 'goes in for your ' + money(x.own) + ' target, plus ' + money(x.match) + ' match.';
+    const split = [];
+    if (x.d > 0) split.push([P1 + ' deferrals', x.d]);
+    if (x.match > 0) split.push(['match', x.match]);
+    if (x.er + x.solo > 0) split.push([(b.soloWins ? 'Solo 401(k)' : 'SEP or solo 401(k)'), x.er + x.solo]);
+    if (x.g457 > 0) split.push(['457(b)', x.g457]);
+    if (x.ira > 0) split.push(['IRA', x.ira]);
+    if (x.sira > 0) split.push(['Spousal IRA', x.sira]);
+    if (r.s){
+      const sv = r.s;
+      $('stateSpouse').textContent = money(x.sira);
+      $('spouseDerived').innerHTML = 'Spousal IRA <b>' + money(sv.max) + '</b>' + (sv.fromOther > 0.5 ? ', ' + tip('sira', 'funded by your pay') : '') +
+        ' &middot; deduction ' + (sv.ranges.ded ? 'phases out at ' + rangeText(sv.ranges.ded) : 'not phased out');
+    }
+    $('answerSplit').innerHTML = split.map(function(s){ return '<li>' + s[0] + ' <b>' + money(s[1]) + '</b></li>'; }).join('');
+
+    $('stateE1').textContent = x.d + x.match + x.g457 > 0 ? money(x.d + x.match + x.g457) : 'None';
+    $('stateBiz').textContent = x.er + x.solo > 0 ? money(x.er + x.solo) : 'None';
+    $('bizDerived').innerHTML = b.comp > 0
+      ? 'Owner pay after ½ SE tax <b>' + money(b.comp) + '</b> &middot; ' + tip('b415', 'own §415(c), shared pool')
+      : 'Enter a profit to add a SEP IRA or solo 401(k).';
+
+    // MAGI and the IRA follow the allocation, not the maximum.
+    const view = Object.assign({}, r, { preTax:x.preTax, rothCatchAmt:x.rothCatchAmt, magi:x.magi,
+      s:r.s ? Object.assign({}, r.s, { ranges:x.sRanges, dedLimit:x.sDedLimit, rothLimit:x.sRothLimit }) : null,
+      g:Object.assign({}, r.g, { deferral:x.g457 }), b:Object.assign({}, r.b, { max:x.er + x.solo }),
+      a:Object.assign({}, r.a, { ranges:x.ranges, dedLimit:x.dedLimit, rothLimit:x.rothLimit, active:x.active }) });
+    renderBuckets(r, x);
+    lastView = view;
+    renderPhase(view);
+    renderTable(r);
+    const notes = r.notes.map(function(n){ return '<li>' + NOTE_TEXT[n](r) + '</li>'; });
+    if (x.match < e.match - 0.5) notes.unshift('<li>This target leaves ' + money(e.match - x.match) + ' of match unclaimed. ' + tip('match', 'How to earn it') + '</li>');
+    $('notes').innerHTML = notes.join('');
+    $('scopeLine').textContent = 'Tax year ' + state.year + ' · federal limits only · ' + (r.s ? 'your plans and both spouses’ IRAs' : 'one person’s own contributions') + ', all deferrals pre-tax · ported from the ACCTG 410 workbook · reviewed October 18, 2026 · sources and exclusions below.';
+
+    if (commit){
+      const msg = 'Into plans ' + money(x.total) + ': your ' + money(x.own) + ' plus ' + money(x.match) + ' match. ' + split.map(function(s){ return s[0] + ' ' + money(s[1]); }).join(', ') + '.';
+      if (msg !== lastAnnounce){ $('liveResult').textContent = msg; lastAnnounce = msg; }
+    }
+  }
+
+  /* The state is the source of truth: write it into the controls, so a
+     browser that restores old form values on reload cannot disagree with it. */
+  function syncControls(){
+    document.querySelectorAll('.inline-number[data-key]').forEach(function(el){ el.value = shown(el); });
+    $('spouseCovered').checked = state.spouseCovered; $('has457').checked = state.has457;
+    $('statusSelect').value = state.status; $('planSelect').value = state.plan; yearSel.value = state.year;
+  }
+  syncControls();
+
+  let resizeTimer = null;
+  window.addEventListener('resize', function(){ clearTimeout(resizeTimer); resizeTimer = setTimeout(function(){ render(false); }, 120); });
+  render(false);
+})();
+</script>
+</body>
+</html>

@@ -11,9 +11,9 @@ function extract(name){
   return src.slice(start, j);
 }
 const code = 'const MAX_PCT = 0.85;\n' + src.match(/const YEAR_RULES = [\s\S]*?;\n/)[0] +
-  ['model','uncapped','curvePoints','marginalAt','explorationBreaks','inclusionStory','taxYearChoices','thresholdsFor'].map(extract).join('\n');
-const { model, uncapped, curvePoints, explorationBreaks, inclusionStory, taxYearChoices, thresholdsFor } =
-  new Function(code + '; return {model, uncapped, curvePoints, marginalAt, explorationBreaks, inclusionStory, taxYearChoices, thresholdsFor};')();
+  ['model','uncapped','curvePoints','marginalAt','lumpSumElection','lumpActive','taxableAt','curveAgi','explorationBreaks','inclusionStory','taxYearChoices','thresholdsFor'].map(extract).join('\n');
+const { model, uncapped, curvePoints, lumpSumElection, taxableAt, curveAgi, explorationBreaks, inclusionStory, taxYearChoices, thresholdsFor } =
+  new Function(code + '; return {model, uncapped, curvePoints, marginalAt, lumpSumElection, taxableAt, curveAgi, explorationBreaks, inclusionStory, taxYearChoices, thresholdsFor};')();
 
 const S = [
   ['Joint A',  {benefits:12400, agi:36000, lo:32000, up:44000}, 5100,    0.4112903225806452],
@@ -106,6 +106,40 @@ check('both reviewed years reproduce the independent workbook scenarios',[2025,2
   const limits=thresholdsFor(year,base.lo===32000?'joint':'single');
   return near(model({...base,...limits}).taxable,amount);
 })));
+
+// Section 86(b)(2) adjustments, separate-return thresholds and the 86(e) election.
+console.log('\nadjustments, separate returns and lump sums:');
+check('tax-exempt interest and add-backs enter provisional income dollar for dollar',
+  near(model({...base,adj:3000}).pi,45200) && near(model({...base,adj:3000}).taxable,model({...base,agi:39000}).taxable));
+check('adjustment shifts every boundary left by the same amount',
+  explorationBreaks(12400,32000,44000,{adj:2500}).every((p,k)=>near(p.agi,jointBreaks[k].agi-2500)));
+check('separate filers who lived apart use the $25,000 / $34,000 thresholds',
+  [2025,2026].every(y=>{const t=thresholdsFor(y,'mfsApart');return t.lo===25000&&t.up===34000;}));
+const together=thresholdsFor(2025,'mfsTogether');
+check('separate filers who lived together have zero thresholds',together.lo===0&&together.up===0);
+check('lived together: 85% of provisional income, capped at 85% of benefits',
+  near(model({benefits:12000,agi:2000,lo:0,up:0}).taxable,.85*8000) &&
+  near(model({benefits:12000,agi:40000,lo:0,up:0}).taxable,10200));
+// Pub. 915-style check: $6,000 of a $20,000 benefit belongs to a prior year with
+// $10,000 of benefits and $20,000 of other income, single thresholds.
+const ls={benefits:20000,agi:30000,lo:25000,up:34000,lump:{portion:6000,priorBenefits:10000,priorIncome:20000}};
+const e=lumpSumElection(ls);
+check('election: this year without the prior-year portion',near(e.current,model({benefits:14000,agi:30000,lo:25000,up:34000}).taxable));
+check('election: prior-year increase is the change in that prior year’s taxable benefits',
+  near(e.increase,model({benefits:16000,agi:20000,lo:25000,up:34000}).taxable-model({benefits:10000,agi:20000,lo:25000,up:34000}).taxable));
+check('election applies only when it lowers the result',
+  near(e.normal,model(ls).taxable) && e.applies===(e.elected<e.normal) && near(taxableAt(ls),Math.min(e.normal,e.elected)));
+check('election that would raise the amount is not made',
+  (()=>{const x={...ls,lump:{portion:6000,priorBenefits:30000,priorIncome:90000}};const r=lumpSumElection(x);return !r.applies&&near(taxableAt(x),r.normal);})());
+let curveOk=true;
+for(const lump of [null,ls.lump,{portion:15000,priorBenefits:0,priorIncome:5000}]){
+  const i={...ls,lump};const pts=curveAgi(i,120000);
+  for(let x=-10000;x<=120000;x+=137.5){
+    let y=null;for(let k=0;k<pts.length-1;k++){const a=pts[k],z=pts[k+1];if(x>=a.x&&x<=z.x){y=a.y+(z.y-a.y)*(x-a.x)/(z.x-a.x);break;}}
+    if(y!==null&&Math.abs(y-taxableAt({...i,agi:x}))>1e-6) curveOk=false;
+  }
+}
+check('drawn curve matches the model everywhere, with and without an election',curveOk);
 
 console.log(fail === 0 ? '\nALL CHECKS PASS' : `\n${fail} FAILURE(S)`);
 process.exit(fail ? 1 : 0);
