@@ -41,20 +41,31 @@
 
 .brand:hover { color: var(--ink); }
 
-/* The mark: three ascending columns on a ledger rule — the bracket
-   staircase the tools draw, reduced until it survives 16px. It is inline
-   SVG rather than an <img> so it inherits currentColor and follows the
-   theme; an <img> would need two files and still be wrong in one of them.
-   The wordmark beside it stays live text in the serif face, so it always
-   matches the headings and is selectable and translatable.
-   Source of truth for the shape: assets/img/logo-mark.svg;
-   the full lockup with the wordmark is assets/img/logo.svg. */
-.brand-mark {
+/* The deep-teal wordmark artwork, used in every page's topbar.
+   Source: assets/img/taxvisual-logo-deep-teal.png. */
+.brand--wordmark {
+  --brand-artwork-paper: #fbfaf8;
   flex: none;
-  width: 1.25rem;
-  height: 1.25rem;
-  color: var(--accent);
-  fill: currentColor;
+  gap: 0;
+}
+
+.brand--wordmark .brand-logo {
+  display: block;
+  width: 13.5rem;
+  height: auto;
+}
+
+/* Preserve the selected teal and charcoal artwork in both themes. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand--wordmark {
+    background: var(--brand-artwork-paper);
+    border-radius: var(--radius-sm);
+  }
+}
+
+:root[data-theme="dark"] .brand--wordmark {
+  background: var(--brand-artwork-paper);
+  border-radius: var(--radius-sm);
 }
 
 .topbar nav ul {

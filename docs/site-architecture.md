@@ -366,19 +366,17 @@ page the whole site is set on. The wordmark is pinned to its measured width with
 `textLength`, so a machine without IBM Plex Serif condenses the fallback to fit
 rather than running the word past the end of the rule.
 
-In the topbar the symbol is inlined and the wordmark stays **live HTML text** in
-the serif face, so it matches the headings and stays selectable, translatable
-and responsive to text-size settings. The lockup file is for everywhere that
-cannot rely on the page's fonts and CSS.
+The topbar on every page now uses the deep-teal wordmark artwork instead,
+`assets/img/taxvisual-logo-deep-teal.png`, as an `<img class="brand-logo">`
+inside `.brand--wordmark` (styled in `components.css`). The artwork has fixed
+teal and charcoal colors, so in dark mode it sits on a light paper tile rather
+than following the theme. The SVG symbol and lockup above remain for the
+favicon and anywhere else that needs vector art.
 
 Three things to know before changing it:
 
-1. **It is inline SVG in the topbar, not an `<img>`.** That is what lets it take
-   `currentColor` and follow the theme; `.brand-mark` colors it `var(--accent)`
-   in `components.css`. An `<img>` would need two files and still be wrong in
-   one theme. The cost is that the markup is hand-duplicated into every page,
-   like the rest of the chrome — `assets/partials/topbar.html` is the source of
-   truth.
+1. **The topbar markup is hand-duplicated into every page**, like the rest of
+   the chrome — `assets/partials/topbar.html` is the source of truth.
 2. **`favicon.svg` carries its own colors**, because a favicon cannot inherit
    the page's. Both theme pairs are literal hex lifted from `tokens.css`, and
    both are already contrast-verified there. It switches on
